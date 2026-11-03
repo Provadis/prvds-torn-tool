@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.11.0
-// @description  Watchlist für Gegner im Ranked War: Spieler und ganze Factions, Hospital-Countdown, Farbe nach Last Action, FF Scouter
+// @version      2.12.0
+// @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
 // @supportURL   https://github.com/Provadis/torn-war-watchlist/issues
@@ -21,33 +21,33 @@
 (function () {
   'use strict';
 
-  // ---- Einstellungen ------------------------------------------------------
-  const DEFAULT_REFRESH_S = 60;   // Standard: alle 60s die komplette Liste neu holen (im Panel änderbar)
+  // ---- Settings -----------------------------------------------------------
+  const DEFAULT_REFRESH_S = 60;   // default: refresh the whole list every 60 s (changeable in the panel)
   const MIN_REFRESH_S = 15;
   const MAX_REFRESH_S = 600;
-  const REQUEST_GAP_MS = 700;     // Abstand zwischen API-Calls (Torn-Limit: 100/min)
-  // Version und Update-Adresse kommen aus dem Header (@version / @downloadURL)
+  const REQUEST_GAP_MS = 700;     // gap between API calls (Torn limit: 100/min)
+  // Version and update URL come from the header (@version / @downloadURL)
   const GMI = typeof GM_info !== 'undefined' ? GM_info : null;
   const SCRIPT_VERSION = (GMI && GMI.script.version) || '';
   const UPDATE_URL = (GMI && (GMI.script.downloadURL || GMI.script.updateURL))
     || 'https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js';
-  const GREEN_AFTER_S = 15 * 60;  // > 15 min inaktiv  -> grün
-  const ORANGE_AFTER_S = 10 * 60; // 10–15 min inaktiv -> orange, darunter rot
+  const GREEN_AFTER_S = 15 * 60;  // > 15 min inactive  -> green
+  const ORANGE_AFTER_S = 10 * 60; // 10–15 min inactive -> orange, below that red
 
-  // ---- Speicher (geteilt zwischen allen Torn-Tabs) ------------------------
+  // ---- Storage (shared between all Torn tabs) -----------------------------
   const getList = () => GM_getValue('list', []);
   const setList = (list) => GM_setValue('list', list);
   const getKey = () => GM_getValue('apiKey', '');
   const getRefreshS = () => GM_getValue('refreshS', DEFAULT_REFRESH_S);
   const isPaused = () => GM_getValue('paused', false);
 
-  // Beobachtete Factions: { id, name, tag, hidden: [Spieler-IDs], members: [{ id, name, ts }], error }
-  // Ihre Mitglieder kommen mit EINEM Call pro Faction; "hidden" blendet einzelne Spieler nur aus.
+  // Watched factions: { id, name, tag, hidden: [player IDs], members: [{ id, name, ts }], error }
+  // Their members come with ONE call per faction; "hidden" only hides single players.
   const getFactions = () => GM_getValue('factions', []);
   const setFactions = (factions) => GM_setValue('factions', factions);
 
-  // Dauerhafte Einstellungen (für Export/Import und die Sicherung); Zwischenspeicher wie Hits
-  // oder der letzte Refresh gehören nicht dazu. Pro Schlüssel eine Prüfung des Werts.
+  // Persistent settings (for export/import and the backup); caches like hits or the last
+  // refresh are not included. One value check per key.
   const isBool = (v) => typeof v === 'boolean';
   const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
   const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -72,8 +72,8 @@
     lang: (v) => v === 'de' || v === 'en',
   };
 
-  // ---- Sprache (Deutsch / Englisch) ----------------------------------------
-  // t('key', ...args): Texte ohne Platzhalter sind Strings, mit Platzhaltern Funktionen.
+  // ---- Language (English / German) ----------------------------------------
+  // t('key', ...args): texts without placeholders are strings, with placeholders functions.
   const I18N = {
     de: {
       dragHint: 'Ziehen zum Verschieben, Doppelklick zum Andocken',
@@ -304,15 +304,16 @@
       lgHover: 'Tip: hover a row or the FF score for details (last action, estimated stats).',
     },
   };
-  const getLang = () => (GM_getValue('lang', 'de') === 'en' ? 'en' : 'de');
+  // English is the default; German only when chosen in the settings
+  const getLang = () => (GM_getValue('lang', 'en') === 'de' ? 'de' : 'en');
   function t(key, ...args) {
-    const s = I18N[getLang()][key] ?? I18N.de[key];
+    const s = I18N[getLang()][key] ?? I18N.en[key];
     return typeof s === 'function' ? s(...args) : s;
   }
 
-  // Sicherung im localStorage von torn.com: Geht der Tampermonkey-Speicher verloren oder ist er
-  // älter als die Sicherung, wird beim Laden die Sicherung zurückgespielt. "savedAt" steht in
-  // beiden Speichern und entscheidet, welcher aktueller ist.
+  // Backup in torn.com's localStorage: if the Tampermonkey storage is lost or older than the
+  // backup, the backup is restored on load. "savedAt" is kept in both stores and decides
+  // which one is newer.
   const BACKUP_KEY = 'twl-settings-backup';
   function readBackup() {
     try {
@@ -335,7 +336,7 @@
     try {
       localStorage.setItem(BACKUP_KEY, JSON.stringify({ savedAt, settings }));
     } catch (e) {
-      console.warn('[Watchlist] Sicherung im localStorage fehlgeschlagen:', e);
+      console.warn('[Watchlist] localStorage backup failed:', e);
     }
   }
   let backupTimer = null;
@@ -352,10 +353,10 @@
       }
       GM_setValue('savedAt', b.savedAt);
     } else if (!b || b.savedAt < gmAt) {
-      saveBackup(); // erste Sicherung anlegen bzw. veraltete erneuern
+      saveBackup(); // create the first backup or renew an outdated one
     }
   })();
-  // Jede eigene Änderung (nicht die aus anderen Tabs) landet kurz danach auch in der Sicherung
+  // Every own change (not those from other tabs) also lands in the backup shortly after
   for (const k of Object.keys(SETTINGS)) {
     GM_addValueChangeListener(k, (_k, _o, _n, remote) => { if (!remote) scheduleBackup(); });
   }
@@ -364,7 +365,7 @@
   function updateEntry(id, patch) {
     const list = getList();
     const entry = list.find((e) => e.id === id);
-    if (!entry) return; // inzwischen entfernt
+    if (!entry) return; // removed in the meantime
     Object.assign(entry, patch);
     setList(list);
   }
@@ -372,18 +373,18 @@
   function updateFaction(id, patch) {
     const factions = getFactions();
     const f = factions.find((x) => x.id === id);
-    if (!f) return; // inzwischen entfernt
+    if (!f) return; // removed in the meantime
     Object.assign(f, patch);
     setFactions(factions);
   }
 
-  // Spieler-IDs, deren Daten schon über eine beobachtete Faction kommen (brauchen keinen eigenen Call)
+  // Player IDs whose data already comes via a watched faction (no call of their own needed)
   function coveredIds(factions) {
     return new Set(factions.flatMap((f) => f.members.map((m) => m.id)));
   }
 
   function addPlayer(id) {
-    // Steckt der Spieler in einer beobachteten Faction, wird er dort nur wieder eingeblendet.
+    // If the player is in a watched faction, just show them there again.
     const factions = getFactions();
     const owners = factions.filter((f) => f.members.some((m) => m.id === id));
     if (owners.length) {
@@ -401,7 +402,7 @@
     if (key && !isPaused()) refreshOne(id, key).then(render);
   }
 
-  // ✕ bei einem Spieler: aus der Einzelliste löschen und in beobachteten Factions ausblenden.
+  // ✕ on a player: delete from the single list and hide in watched factions.
   function removePlayer(id) {
     setList(getList().filter((e) => e.id !== id));
     const factions = getFactions();
@@ -457,18 +458,17 @@
     });
   }
 
-  // Status aus der API (Hospital, Jail, Traveling, …); "until" = Zeitpunkt, an dem er endet
+  // Status from the API (Hospital, Jail, Traveling, …); "until" = when it ends
   const statusOf = (s) => (s ? { state: s.state || '', until: s.until || 0 } : null);
 
   const profileFaction = (d) => {
     const f = d.faction || {};
     return f.faction_id
       ? { id: f.faction_id, name: f.faction_name, tag: f.faction_tag || '' }
-      : { id: 0, name: 'Ohne Faction', tag: '' };
+      : { id: 0, name: 'No faction', tag: '' };
   };
 
-  // Einzelner Spieler. Liefert den Torn-Fehlercode zurück (oder 0), damit die Schleife bei
-  // Key-Problemen abbrechen kann.
+  // Single player. Returns the Torn error code (or 0) so the loop can stop on key problems.
   async function refreshOne(id, key) {
     try {
       const d = await apiGet(`user/${id}?selections=profile`, key);
@@ -489,7 +489,7 @@
     return 0;
   }
 
-  // Ganze Faction mit einem Call (/v2/faction/{id}/members). Der Name wird nur einmal geholt.
+  // Whole faction with one call (/v2/faction/{id}/members). The name is fetched only once.
   async function refreshFaction(id, key) {
     try {
       const f = getFactions().find((x) => x.id === id);
@@ -523,8 +523,8 @@
     return 0;
   }
 
-  // ---- Today's Hits: eigene erfolgreiche Angriffe seit 00:00 TCT (= UTC) ----------------
-  // Braucht einen Key mit Limited Access. Zählt inkrementell: pro Update meist nur ein Call.
+  // ---- Today's hits: own successful attacks since 00:00 TCT (= UTC) -----------------------
+  // Needs a key with Limited access. Counts incrementally: usually just one call per update.
   const HIT_RESULTS = ['Attacked', 'Mugged', 'Hospitalized', 'Arrested', 'Looted', 'Special', 'Bounty'];
   const hitsEnabled = () => GM_getValue('hitsOn', true);
   const todayStart = () => Math.floor(Date.now() / 86400000) * 86400;
@@ -538,10 +538,10 @@
   async function refreshHits(key) {
     if (hitsLoading) return;
     const h = getHits();
-    if (h.denied && GM_getValue('hitsDeniedKey', '') === key) return; // Key hat keine Rechte – Calls sparen
+    if (h.denied && GM_getValue('hitsDeniedKey', '') === key) return; // key lacks access – save calls
     hitsLoading = true;
     try {
-      // Eigene Spieler-ID einmalig holen (pro Key gemerkt)
+      // Fetch own player ID once (remembered per key)
       let myId = GM_getValue('myId', null);
       if (!myId || GM_getValue('myIdKey', '') !== key) {
         const me = await apiGet('user/?selections=basic', key);
@@ -552,7 +552,7 @@
         await sleep(REQUEST_GAP_MS);
       }
       const seen = new Set(h.ids);
-      for (let page = 0; page < 10; page++) { // max. 1000 Angriffe pro Update nachladen
+      for (let page = 0; page < 10; page++) { // load at most 1000 attacks per update
         if (page) await sleep(REQUEST_GAP_MS);
         const d = await apiGet(`v2/user/attacks?filters=outgoing&sort=ASC&limit=100&from=${h.from}`, key);
         if (d.error) {
@@ -585,17 +585,16 @@
     } finally {
       hitsLoading = false;
     }
-    if (h.day === todayStart()) GM_setValue('hits', h); // Tageswechsel während der Abfrage? Dann verwerfen.
+    if (h.day === todayStart()) GM_setValue('hits', h); // day changed during the request? Then discard.
   }
 
-  // ---- FF Scouter: Fair-Fight-Schätzung pro Spieler (ffscouter.com) -------------------------
-  // Braucht einen Torn-API-Key, der bei ffscouter.com registriert ist (eigener Key oder der
-  // Watchlist-Key). Die Werte ändern sich langsam und werden zwischengespeichert; FF hängt aber
-  // auch von den eigenen Stats ab, deshalb nach einer Weile neu holen.
+  // ---- FF Scouter: fair fight estimate per player (ffscouter.com) ----------------------------
+  // Needs a Torn API key registered at ffscouter.com (own key or the watchlist key). Values
+  // change slowly and are cached; FF also depends on your own stats, so refetch after a while.
   const FF_API = 'https://ffscouter.com/api/v1';
   const FF_MAX_AGE_MS = 30 * 60 * 1000;
-  const FF_CHUNK = 100;               // Spieler pro Abfrage
-  const FF_OLD_S = 14 * 86400;        // ältere Schätzungen bekommen ein "?"
+  const FF_CHUNK = 100;               // players per request
+  const FF_OLD_S = 14 * 86400;        // older estimates get a "?"
   const ffEnabled = () => GM_getValue('ffOn', false);
   const getFfKey = () => GM_getValue('ffKey', '') || getKey();
   const getFfCache = () => GM_getValue('ffCache', {});
@@ -640,13 +639,13 @@
         }
         const cache = getFfCache();
         const t = Date.now();
-        for (const id of chunk) cache[id] = { ff: null, bs: null, upd: null, fetched: t }; // keine Daten
+        for (const id of chunk) cache[id] = { ff: null, bs: null, upd: null, fetched: t }; // no data
         for (const r of d) {
           if (r && r.player_id) {
             cache[r.player_id] = { ff: r.fair_fight ?? null, bs: r.bs_estimate_human ?? null, upd: r.last_updated ?? null, fetched: t };
           }
         }
-        // Einträge, die seit einem Tag niemand mehr gebraucht hat, wegwerfen
+        // drop entries nobody has needed for a day
         for (const id of Object.keys(cache)) if (t - cache[id].fetched > 86400000) delete cache[id];
         GM_setValue('ffCache', cache);
         GM_setValue('ffError', '');
@@ -658,7 +657,7 @@
     }
   }
 
-  // Alle angezeigten Spieler: Mitglieder beobachteter Factions (ohne ausgeblendete) + Einzelspieler
+  // All shown players: members of watched factions (without hidden ones) + single players
   function shownIds() {
     const ids = new Set();
     for (const f of getFactions()) {
@@ -669,16 +668,16 @@
     return [...ids];
   }
 
-  const KEY_ERRORS = [1, 2, 10, 13, 16, 18]; // Key fehlt/falsch/gesperrt/zu wenig Rechte
+  const KEY_ERRORS = [1, 2, 10, 13, 16, 18]; // key missing/wrong/locked/insufficient access
   let refreshing = false;
 
   async function refreshAll(force) {
     if (refreshing) return;
     const key = getKey();
     if (!key) return;
-    // Pausiert: keine automatischen Abfragen (⟳ holt trotzdem einmal manuell).
+    // Paused: no automatic requests (⟳ still fetches once manually).
     if (!force && isPaused()) return;
-    // Nur ein Tab aktualisiert pro Intervall, die anderen bekommen die Daten über den Speicher.
+    // Only one tab refreshes per interval, the others get the data via the shared storage.
     if (!force && Date.now() - GM_getValue('lastRefresh', 0) < getRefreshS() * 1000) return;
     GM_setValue('lastRefresh', Date.now());
     refreshing = true;
@@ -687,25 +686,25 @@
       let calls = 0;
       const next = async () => {
         if (calls++) await sleep(REQUEST_GAP_MS);
-        return force || !isPaused(); // während eines laufenden Durchlaufs pausiert?
+        return force || !isPaused(); // paused during a running pass?
       };
-      // 1) Factions: ein Call pro Faction
+      // 1) Factions: one call per faction
       for (const fid of getFactions().map((f) => f.id)) {
         if (!(await next())) return;
         if (KEY_ERRORS.includes(await refreshFaction(fid, key))) return;
       }
-      // 2) Einzelne Spieler – außer denen, die schon über eine Faction abgedeckt sind
+      // 2) Single players – except those already covered by a faction
       const covered = coveredIds(getFactions());
       for (const id of getList().map((e) => e.id).filter((pid) => !covered.has(pid))) {
         if (!(await next())) return;
         if (KEY_ERRORS.includes(await refreshOne(id, key))) return;
       }
-      // 3) Today's Hits (eigener Fehler, bricht die Watchlist nicht ab)
+      // 3) Today's hits (own error, does not stop the watchlist)
       if (hitsEnabled()) {
         if (!(await next())) return;
         await refreshHits(key);
       }
-      // 4) FF Scouter (eigener Server, zählt nicht gegen Torns Limit) – nur veraltete/neue Spieler
+      // 4) FF Scouter (own server, does not count against Torn's limit) – only stale/new players
       if (ffEnabled() && ffStale(shownIds()).length) {
         if (!(await next())) return;
         await refreshFF(shownIds());
@@ -716,7 +715,7 @@
     }
   }
 
-  // ---- Hilfsfunktionen -----------------------------------------------------
+  // ---- Helpers --------------------------------------------------------------
   function currentProfileId() {
     if (location.pathname !== '/profiles.php') return null;
     const id = parseInt(new URLSearchParams(location.search).get('XID'), 10);
@@ -731,7 +730,7 @@
     return Number.isFinite(id) ? id : null;
   }
 
-  // Faction eines Spielers, soweit schon bekannt (ohne API-Call)
+  // A player's faction, if already known (without an API call)
   const lookedUpFactions = {};
   function knownFactionOf(pid, factions) {
     const f = factions.find((x) => x.members.some((m) => m.id === pid));
@@ -740,7 +739,7 @@
     return (e && e.faction) || lookedUpFactions[pid] || null;
   }
 
-  // "+ Faction des Spielers": Faction notfalls mit einem Profil-Call nachschlagen
+  // "+ Add the player's faction": look the faction up with a profile call if needed
   async function addFactionOfPlayer(pid, btn) {
     let fac = knownFactionOf(pid, getFactions());
     if (!fac) {
@@ -755,7 +754,7 @@
       } catch (e) {
         return alert(t('error', e.message));
       } finally {
-        delete $('.twl-profile').dataset.html; // Button neu zeichnen
+        delete $('.twl-profile').dataset.html; // redraw the button
         render();
       }
     }
@@ -772,7 +771,7 @@
     return `${Math.floor(h / 24)}d ${h % 24}h`;
   }
 
-  // Restzeit im Hospital in Sekunden (0 = nicht im Hospital bzw. schon raus)
+  // Hospital time left in seconds (0 = not in hospital or already out)
   const hospitalLeft = (st, now) => (st && st.state === 'Hospital' && st.until > now ? st.until - now : 0);
 
   function statusLabel(st, now) {
@@ -803,7 +802,7 @@
     #twl-panel { position: fixed; top: 110px; width: 240px; z-index: 999999; font: 12px/1.35 Arial, sans-serif;
       display: flex; flex-direction: column; box-sizing: border-box;
       background: #1b1b1f; color: #eee; border: 1px solid #ff7518; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.5); }
-    /* Scrollbalken im Kürbis-Look (Chrome/Edge/Safari über ::-webkit-scrollbar, Firefox über scrollbar-color) */
+    /* Pumpkin-style scrollbars (Chrome/Edge/Safari via ::-webkit-scrollbar, Firefox via scrollbar-color) */
     #twl-panel ::-webkit-scrollbar { width: 8px; height: 8px; }
     #twl-panel ::-webkit-scrollbar-track { background: #15151a; border-radius: 4px; }
     #twl-panel ::-webkit-scrollbar-thumb { background: #a0521a; border: 1px solid #2a1a0e; border-radius: 4px; }
@@ -857,7 +856,7 @@
     .twl-list { max-height: 60vh; overflow-y: auto; }
     .twl-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; margin-bottom: 3px; border-radius: 4px;
       color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.9); }
-    /* Torn färbt Links selbst ein (teils rot) – daher hier erzwingen. */
+    /* Torn colors links itself (partly red) – so force it here. */
     #twl-panel .twl-row a, #twl-panel .twl-row a:link, #twl-panel .twl-row a:visited,
     #twl-panel .twl-row a:hover, #twl-panel .twl-row a:active { color: #fff !important; text-decoration: none; font-weight: bold; }
     #twl-panel .twl-row a:hover { text-decoration: underline; }
@@ -1020,8 +1019,8 @@
   const $ = (sel) => panel.querySelector(sel);
   const input = $('.twl-add input');
 
-  // Position: entweder am rechten/linken Rand angedockt ("side") oder frei verschoben ("pos").
-  // Frei verschoben ist das Panel oben links verankert, es wächst beim Resizen also nach rechts.
+  // Position: either docked to the right/left edge ("side") or moved freely ("pos").
+  // When moved freely the panel is anchored top left, so resizing grows it to the right.
   function clampPos(x, y) {
     const r = panel.getBoundingClientRect();
     return {
@@ -1041,7 +1040,7 @@
     panel.style.width = size ? `${size.w}px` : '';
     panel.style.height = size && !collapsed ? `${size.h}px` : '';
     panel.classList.toggle('twl-sized', !!size && !collapsed);
-    // Gespeicherte Position nur anzeigen, nicht überschreiben – bei kleinerem Fenster ins Bild schieben
+    // Only display the saved position, don't overwrite it – push it on screen in a smaller window
     const p = pos ? clampPos(pos.x, pos.y) : null;
     panel.style.left = p ? `${p.x}px` : '';
     panel.style.top = p ? `${p.y}px` : '';
@@ -1049,7 +1048,7 @@
   }
   window.addEventListener('resize', applyLayout);
 
-  // Verschieben: am Kopf ziehen (nicht an den Buttons). Doppelklick dockt wieder an den Rand an.
+  // Moving: drag the header (not the buttons). Double-click docks it to the edge again.
   const head = $('.twl-head');
   head.addEventListener('pointerdown', (ev) => {
     if (ev.button !== 0 || ev.target.closest('button')) return;
@@ -1061,7 +1060,7 @@
     const move = (e) => {
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
-      if (!pos && Math.abs(dx) + Math.abs(dy) < 4) return; // kleiner Wackler ist kein Ziehen
+      if (!pos && Math.abs(dx) + Math.abs(dy) < 4) return; // a small wobble is not a drag
       pos = clampPos(start.left + dx, start.top + dy);
       panel.style.left = `${pos.x}px`;
       panel.style.top = `${pos.y}px`;
@@ -1085,8 +1084,8 @@
     applyLayout();
   });
 
-  // Größe ändern über den Griff in der unteren Ecke (Richtung Bildschirmmitte bzw. nach rechts,
-  // wenn das Panel frei verschoben ist).
+  // Resize via the handle in the bottom corner (towards the screen center, or to the right when
+  // the panel is moved freely).
   const handle = $('.twl-resize');
   handle.addEventListener('pointerdown', (ev) => {
     ev.preventDefault();
@@ -1124,7 +1123,7 @@
     el.innerHTML = html;
   }
 
-  // FF-Anzeige einer Zeile: Zahl in Farbe von blau (leicht, FF 1) bis rot (schwer, FF 5+)
+  // FF display of a row: number colored from blue (easy, FF 1) to red (difficult, FF 5+)
   function ffInfo(d, now) {
     if (!d) return { text: '…', cls: 'twl-ff-none', title: t('ffLoading') };
     const ff = Number(d.ff);
@@ -1147,7 +1146,7 @@
     const factions = getFactions();
     const now = Math.floor(Date.now() / 1000);
 
-    // Angezeigte Spieler: Mitglieder beobachteter Factions (ohne ausgeblendete) + Einzelspieler
+    // Shown players: members of watched factions (without hidden ones) + single players
     const shown = new Map();
     for (const f of factions) {
       const hidden = new Set(f.hidden);
@@ -1158,7 +1157,7 @@
     for (const e of list) if (!shown.has(e.id)) shown.set(e.id, e);
     $('.twl-count').textContent = `(${shown.size})`;
 
-    // Buttons für das gerade geöffnete Spieler- bzw. Faction-Profil
+    // Buttons for the currently open player or faction profile
     const profileParts = [];
     const pid = currentProfileId();
     if (pid != null) {
@@ -1180,21 +1179,21 @@
     }
     setHtml($('.twl-profile'), profileParts.join(''));
 
-    // Liste: wer nicht im Hospital ist zuerst (am längsten inaktive oben), danach nach
-    // Hospital-Restzeit – wer als Nächstes rauskommt, steht weiter oben.
+    // List: players not in hospital first (longest inactive on top), then by hospital time
+    // left – whoever gets out next is higher up.
     const rows = [...shown.values()]
       .map((e) => ({ ...e, age: e.ts ? Math.max(0, now - e.ts) : null, hosp: hospitalLeft(e.status, now) }))
       .sort((a, b) => a.hosp - b.hosp || (b.age ?? -1) - (a.age ?? -1));
 
-    // Nach Faction gruppieren (Reihenfolge innerhalb der Gruppe bleibt wie oben sortiert).
-    // Beobachtete Factions (★) zuerst, dann übrige alphabetisch, "Ohne Faction"/"Noch nicht geladen" ans Ende.
+    // Group by faction (order within a group stays as sorted above).
+    // Watched factions (★) first, then the rest alphabetically, "No faction"/"Not loaded yet" at the end.
     const groups = new Map();
     for (const f of factions) {
       groups.set(f.id, { id: f.id, name: f.name || `Faction ${f.id}`, tag: f.tag, watched: f, rows: [] });
     }
     for (const e of rows) {
       const f = e.faction || { id: 'unknown', name: t('notLoaded'), tag: '' };
-      // "Ohne Faction" kommt gespeichert aus der API-Antwort – in der aktuellen Sprache anzeigen
+      // "No faction" is stored from the API response – show it in the current language
       if (!groups.has(f.id)) groups.set(f.id, { ...f, name: f.id === 0 ? t('noFaction') : f.name, watched: null, rows: [] });
       groups.get(f.id).rows.push(e);
     }
@@ -1212,7 +1211,7 @@
         <span class="twl-ff"></span>
         <button class="twl-x" data-act="remove" data-id="${e.id}" title="${t('remove')}">✕</button>
       </div>`;
-    // Zusatzzeilen einer beobachteten Faction: Fehler / noch keine Daten / Wiederherstellen-Button
+    // Extra lines of a watched faction: error / no data yet / restore button
     const factionExtras = (f) => {
       const memberIds = new Set(f.members.map((m) => m.id));
       const hiddenCount = f.hidden.filter((h) => memberIds.has(h)).length;
@@ -1242,8 +1241,8 @@
         </div>`;
     };
 
-    // Struktur nur neu bauen, wenn sich etwas geändert hat; sonst nur Zeit + Farbe
-    // aktualisieren, damit Klicks nicht durch das sekündliche Neuzeichnen verloren gehen.
+    // Only rebuild the structure when something changed; otherwise just update time + color,
+    // so clicks are not lost to the redraw every second.
     setHtml($('.twl-list'), sortedGroups.length
       ? sortedGroups.map(groupHtml).join('')
       : `<div class="twl-empty">${t('emptyList')}</div>`);
@@ -1251,8 +1250,8 @@
     const ffCache = ffOn ? getFfCache() : {};
     for (const e of rows) {
       const row = $(`.twl-row[data-id="${e.id}"]`);
-      if (!row) continue; // Gruppe zugeklappt
-      // Farbe weiterhin nach Last Action, angezeigt wird der Status (Hospital-Countdown)
+      if (!row) continue; // group collapsed
+      // Color still by last action, the status (hospital countdown) is displayed
       row.className = `twl-row ${colorClass(e.age)}`;
       row.querySelector('.twl-age').textContent = statusLabel(e.status, now);
       row.title = e.age == null ? '' : t('lastAction', formatAge(e.age));
@@ -1266,7 +1265,7 @@
         ffEl.title = f.title;
       }
     }
-    // Farbzähler im Gruppenkopf, damit man auch zugeklappt sieht, wer wie lange weg ist
+    // Color counters in the group head, so you see who has been away how long even when collapsed
     for (const g of sortedGroups) {
       const counts = {};
       for (const e of g.rows) counts[colorClass(e.age)] = (counts[colorClass(e.age)] || 0) + 1;
@@ -1277,8 +1276,8 @@
       setHtml($(`.twl-group[data-gid="${g.id}"] .twl-badges`), badges);
     }
 
-    // Geschätzter API-Verbrauch der Watchlist (Limit: 100/min pro Account, alle Keys zusammen):
-    // ein Call pro Faction + einer pro Einzelspieler, der nicht schon über eine Faction kommt
+    // Estimated API usage of the watchlist (limit: 100/min per account, all keys combined):
+    // one call per faction + one per single player not already covered by a faction
     const covered = coveredIds(factions);
     const hits = getHits();
     const hitsCall = hitsEnabled() && !(hits.denied && GM_getValue('hitsDeniedKey', '') === getKey()) ? 1 : 0;
@@ -1289,14 +1288,14 @@
     rate.title = t('callsPerUpdate', calls);
     rate.classList.toggle('twl-warn', perMin > 60);
 
-    // Today's Hits-Leiste (auch bei eingeklapptem Panel sichtbar)
+    // Today's hits strip (visible even when the panel is collapsed)
     const hitsBtn = $('.twl-hits');
     hitsBtn.style.display = hitsEnabled() ? '' : 'none';
     setHtml(hitsBtn, `${t('hitsStrip', hits.hits)}${hitsLoading ? ' …' : ''}`
       + (hits.error ? ` <span class="twl-hits-err">(${esc(hits.error)})</span>` : ''));
     hitsBtn.title = t('hitsTitle', hits.attempts, hits.hits, hits.warHits);
 
-    // FF-Scouter-Status: Fehler oder welcher Key benutzt wird
+    // FF Scouter status: error or which key is used
     const ffStatus = $('.twl-ff-status');
     const ffErr = GM_getValue('ffError', '');
     ffStatus.className = `twl-ff-status${ffErr ? ' twl-ff-err' : ''}`;
@@ -1326,7 +1325,7 @@
       const last = GM_getValue('lastRefresh', 0);
       footText.textContent = last ? t('footLast', formatAge(Math.floor((Date.now() - last) / 1000))) : '';
     }
-    // Abfragen pro Minute unten rechts – nur wenn auch wirklich abgefragt wird
+    // Requests per minute bottom right – only when requests actually run
     const footRate = $('.twl-foot-rate');
     footRate.textContent = paused || !getKey() ? '' : rate.textContent;
     footRate.title = rate.title;
@@ -1354,7 +1353,7 @@
         const k = prompt(t('ffKeyPrompt'), GM_getValue('ffKey', ''));
         if (k === null) break;
         GM_setValue('ffKey', k.trim());
-        GM_setValue('ffCache', {}); // FF hängt vom Key-Besitzer ab -> alles neu holen
+        GM_setValue('ffCache', {}); // FF depends on the key owner -> refetch everything
         GM_setValue('ffError', '');
         if (ffEnabled()) refreshFF(shownIds()).then(render);
         render();
@@ -1364,7 +1363,7 @@
       case 'hits': {
         const key = getKey();
         if (!key) break;
-        GM_setValue('hitsDeniedKey', ''); // bewusster Klick: auch nach Rechte-Fehler nochmal versuchen
+        GM_setValue('hitsDeniedKey', ''); // deliberate click: retry even after an access error
         const done = refreshHits(key).then(render);
         render();
         done.catch(() => {});
@@ -1380,12 +1379,12 @@
       }
       case 'pause':
         GM_setValue('paused', !isPaused());
-        // Beim Fortsetzen sofort aktualisieren statt aufs nächste Intervall zu warten.
+        // Refresh right away when resuming instead of waiting for the next interval.
         if (!isPaused()) refreshAll(true);
         render();
         break;
       case 'side':
-        // Frei verschoben? Dann erst einmal wieder an den bisherigen Rand andocken.
+        // Moved freely? Then first dock back to the previous edge.
         if (GM_getValue('pos', null)) GM_setValue('pos', null);
         else GM_setValue('side', GM_getValue('side', 'right') === 'right' ? 'left' : 'right');
         applyLayout();
@@ -1407,14 +1406,14 @@
         showSettings($('.twl-spage').hidden);
         break;
       case 'update-check':
-        // Tampermonkey fängt .user.js-Links ab und zeigt Update-Dialog bzw. "ist aktuell"
+        // Tampermonkey intercepts .user.js links and shows its update dialog or "up to date"
         if (UPDATE_URL) window.open(UPDATE_URL, '_blank');
         break;
     }
   });
 
-  // Einstellungsseite statt der Liste anzeigen (pro Tab, wird nicht gespeichert).
-  // Ist das Panel eingeklappt, klappt ⚙ es dafür auf.
+  // Show the settings page instead of the list (per tab, not saved).
+  // If the panel is collapsed, ⚙ expands it.
   function showSettings(open) {
     $('.twl-spage').hidden = !open;
     $('.twl-main').hidden = open;
@@ -1425,8 +1424,8 @@
     }
   }
 
-  // ---- Legende (in den Einstellungen): Beispielzeilen mit einem erfundenen Spieler ---------
-  const LEGEND_FAKE_ID = 1234567; // Fantasie-ID, kein echter Account
+  // ---- Legend (in the settings): example rows with a made-up player -----------------------
+  const LEGEND_FAKE_ID = 1234567; // made-up ID, not a real account
   function renderLegend() {
     const name = t('lgExampleName');
     const now = Math.floor(Date.now() / 1000);
@@ -1479,7 +1478,7 @@
       <div class="twl-lg-text">${esc(t('lgSort'))}</div>
       <div class="twl-lg-text">${esc(t('lgHover'))}</div>`);
   }
-  // Feste Texte im Panel (data-i18n = Text, data-i18n-title = Tooltip) in der gewählten Sprache
+  // Fixed panel texts (data-i18n = text, data-i18n-title = tooltip) in the chosen language
   function applyLang() {
     for (const el of panel.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
     for (const el of panel.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
@@ -1514,12 +1513,12 @@
     render();
   });
 
-  // ---- Chain-Timer: direkt aus Torns Sidebar gelesen (keine API-Calls) ---------------------
-  const CHAIN_ALERT_S = 90; // unter 1:30 blinkt es rot
+  // ---- Chain timer: read straight from Torn's sidebar (no API calls) -----------------------
+  const CHAIN_ALERT_S = 90; // below 1:30 it blinks red
   const chainEnabled = () => GM_getValue('chainOn', true);
 
-  // Sucht die Chain-Leiste in der Sidebar. Torn hängt an Klassennamen zufällige Endungen an
-  // (z.B. "bar-value___xY12"), daher Teiltreffer; als Notlösung über das Label "Chain:".
+  // Finds the chain bar in the sidebar. Torn appends random suffixes to class names
+  // (e.g. "bar-value___xY12"), hence partial matches; as a fallback via the label "Chain:".
   function findChainBar() {
     const bar = document.querySelector('#barChain, [id^="barChain"], [class*="chain-bar"]');
     if (bar) return bar;
@@ -1528,26 +1527,26 @@
     return label ? label.closest('a, li, div') : null;
   }
 
-  // Torn kürzt große Zahlen ab ("2615/5k"); manchmal steht das "k" nur in einem CSS-::after.
+  // Torn abbreviates big numbers ("2615/5k"); sometimes the "k" is only in a CSS ::after.
   const CHAIN_VALUE_RE = /(\d[\d,.]*)\s*([kKmM]?)\s*\/\s*(\d[\d,.]*)\s*([kKmM]?)/;
   const pseudoText = (el, which) => {
     const c = getComputedStyle(el, which).content;
     return c && c !== 'none' && c !== 'normal' ? c.replace(/^["']|["']$/g, '') : '';
   };
-  // Sichtbarer Text inkl. CSS-::before/::after aller verschachtelten Elemente. Zwischen Elementen
-  // steht ein Leerzeichen, sonst kleben Werte zusammen ("4/10" + "02:57" -> "4/1002:57").
+  // Visible text incl. CSS ::before/::after of all nested elements. A space goes between
+  // elements, otherwise values stick together ("4/10" + "02:57" -> "4/1002:57").
   const visibleText = (el) => pseudoText(el, '::before')
     + [...el.childNodes].map((n) => (n.nodeType === 1 ? ` ${visibleText(n)} ` : n.nodeType === 3 ? n.textContent : '')).join('')
     + pseudoText(el, '::after');
   function parseCount(num, suffix) {
     const mult = { k: 1e3, m: 1e6 }[suffix.toLowerCase()] || 1;
-    // Mit Suffix ist "." ein Dezimalpunkt (2.5k), ohne sind "," und "." Tausendertrenner
+    // With a suffix "." is a decimal point (2.5k), without one "," and "." are thousands separators
     const n = mult > 1 ? parseFloat(num.replace(/,/g, '')) : parseInt(num.replace(/[,.]/g, ''), 10);
     return Math.round(n * mult);
   }
   const fmtCount = (n) => n.toLocaleString(getLang() === 'en' ? 'en-US' : 'de-DE');
-  // Das Maximum ist immer der nächste Bonus-Meilenstein (2615 -> 5k). Die Attack-Seite zeigt es
-  // nicht an, daher dort daraus berechnet.
+  // The maximum is always the next bonus milestone (2615 -> 5k). The attack page doesn't show it,
+  // so it is calculated there.
   const CHAIN_MILESTONES = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000];
   const nextMilestone = (cur) => CHAIN_MILESTONES.find((m) => m > cur) || null;
 
@@ -1556,14 +1555,14 @@
     if (!bar || panel.contains(bar)) return null;
     const valueEl = bar.querySelector('[class*="bar-value"]');
     const timeEl = bar.querySelector('[class*="bar-timeleft"]');
-    // Uhrzeit vorher entfernen, damit sie nicht als Teil der Maximal-Zahl gelesen wird
+    // Strip the time first so it isn't read as part of the maximum
     const rawValue = visibleText(valueEl || bar).replace(/\d{1,2}:\d{2}(?::\d{2})?/g, ' ').replace(/\s+/g, ' ');
     const m = rawValue.match(CHAIN_VALUE_RE);
     let value = valueEl ? rawValue.trim() : '';
     if (m) {
       const cur = parseCount(m[1], m[2]);
       let max = parseCount(m[3], m[4]);
-      // Das Maximum ist immer ein Bonus-Meilenstein; alles andere ist falsch gelesen
+      // The maximum is always a bonus milestone; anything else was misread
       if (!CHAIN_MILESTONES.includes(max) || max <= cur) max = nextMilestone(cur);
       value = max ? `${fmtCount(cur)} / ${fmtCount(max)}` : fmtCount(cur);
     }
@@ -1571,8 +1570,8 @@
     return value || time ? { value, time } : null;
   }
 
-  // Attack-Seite (ohne Sidebar): dort steht die Chain als "2.630 (04:01)", der Timer in
-  // <span>(<span>04:01</span>)</span>. Gefundenes Element wird gemerkt, damit nicht 4×/s gesucht wird.
+  // Attack page (no sidebar): the chain shows as "2.630 (04:01)", the timer in
+  // <span>(<span>04:01</span>)</span>. The found element is remembered so we don't search 4×/s.
   let attackTimerEl = null;
   const isAttackTimer = (el) => el && el.isConnected && !el.children.length
     && /^\d{1,2}:\d{2}(?::\d{2})?$/.test(el.textContent.trim())
@@ -1584,7 +1583,7 @@
     if (!isAttackTimer(attackTimerEl)) attackTimerEl = [...root.querySelectorAll('span')].find(isAttackTimer) || null;
     if (!attackTimerEl) return null;
     const time = attackTimerEl.textContent.trim();
-    // Chain-Zahl: die Zahl direkt vor "(mm:ss)", bis zu drei Ebenen nach oben gesucht
+    // Chain count: the number right before "(mm:ss)", searched up to three levels up
     let cur = null;
     let el = attackTimerEl.parentElement;
     for (let i = 0; i < 3 && el && cur == null; i++) {
@@ -1628,15 +1627,15 @@
     updateChain();
   });
 
-  // ---- Bomben-Sound 💣: Piepen ab 1:30, ab 0:30 immer schneller, bei 0 Explosion -----------
-  // Alles per Web Audio synthetisiert, keine Sounddatei. Browser geben Ton erst nach einem
-  // Klick/Tastendruck auf der Seite frei – in Torn klickt man ohnehin ständig.
-  const BOMB_FAST_S = 30;      // ab hier wird das Piepen schneller
-  const BOMB_LOOKAHEAD = 1.2;  // Pieptöne so weit im Voraus planen (Hintergrund-Tabs ticken nur 1×/s)
+  // ---- Bomb sound 💣: beeps from 1:30, faster and faster from 0:30, explosion at 0 ----------
+  // Everything is synthesized with Web Audio, no sound file. Browsers only allow sound after a
+  // click/key press on the page – in Torn you click all the time anyway.
+  const BOMB_FAST_S = 30;      // from here the beeping speeds up
+  const BOMB_LOOKAHEAD = 1.2;  // schedule beeps this far ahead (background tabs only tick 1×/s)
   const TAB_ID = Math.random().toString(36).slice(2);
   const soundEnabled = () => GM_getValue('soundOn', false);
   const soundVol = () => GM_getValue('soundVol', 60);
-  // Abstand zwischen zwei Pieptönen: 1 s, unter 0:30 gleitend runter auf 0,12 s
+  // Gap between two beeps: 1 s, below 0:30 gliding down to 0.12 s
   const beepGap = (rem) => (rem > BOMB_FAST_S ? 1 : 0.12 + 0.38 * (rem / BOMB_FAST_S));
 
   let actx = null;
@@ -1646,7 +1645,7 @@
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return null;
       actx = new AC();
-      const comp = actx.createDynamicsCompressor(); // verhindert Übersteuern bei der Explosion
+      const comp = actx.createDynamicsCompressor(); // prevents clipping during the explosion
       comp.connect(actx.destination);
       master = actx.createGain();
       master.connect(comp);
@@ -1678,7 +1677,7 @@
     osc.onended = () => pendingBeeps.delete(osc);
   }
   function cancelBeeps() {
-    pendingBeeps.forEach((o) => { try { o.stop(); } catch { /* schon vorbei */ } });
+    pendingBeeps.forEach((o) => { try { o.stop(); } catch { /* already over */ } });
     pendingBeeps.clear();
   }
 
@@ -1694,7 +1693,7 @@
     return buf;
   }
   function explode(at) {
-    // Grollen: braunes Rauschen, dessen Filter sich langsam schließt
+    // Rumble: brown noise whose filter closes slowly
     const rumble = actx.createBufferSource();
     rumble.buffer = noiseBuffer(3.2, true);
     const lp = actx.createBiquadFilter();
@@ -1707,7 +1706,7 @@
     rg.gain.exponentialRampToValueAtTime(0.001, at + 3);
     rumble.connect(lp).connect(rg).connect(master);
     rumble.start(at);
-    // Knall: kurzes helles Rauschen
+    // Bang: short bright noise
     const crack = actx.createBufferSource();
     crack.buffer = noiseBuffer(0.3, false);
     const hp = actx.createBiquadFilter();
@@ -1718,7 +1717,7 @@
     cg.gain.exponentialRampToValueAtTime(0.001, at + 0.25);
     crack.connect(hp).connect(cg).connect(master);
     crack.start(at);
-    // Druckwelle: tiefer Ton, der nach unten wegrutscht
+    // Shock wave: low tone sliding downwards
     const thump = actx.createOscillator();
     thump.frequency.setValueAtTime(120, at);
     thump.frequency.exponentialRampToValueAtTime(30, at + 0.8);
@@ -1736,13 +1735,13 @@
       document.body.appendChild(flash);
       setTimeout(() => flash.remove(), 1300);
       panel.classList.remove('twl-boom');
-      void panel.offsetWidth; // Animation neu starten
+      void panel.offsetWidth; // restart the animation
       panel.classList.add('twl-boom');
       setTimeout(() => panel.classList.remove('twl-boom'), 1100);
     }, delayMs);
   }
 
-  // Mehrere Torn-Tabs offen? Nur einer piept – bevorzugt der sichtbare.
+  // Several Torn tabs open? Only one beeps – preferably the visible one.
   function isSoundTab() {
     const now = Date.now();
     const vis = document.visibilityState === 'visible';
@@ -1756,8 +1755,8 @@
     if (o && o.id === TAB_ID) GM_setValue('soundTab', null);
   });
 
-  // Scharfe Bombe: end = Zeitpunkt von 0:00 (performance.now), shown = zuletzt gelesene Sekunden,
-  // next = Audio-Zeit des nächsten geplanten Pieptons
+  // Armed bomb: end = time of 0:00 (performance.now), shown = last read seconds,
+  // next = audio time of the next scheduled beep
   let bomb = null;
   function disarm() {
     if (!bomb) return;
@@ -1775,9 +1774,9 @@
   function updateBomb(left) {
     if (!soundEnabled()) { disarm(); return; }
     const now = performance.now();
-    // Timer auf 0 gelaufen (oder Chain-Anzeige verschwunden), während die Bombe tickte
+    // Timer ran to 0 (or the chain display vanished) while the bomb was ticking
     if (bomb && (left == null || left === 0) && now >= bomb.end - 1500) { detonate(); return; }
-    // Kein Timer, schon 0 oder wieder über 1:30 (Hit gelandet): entschärft
+    // No timer, already 0 or back above 1:30 (hit landed): defused
     if (left == null || left <= 0 || left >= CHAIN_ALERT_S) { disarm(); return; }
     if (!bomb || left > bomb.shown) {
       disarm();
@@ -1800,7 +1799,7 @@
     }
   }
 
-  // Probehören: die letzten 6 Sekunden + Explosion
+  // Preview: the last 6 seconds + explosion
   function testBomb() {
     const ctx = audio();
     if (!ctx) return;
@@ -1823,7 +1822,7 @@
     GM_setValue('soundOn', soundToggle.checked);
     if (!soundToggle.checked) { disarm(); return; }
     const ctx = audio();
-    if (ctx) beep(ctx.currentTime + 0.05, 0.09); // kurzer Bestätigungs-Piep
+    if (ctx) beep(ctx.currentTime + 0.05, 0.09); // short confirmation beep
   });
   volInput.addEventListener('input', () => {
     GM_setValue('soundVol', Number(volInput.value));
@@ -1848,15 +1847,15 @@
   });
 
   // ---- Nyan Cat 🌈 (just for the lols) ---------------------------------------
-  const NYAN_SPEED = 170;          // Pixel pro Sekunde entlang des Rahmens
-  const NYAN_PAUSE_S = [20, 90];   // zufällige Pause zwischen zwei Runden
-  const NYAN_TRAIL = 200;          // Länge des Regenbogenschweifs in Pixeln
-  const NYAN_STEP = 3;             // Abstand der Schweif-Stücke (kleiner = glatter)
-  const NYAN_CORNER = 16;          // Radius, mit dem die Katze um die Ecken läuft
-  const NYAN_TAIL_GAP = 13;        // Abstand Katzenmitte -> Schweifanfang (hinterm Pop-Tart)
+  const NYAN_SPEED = 170;          // pixels per second along the border
+  const NYAN_PAUSE_S = [20, 90];   // random pause between two laps
+  const NYAN_TRAIL = 200;          // length of the rainbow trail in pixels
+  const NYAN_STEP = 3;             // spacing of the trail pieces (smaller = smoother)
+  const NYAN_CORNER = 16;          // radius the cat uses to run around corners
+  const NYAN_TAIL_GAP = 13;        // distance cat center -> trail start (behind the Pop-Tart)
 
-  // Der Schweif besteht aus vielen schmalen Regenbogen-Stücken, die einzeln auf der Bahn
-  // hinter der Katze liegen – so biegt er sich mit um die Ecken.
+  // The trail consists of many thin rainbow pieces, each placed on the track behind the cat –
+  // that way it bends around the corners too.
   const trail = document.createElement('div');
   trail.id = 'twl-nyan-trail';
   trail.innerHTML = '<div class="twl-rb"></div>'.repeat(Math.ceil(NYAN_TRAIL / NYAN_STEP));
@@ -1905,8 +1904,8 @@
     nyan.style.display = trail.style.display = 'none';
   }
 
-  // Bahn: Rechteck mit abgerundeten Ecken, innen am Rahmen (damit die Katze am Bildschirmrand
-  // nicht abgeschnitten wird), im Uhrzeigersinn ab oben links. at(d) liefert [x, y, Blickrichtung°].
+  // Track: rectangle with rounded corners, inside the border (so the cat isn't cut off at the
+  // screen edge), clockwise from the top left. at(d) returns [x, y, heading°].
   const NYAN_INSET = 10;
   function nyanPath(panelRect) {
     const x = panelRect.left + NYAN_INSET;
@@ -1950,9 +1949,9 @@
     const start = performance.now();
     nyan.style.display = trail.style.display = 'block';
     const step = (t) => {
-      const path = nyanPath(panel.getBoundingClientRect()); // live, falls das Panel gerade resized wird
+      const path = nyanPath(panel.getBoundingClientRect()); // live, in case the panel is being resized
       const d = ((t - start) / 1000) * NYAN_SPEED;
-      // Eine Runde: Katze läuft bis zum Startpunkt, danach "fließt" der Schweif noch hinterher.
+      // One lap: the cat runs back to the start, then the trail "flows" after it.
       if (d - NYAN_TAIL_GAP - NYAN_TRAIL >= path.length) {
         nyan.style.display = trail.style.display = 'none';
         scheduleNyan();
@@ -1961,13 +1960,13 @@
 
       if (d <= path.length) {
         const [x, y, a] = path.at(d);
-        nyan.style.opacity = Math.max(0, Math.min(1, d / 20, (path.length - d) / 20)); // weich ein-/ausblenden
+        nyan.style.opacity = Math.max(0, Math.min(1, d / 20, (path.length - d) / 20)); // fade in/out smoothly
         nyan.style.transform = `translate(${x - 17}px, ${y - 10}px) rotate(${a}deg)`;
       } else {
         nyan.style.opacity = 0;
       }
 
-      const wave = Math.floor(t / 150) % 2; // Regenbogen wippt stufenweise wie im Original
+      const wave = Math.floor(t / 150) % 2; // rainbow bobs in steps like the original
       trailParts.forEach((el, k) => {
         const dk = d - NYAN_TAIL_GAP - k * NYAN_STEP;
         if (dk < 0 || dk > path.length) {
@@ -1976,8 +1975,8 @@
         }
         const [x, y, a] = path.at(dk);
         const rad = (a * Math.PI) / 180;
-        const off = (Math.floor((k * NYAN_STEP) / 12) + wave) % 2 ? 1 : -1; // quer zur Laufrichtung
-        el.style.opacity = 1 - (k / trailParts.length) ** 2; // Schweifende blendet aus
+        const off = (Math.floor((k * NYAN_STEP) / 12) + wave) % 2 ? 1 : -1; // across the running direction
+        el.style.opacity = 1 - (k / trailParts.length) ** 2; // trail end fades out
         el.style.transform = `translate(${x - 2.5 - Math.sin(rad) * off}px, ${y - 7.5 + Math.cos(rad) * off}px) rotate(${a}deg)`;
       });
 
@@ -1991,14 +1990,14 @@
   function applyNyan() {
     nyanToggle.checked = nyanEnabled();
     stopNyan();
-    if (nyanEnabled()) scheduleNyan(800); // beim Einschalten gleich eine Runde
+    if (nyanEnabled()) scheduleNyan(800); // run a lap right away when switched on
   }
   nyanToggle.addEventListener('change', () => {
     GM_setValue('nyan', nyanToggle.checked);
     applyNyan();
   });
 
-  // ---- Export / Import der Einstellungen (inkl. API-Key, Spieler, Factions) -----------------
+  // ---- Export / import of the settings (incl. API key, players, factions) -------------------
   const EXPORT_APP = 'torn-war-watchlist';
 
   function exportSettings() {
@@ -2026,7 +2025,7 @@
       return;
     }
     const s = { ...data.settings };
-    // Spieler und Factions in die erwartete Form bringen, kaputte Einträge verwerfen
+    // Bring players and factions into the expected shape, drop broken entries
     const validId = (e) => isObj(e) && Number.isInteger(e.id) && e.id > 0;
     if (Array.isArray(s.list)) {
       s.list = s.list.filter(validId).map((e) => ({ name: null, ts: null, error: null, ...e }));
@@ -2046,12 +2045,12 @@
 
     const keyChanged = 'apiKey' in s && s.apiKey !== getKey();
     for (const k of valid) GM_setValue(k, s[k]);
-    if (keyChanged) GM_setValue('hits', null); // Hits gehören zum alten Account
+    if (keyChanged) GM_setValue('hits', null); // hits belong to the old account
     GM_setValue('hitsDeniedKey', '');
     GM_setValue('lastRefresh', 0);
-    saveBackup(); // sofort sichern, nicht erst nach der Verzögerung
+    saveBackup(); // back up right away, not after the delay
 
-    // Alles sofort übernehmen
+    // Apply everything right away
     intervalInput.value = getRefreshS();
     hitsToggle.checked = hitsEnabled();
     chainToggle.checked = chainEnabled();
@@ -2077,7 +2076,7 @@
     file.text().then(importSettings, () => alert(t('importReadFail')));
   });
 
-  // Änderungen aus anderen Tabs übernehmen
+  // Apply changes from other tabs
   GM_addValueChangeListener('nyan', (_k, _o, _n, remote) => { if (remote) applyNyan(); });
   GM_addValueChangeListener('list', (_k, _o, _n, remote) => { if (remote) render(); });
   GM_addValueChangeListener('factions', (_k, _o, _n, remote) => { if (remote) render(); });
@@ -2102,9 +2101,9 @@
   refreshAll(false);
   scheduleNyan();
   updateChain();
-  setInterval(updateChain, 250); // öfter als 1×/s, damit die Anzeige nicht hinter Torns Timer herhinkt
+  setInterval(updateChain, 250); // more often than 1×/s so the display doesn't lag behind Torn's timer
 
-  // Jede Sekunde: Zeiten/Farben neu berechnen; alle paar Sekunden prüfen, ob ein API-Refresh fällig ist.
+  // Every second: recalculate times/colors; every few seconds check whether an API refresh is due.
   let tick = 0;
   setInterval(() => {
     render();

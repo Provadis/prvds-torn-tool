@@ -2,269 +2,270 @@
 
 # 🎃 Torn War Watchlist
 
-**Behalte deine Gegner im Ranked War im Blick: wer online ist, wer im Hospital liegt, wie stark jemand ist und wie viel Zeit die Chain noch hat. Alles in einem kleinen Panel direkt in Torn.**
+**Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.11.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.12.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
-[![Sprache](https://img.shields.io/badge/Sprache-DE%20%7C%20EN-1b1b1f?style=for-the-badge)](#-einstellungen--sprache)
-[![Lizenz](https://img.shields.io/badge/Lizenz-MIT-2ea44f?style=for-the-badge)](LICENSE)
-[![Mit KI gebaut](https://img.shields.io/badge/gebaut%20mit-KI-8A2BE2?style=for-the-badge)](#%EF%B8%8F-disclaimer)
+[![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
+[![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
+[![Built with AI](https://img.shields.io/badge/built%20with-AI-8A2BE2?style=for-the-badge)](#%EF%B8%8F-disclaimer)
 
-### [⬇️ Jetzt installieren](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+### [⬇️ Install now](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 
-<img src="docs/images/main.png" width="320" alt="Watchlist mit Factions, Farben, Status und FF-Werten">
+<img src="docs/images/main.png" width="320" alt="Watchlist with factions, colors, status and FF scores">
 
 </div>
 
 > [!NOTE]
-> Ein Spaßprojekt, **komplett mit KI entwickelt**. Benutzung auf eigene Gefahr – mehr dazu im [Disclaimer](#%EF%B8%8F-disclaimer) ganz unten.
+> A fun project, **built entirely with AI**. Use at your own risk – see the [disclaimer](#%EF%B8%8F-disclaimer) at the bottom.
 
 ---
 
-## 📑 Inhalt
+## 📑 Contents
 
-- [Funktionen](#-funktionen)
-- [Installation & Updates](#-installation--updates)
-- [Einrichtung](#-einrichtung)
-- [API-Verbrauch](#-api-verbrauch)
-- [Legende](#-legende)
-- [Datenschutz](#-datenschutz)
-- [FAQ & Probleme](#-faq--probleme)
+- [Features](#-features)
+- [Installation & updates](#-installation--updates)
+- [Setup](#-setup)
+- [API usage](#-api-usage)
+- [Legend](#-legend)
+- [Privacy](#-privacy)
+- [FAQ & troubleshooting](#-faq--troubleshooting)
 - [Changelog](#-changelog)
-- [English summary](#-english-summary)
+- [Kurzfassung auf Deutsch](#-kurzfassung-auf-deutsch)
 - [Disclaimer](#%EF%B8%8F-disclaimer)
 
 ---
 
-## ✨ Funktionen
+## ✨ Features
 
-### 👥 Watchlist für Spieler und ganze Factions
-- **Einzelne Spieler** fügst du per ID oder direkt auf ihrem Profil hinzu („+ Spieler hinzufügen“).
-- **Ganze Factions** gehen genauso: auf der Faction-Seite oder auf dem Profil eines Mitglieds („+ Faction hinzufügen“).
-- **Sparsam:** Eine Faction kostet **einen einzigen API-Call** (`/v2/faction/{id}/members`), egal wie viele Mitglieder sie hat.
-- **Ausblenden:** Einzelne Faction-Mitglieder blendest du mit ✕ aus, mit ↺ holst du alle wieder zurück.
-- **Gruppen:** Spieler werden nach Faction gruppiert, und jede Gruppe lässt sich auf- und zuklappen. Die farbigen Zähler im Gruppenkopf zeigen auch im zugeklappten Zustand, wer wie lange weg ist.
+### 👥 Watchlist for players and whole factions
+- **Single players:** add them by ID or right on their profile („+ Add player“).
+- **Whole factions:** same thing, on the faction page or on a member's profile („+ Add faction“).
+- **Cheap on calls:** a faction costs **one single API call** (`/v2/faction/{id}/members`), no matter how many members it has.
+- **Hiding:** hide single faction members with ✕, bring them all back with ↺.
+- **Groups:** players are grouped by faction, and each group can be collapsed. The colored counters in the group header show who has been away how long, even when the group is collapsed.
 
-### 🟢🟠🔴 Farben nach Last Action
-| Farbe | Bedeutung |
+### 🟢🟠🔴 Colors by last action
+| Color | Meaning |
 |---|---|
-| 🟩 Grün | über 15 min inaktiv – vermutlich offline |
-| 🟧 Orange | 10–15 min inaktiv |
-| 🟥 Rot | unter 10 min – gerade aktiv |
+| 🟩 Green | inactive for more than 15 min – probably offline |
+| 🟧 Orange | inactive for 10–15 min |
+| 🟥 Red | less than 10 min – active right now |
 
-### 🏥 Hospital-Countdown & Status
-Statt „wie lange offline“ zeigt jede Zeile den **Status**:
-- **Okay** = angreifbar
-- **🏥 12m 30s** = Restzeit im Hospital
-- **⛓** = Restzeit im Jail
-- **✈** = reist bzw. ist im Ausland
+### 🏥 Hospital countdown & status
+Instead of „offline for …“ every row shows the **status**:
+- **Okay** = can be attacked
+- **🏥 12m 30s** = hospital time left
+- **⛓** = jail time left
+- **✈** = traveling or abroad
 
-Sortiert wird so, dass angreifbare Spieler oben stehen (am längsten inaktiv zuerst). Danach kommen die Hospital-Patienten, wer als Nächstes rauskommt, zuerst.
+The list is sorted so that attackable players come first (longest inactive on top). Players in hospital follow, whoever gets out next first.
 
 ### 📊 FF Scouter
-Zeigt den **Fair-Fight-Wert** jedes Spielers von [ffscouter.com](https://ffscouter.com):
-- **Farbe:** blau = leicht, grün/gelb = mittel, rot = schwer.
-- **Tooltip:** geschätzte Stats und wie alt die Schätzung ist.
-- **Abfragen:** bis zu 100 Spieler in einem Call, 30 Minuten zwischengespeichert.
+Shows every player's **fair fight score** from [ffscouter.com](https://ffscouter.com):
+- **Color:** blue = easy, green/yellow = moderate, red = difficult.
+- **Tooltip:** estimated stats and how old the estimate is.
+- **Requests:** up to 100 players per call, cached for 30 minutes.
 
-### ⛓ Chain-Timer mit Alarm
-- Den Chain-Stand liest das Skript direkt von der Seite (Sidebar oder Angriffsseite) und zeigt ihn groß an. Das kostet keinen API-Call.
-- **Unter 1:30** blinkt die Box rot und das ganze Panel leuchtet.
-- Optional gibt es den **💣 Bomben-Sound**: Ab 1:30 piept es, ab 0:30 immer schneller, bei 0 kommt die Explosion samt Blitz. Ein gelandeter Hit entschärft die Bombe.
-
-<p align="center">
-  <img src="docs/images/chain-alert.png" width="300" alt="Chain-Alarm unter 1:30">
-  &nbsp;&nbsp;
-  <img src="docs/images/nyan.png" width="300" alt="Nyan Cat läuft um das Panel">
-</p>
-
-### 🎯 Today's Hits
-Zählt deine **erfolgreichen Angriffe seit 00:00 TCT**. Dafür braucht es einen Key mit Limited Access.
-
-### 🪟 Frei verschiebbar & anpassbar
-- **Verschieben:** am Kopf ziehen, Doppelklick dockt das Panel wieder an den Rand an.
-- **Größe** über die Ecke unten ändern.
-- **Einklappen** mit –.
-
-Alles wird gespeichert und gilt in allen Torn-Tabs.
-
-### ⚙ Einstellungen & Sprache
-Alle Optionen liegen auf einer eigenen Einstellungsseite hinter **⚙**. Die Oberfläche gibt es auf **Deutsch und Englisch**, umschaltbar ohne Neuladen. Unten auf der Einstellungsseite steht eine **Legende**, die jede Markierung erklärt.
+### ⛓ Chain timer with alarm
+- The script reads the chain straight from the page (sidebar or attack page) and shows it big. This costs no API calls.
+- **Below 1:30** the box blinks red and the whole panel glows.
+- Optional **💣 bomb sound**: beeps from 1:30, faster and faster from 0:30, and explodes with a flash at 0. A landed hit defuses the bomb.
 
 <p align="center">
-  <img src="docs/images/settings.png" width="300" alt="Einstellungsseite">
+  <img src="docs/images/chain-alert.png" width="300" alt="Chain alarm below 1:30">
   &nbsp;&nbsp;
-  <img src="docs/images/english.png" width="300" alt="Englische Oberfläche">
+  <img src="docs/images/nyan.png" width="300" alt="Nyan Cat running around the panel">
 </p>
 
-### 💾 Export, Import & Sicherung
-- **⬇ Export / ⬆ Import:** Einstellungen, API-Keys, Spieler und Factions als Datei sichern und wiederherstellen.
-- **Automatische Sicherung:** Zusätzlich wird alles im Browser-Speicher gesichert und beim Laden automatisch zurückgespielt, falls der Tampermonkey-Speicher einmal leer ist.
+### 🎯 Today's hits
+Counts your **successful attacks since 00:00 TCT**. This needs a key with Limited access.
+
+### 🪟 Movable & resizable
+- **Move:** drag the header. Double-click docks the panel back to the edge.
+- **Resize** via the bottom corner.
+- **Collapse** with –.
+
+Everything is saved and shared across all Torn tabs.
+
+### ⚙ Settings & language
+All options live on their own settings page behind **⚙**. The UI is available in **English and German** and switches instantly, without a reload. At the bottom of the settings page there is a **legend** explaining every marker.
+
+<p align="center">
+  <img src="docs/images/settings.png" width="300" alt="Settings page">
+  &nbsp;&nbsp;
+  <img src="docs/images/german.png" width="300" alt="German UI">
+</p>
+
+### 💾 Export, import & backup
+- **⬇ Export / ⬆ Import:** save settings, API keys, players and factions to a file and restore them.
+- **Automatic backup:** everything is also backed up in the browser's storage and restored automatically on load if the Tampermonkey storage ever ends up empty.
 
 ### 🌈 Nyan Cat
-Läuft ab und zu um den Rand des Panels, mit Regenbogen. Lässt sich abschalten. Einfach so, weil es geht.
+Runs around the panel border every now and then, rainbow included. Can be switched off. Just because.
 
 ---
 
-## 📥 Installation & Updates
+## 📥 Installation & updates
 
-1. **[Tampermonkey](https://www.tampermonkey.net/)** im Browser installieren (Chrome, Edge, Firefox, Opera …).
-2. **[Diesen Link öffnen](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)** → Tampermonkey zeigt die Installationsseite → **Installieren**.
-3. [torn.com](https://www.torn.com) neu laden – rechts erscheint das 🎃-Panel.
+1. Install **[Tampermonkey](https://www.tampermonkey.net/)** in your browser (Chrome, Edge, Firefox, Opera …).
+2. **[Open this link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)** → Tampermonkey shows its install page → **Install**.
+3. Reload [torn.com](https://www.torn.com) – the 🎃 panel appears on the right.
 
 ### Updates
-- **Automatisch:** Tampermonkey sucht selbst nach neuen Versionen, standardmäßig einmal am Tag. Das Intervall stellst du unter *Tampermonkey → Einstellungen → Script-Update-Prüfintervall* ein.
-- **Sofort:** ⚙ → **🔄 Nach Updates suchen**, oder im Tampermonkey-Dashboard *Nach Userscript-Updates suchen*.
-- **Deine Daten bleiben bei Updates erhalten:** Liste, Keys und Einstellungen.
+- **Automatic:** Tampermonkey checks for new versions on its own, once a day by default. You can change the interval under *Tampermonkey → Settings → Script update check interval*.
+- **Right away:** ⚙ → **🔄 Check for updates**, or *Check for userscript updates* in the Tampermonkey dashboard.
+- **Your data survives updates:** list, keys and settings stay.
 
 ---
 
-## 🔧 Einrichtung
+## 🔧 Setup
 
-| Was | Wo | Hinweis |
+| What | Where | Note |
 |---|---|---|
-| **Torn API-Key** | ⚙ → 🔑 Torn API-Key | *Public* reicht für die Watchlist. Für **Today's Hits** braucht es *Limited*. |
-| **FF Scouter** | ⚙ → 📊 FF Scouter anhaken → **Key** | Ein Torn-API-Key, der bei [ffscouter.com](https://ffscouter.com) registriert ist. Leer lassen = den Watchlist-Key verwenden. |
-| **Update-Intervall** | ⚙ → Update alle … s | 15–600 Sekunden, Standard 60. |
-| **Sprache** | ⚙ → Sprache | Deutsch / English |
+| **Torn API key** | ⚙ → 🔑 Torn API key | *Public* is enough for the watchlist. **Today's hits** needs *Limited*. |
+| **FF Scouter** | ⚙ → tick 📊 FF Scouter → **Key** | A Torn API key registered at [ffscouter.com](https://ffscouter.com). Leave empty to use the watchlist key. |
+| **Update interval** | ⚙ → Update every … s | 15–600 seconds, default 60. |
+| **Language** | ⚙ → Language | English / Deutsch |
 
 ---
 
-## 📈 API-Verbrauch
+## 📈 API usage
 
-Torn erlaubt **100 Abfragen pro Minute pro Account**, für alle Keys zusammen. Die Watchlist braucht pro Update:
+Torn allows **100 requests per minute per account**, for all keys combined. Per update the watchlist needs:
 
-- **1 Call pro beobachteter Faction**, egal wie viele Mitglieder
-- **1 Call pro Einzelspieler**, der nicht schon über eine Faction abgedeckt ist
-- **1 Call** für Today's Hits (wenn aktiv)
+- **1 call per watched faction**, no matter how many members
+- **1 call per single player** not already covered by a faction
+- **1 call** for today's hits (if enabled)
 
-Die aktuelle Rate steht **unten rechts im Panel** (z. B. „≈ 4 Abfragen/min“) und wird ab 60/min orange.
+The current rate is shown **bottom right in the panel** (e.g. „≈ 4 requests/min“) and turns orange above 60/min.
 
-Weitere Sparmaßnahmen:
-- Bei mehreren offenen Torn-Tabs fragt **nur ein Tab** ab, die anderen bekommen die Daten über den gemeinsamen Speicher.
-- Mit ⏸ pausierst du alle Abfragen.
-- FF-Scouter-Abfragen gehen an ffscouter.com und zählen nicht gegen Torns Limit.
+More ways the script saves calls:
+- With several Torn tabs open, **only one tab** makes requests; the others get the data via the shared storage.
+- ⏸ pauses all requests.
+- FF Scouter requests go to ffscouter.com and don't count against Torn's limit.
 
 ---
 
-## 📖 Legende
+## 📖 Legend
 
-<img align="right" src="docs/images/legend.png" width="280" alt="Legende in den Einstellungen">
+<img align="right" src="docs/images/legend.png" width="280" alt="Legend in the settings">
 
-| Markierung | Bedeutung |
+| Marker | Meaning |
 |---|---|
-| 🟩 / 🟧 / 🟥 Zeile | Last Action: > 15 min / 10–15 min / < 10 min |
-| ⬛ graue Zeile | noch keine Daten |
-| `Okay` | nicht im Hospital – angreifbar |
-| `🏥 12m 30s` | im Hospital, Restzeit |
-| `⛓ 5m 00s` | im Jail, Restzeit |
-| `✈ Reist` / `✈ Ausland` | fliegt gerade / ist im Ausland |
-| FF **blau → rot** | leicht → schwer |
-| `2.10?` | FF-Schätzung älter als 14 Tage |
-| `–` / `…` | keine FF-Daten / wird geladen |
-| ★ | Faction steht auf der Watchlist |
-| ⛓ rot blinkend | Chain-Timer unter 1:30 |
-| ✕ / ↺ | entfernen bzw. ausblenden / wiederherstellen |
+| 🟩 / 🟧 / 🟥 row | last action: > 15 min / 10–15 min / < 10 min |
+| ⬛ gray row | no data yet |
+| `Okay` | not in hospital – can be attacked |
+| `🏥 12m 30s` | in hospital, time left |
+| `⛓ 5m 00s` | in jail, time left |
+| `✈ Traveling` / `✈ Abroad` | currently flying / is abroad |
+| FF **blue → red** | easy → difficult |
+| `2.10?` | FF estimate older than 14 days |
+| `–` / `…` | no FF data / loading |
+| ★ | faction is on the watchlist |
+| ⛓ blinking red | chain timer below 1:30 |
+| ✕ / ↺ | remove or hide / restore |
 
-Die gleiche Legende findest du im Skript unter **⚙ → 📖 Legende**, mit einem erfundenen Beispielspieler.
+The same legend is built into the script under **⚙ → 📖 Legend**, with a made-up example player.
 
 <br clear="right">
 
 ---
 
-## 🔒 Datenschutz
+## 🔒 Privacy
 
-- **Deine API-Keys und Listen bleiben lokal** im Tampermonkey-Speicher, plus eine Sicherung im `localStorage` von torn.com. Sie stehen nirgends im Code und werden nicht hochgeladen.
-- **Netzwerk:** Das Skript spricht nur mit `api.torn.com` und (wenn aktiviert) `ffscouter.com`.
-- ⚠️ **Die Export-Datei enthält deinen API-Key im Klartext.** Gib sie nicht weiter.
-- ⚠️ Andere Userscripts auf torn.com könnten die Sicherung im `localStorage` lesen.
+- **Your API keys and lists stay local:** in the Tampermonkey storage, plus a backup in torn.com's `localStorage`. They are not in the code and are never uploaded.
+- **Network:** the script only talks to `api.torn.com` and (if enabled) `ffscouter.com`.
+- ⚠️ **The export file contains your API key in plain text.** Don't share it.
+- ⚠️ Other userscripts running on torn.com could read the `localStorage` backup.
 
 ---
 
-## ❓ FAQ & Probleme
+## ❓ FAQ & troubleshooting
 
 <details>
-<summary><b>Unten steht „Kein API-Key gesetzt“ oder ein API-Fehler</b></summary>
+<summary><b>The footer says „No API key set“ or shows an API error</b></summary>
 
-⚙ → 🔑 Torn API-Key und den Key prüfen. Bei „Incorrect key“ ist der Key falsch oder gelöscht.
+Check your key under ⚙ → 🔑 Torn API key. „Incorrect key“ means the key is wrong or was deleted.
 </details>
 
 <details>
-<summary><b>Today's Hits zeigt „braucht Limited-Key“</b></summary>
+<summary><b>Today's hits shows „needs a Limited key“</b></summary>
 
-Für die Angriffsliste braucht Torn einen Key mit mindestens *Limited Access*. Erstelle in Torn unter *Settings → API Keys* einen neuen Key und trage ihn ein.
+Torn only returns the attack list for keys with at least *Limited access*. Create a new key in Torn under *Settings → API Keys* and enter it.
 </details>
 
 <details>
-<summary><b>FF Scouter: „Key nicht bei FF Scouter registriert“</b></summary>
+<summary><b>FF Scouter: „Key not registered with FF Scouter“</b></summary>
 
-Melde den Key einmal auf [ffscouter.com](https://ffscouter.com) an oder trage unter ⚙ → FF Scouter → **Key** einen Key ein, der dort registriert ist.
+Register the key once at [ffscouter.com](https://ffscouter.com), or enter a key that is registered there under ⚙ → FF Scouter → **Key**.
 </details>
 
 <details>
-<summary><b>Der Bomben-Sound bleibt stumm</b></summary>
+<summary><b>The bomb sound stays silent</b></summary>
 
-Browser spielen erst Ton ab, wenn du nach dem Laden einmal auf die Seite geklickt oder eine Taste gedrückt hast. Mit ⚙ → ▶ Test kannst du es ausprobieren. Bei mehreren Tabs piept nur einer, bevorzugt der sichtbare.
+Browsers only play sound after you have clicked on the page or pressed a key once since it loaded. Try it with ⚙ → ▶ Test. With several tabs open, only one beeps, preferably the visible one.
 </details>
 
 <details>
-<summary><b>Die Chain-Box fehlt oder zeigt Unsinn</b></summary>
+<summary><b>The chain box is missing or shows nonsense</b></summary>
 
-Die Chain wird aus Torns Sidebar bzw. von der Angriffsseite gelesen. Prüfe, ob ⚙ → Chain-Timer angehakt ist. Wenn Torn das Layout ändert, kann das Auslesen kaputtgehen – dann bitte ein Issue mit Screenshot aufmachen.
+The chain is read from Torn's sidebar or the attack page. Check that ⚙ → Chain timer is ticked. If Torn changes its layout, reading may break – please open an issue with a screenshot.
 </details>
 
 <details>
-<summary><b>Meine Liste ist nach dem Neuladen weg</b></summary>
+<summary><b>My list is gone after a reload</b></summary>
 
-Das Skript spielt seine Browser-Sicherung automatisch zurück. Falls trotzdem etwas fehlt: ⚙ → ⬆ Import mit deiner letzten Export-Datei.
+The script restores its browser backup automatically. If something is still missing: ⚙ → ⬆ Import with your latest export file.
 </details>
 
 ---
 
 ## 📝 Changelog
 
-| Version | Neu |
+| Version | What's new |
 |---|---|
-| **2.11.0** | Automatische Updates über GitHub, Versionsanzeige und „Nach Updates suchen“, anonymisierte Legende |
-| **2.10.x** | Legende in den Einstellungen, Scrollbalken im Panel-Design, Abfragen/min in der Fußzeile |
-| **2.9.0** | Eigene Einstellungsseite, Deutsch/Englisch, Status vor FF-Wert |
-| **2.8.0** | FF-Scouter-Integration |
-| **2.7.x** | Export/Import, automatische Browser-Sicherung, Fix für die Chain-Anzeige |
-| **2.6.0** | Bomben-Sound für den Chain-Timer |
-| **2.5.0** | Panel frei verschiebbar |
-| **≤ 2.4** | Watchlist, Factions mit einem Call, Gruppen, Hospital-Countdown, Today's Hits, Chain-Timer, Nyan Cat |
+| **2.12.0** | English as the default language, code comments and README in English |
+| **2.11.0** | Automatic updates via GitHub, version display and „Check for updates“, anonymized legend |
+| **2.10.x** | Legend in the settings, scrollbars in the panel style, requests/min in the footer |
+| **2.9.0** | Separate settings page, English/German, status before the FF score |
+| **2.8.0** | FF Scouter integration |
+| **2.7.x** | Export/import, automatic browser backup, chain display fix |
+| **2.6.0** | Bomb sound for the chain timer |
+| **2.5.0** | Freely movable panel |
+| **≤ 2.4** | Watchlist, factions with one call, groups, hospital countdown, today's hits, chain timer, Nyan Cat |
 
 ---
 
-## 🇬🇧 English summary
+## 🇩🇪 Kurzfassung auf Deutsch
 
-**Torn War Watchlist** is a Tampermonkey userscript for [Torn City](https://www.torn.com) ranked wars. It shows a compact panel with your targets:
-- **Rows colored by last action:** green > 15 min, orange 10–15 min, red < 10 min.
-- **Status:** hospital/jail countdowns, traveling, abroad.
-- **FF Scouter** fair-fight scores.
-- **Chain timer:** big display with a red alarm (and an optional bomb sound) below 1:30.
-- **Today's hits** counter.
+**Torn War Watchlist** ist ein Tampermonkey-Userscript für Ranked Wars in [Torn City](https://www.torn.com). Es zeigt ein kompaktes Panel mit deinen Gegnern:
+- **Zeilenfarbe nach Last Action:** grün über 15 min, orange 10–15 min, rot unter 10 min.
+- **Status:** Hospital-/Jail-Countdown, unterwegs, im Ausland.
+- **FF-Scouter-Werte.**
+- **Chain-Timer:** große Anzeige mit rotem Alarm (optional mit Bomben-Sound) unter 1:30.
+- **Zähler für die heutigen Hits.**
 
-Whole factions cost just one API call per update. The UI is available in **English and German**: ⚙ → Language.
+Ganze Factions kosten nur einen API-Call pro Update. Die Oberfläche gibt es auf **Englisch und Deutsch**: ⚙ → Sprache.
 
-**Install:** get [Tampermonkey](https://www.tampermonkey.net/), then open the [install link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js). Updates arrive automatically. Your API keys stay in your browser and are only sent to `api.torn.com` and `ffscouter.com`.
+**Installation:** [Tampermonkey](https://www.tampermonkey.net/) installieren und den [Installations-Link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js) öffnen. Updates kommen danach automatisch. Deine API-Keys bleiben in deinem Browser und gehen nur an `api.torn.com` und `ffscouter.com`.
 
 ---
 
 ## ⚠️ Disclaimer
 
 > [!CAUTION]
-> ### 🤖 Komplett mit KI entwickelt · 🎉 Reines Spaßprojekt · 🛡️ Nutzung auf eigene Gefahr
+> ### 🤖 Built entirely with AI · 🎉 Just for fun · 🛡️ Use at your own risk
 >
-> - **KI-generiert:** Dieses Projekt – Code, Texte und Bilder – wurde **vollständig mit KI erstellt**. Es gab kein professionelles Code-Review und keine umfassenden Tests auf Torn selbst.
-> - **Just for fun:** Das Skript ist **aus Spaß** für einen Halloween-Ranked-War entstanden. Es ist kein offizielles Torn-Tool und steht in keiner Verbindung zu Torn oder ffscouter.com.
-> - **Keine Haftung:** Die Nutzung erfolgt **auf eigene Gefahr**. Ich übernehme **keinerlei Haftung** – weder für Fehler, falsche Anzeigen, verpasste Chains oder Hits, noch für gesperrte oder verbrauchte API-Keys, Datenverlust oder sonstige Folgen.
-> - **Regeln:** Du bist selbst dafür verantwortlich, dass deine Nutzung den [Torn-Regeln](https://www.torn.com/rules.php) und den API-Nutzungsbedingungen entspricht.
-> - **Ohne Gewähr:** Die Software wird so bereitgestellt, wie sie ist, ohne jede Garantie (siehe [MIT-Lizenz](LICENSE)).
+> - **AI-generated:** this project – code, texts and images – was **created entirely with AI**. There was no professional code review and no extensive testing on Torn itself.
+> - **Just for fun:** the script was made **for fun** for a Halloween ranked war. It is not an official Torn tool and has no affiliation with Torn or ffscouter.com.
+> - **No liability:** you use it **at your own risk**. I accept **no liability whatsoever** – not for bugs, wrong data, missed chains or hits, locked or used-up API keys, data loss or any other consequences.
+> - **Rules:** you are responsible for making sure your use complies with the [Torn rules](https://www.torn.com/rules.php) and the API terms of use.
+> - **No warranty:** the software is provided as is, without any warranty (see the [MIT license](LICENSE)).
 >
 > ---
 >
-> **🇬🇧 English:** This project was **built entirely with AI**, made **just for fun**, and is **used at your own risk**. It is not affiliated with Torn or ffscouter.com. The author accepts **no liability** of any kind. Software provided "as is", without warranty.
+> **🇩🇪 Deutsch:** Dieses Projekt wurde **vollständig mit KI entwickelt**, ist **nur aus Spaß** entstanden und wird **auf eigene Gefahr** benutzt. Es steht in keiner Verbindung zu Torn oder ffscouter.com. Ich übernehme **keinerlei Haftung**. Ohne Gewähr.
 
 <div align="center">
 
