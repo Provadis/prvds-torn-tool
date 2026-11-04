@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.12.0
+// @version      2.12.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -101,6 +101,8 @@
       callsPerUpdate: (n) => `${n} Calls pro Update`,
       ffKey: 'Key',
       ffKeyTitle: 'FF-Scouter-Key setzen',
+      ffReload: '🔄 FF neu laden',
+      ffReloadTitle: 'Zwischenspeicher leeren und alle FF-Werte sofort neu holen (z. B. nach dem Gym)',
       ffKeyPrompt: 'FF-Scouter-Key: ein Torn-API-Key, der bei ffscouter.com registriert ist.\nLeer lassen = den Watchlist-API-Key verwenden.',
       ffOwnKey: 'eigener Key',
       ffWatchlistKey: 'Watchlist-Key',
@@ -215,6 +217,8 @@
       callsPerUpdate: (n) => `${n} calls per update`,
       ffKey: 'Key',
       ffKeyTitle: 'Set FF Scouter key',
+      ffReload: '🔄 Reload FF',
+      ffReloadTitle: 'Clear the cache and fetch all FF scores right away (e.g. after the gym)',
       ffKeyPrompt: 'FF Scouter key: a Torn API key registered at ffscouter.com.\nLeave empty to use the watchlist API key.',
       ffOwnKey: 'own key',
       ffWatchlistKey: 'watchlist key',
@@ -989,6 +993,7 @@
         <div class="twl-settings">
           <label><input type="checkbox" class="twl-ff-toggle" /> 📊 FF Scouter</label>
           <button data-act="ff-key" data-i18n="ffKey" data-i18n-title="ffKeyTitle"></button>
+          <button data-act="ff-reload" class="twl-ff-reload" data-i18n="ffReload" data-i18n-title="ffReloadTitle"></button>
           <span class="twl-ff-status"></span>
         </div>
         <div class="twl-settings">
@@ -1301,6 +1306,9 @@
     ffStatus.className = `twl-ff-status${ffErr ? ' twl-ff-err' : ''}`;
     ffStatus.textContent = !ffOn ? '' : ffErr || (GM_getValue('ffKey', '') ? t('ffOwnKey') : getKey() ? t('ffWatchlistKey') : t('ffNoKey'));
     ffStatus.title = ffErr ? `FF Scouter: ${ffErr}` : '';
+    const ffReload = $('.twl-ff-reload');
+    ffReload.style.display = ffOn ? '' : 'none';
+    ffReload.disabled = ffLoading || !getFfKey();
 
     const keyStatus = $('.twl-key-status');
     keyStatus.textContent = getKey() ? t('apiKeySet') : t('apiKeyMissing');
@@ -1357,6 +1365,16 @@
         GM_setValue('ffError', '');
         if (ffEnabled()) refreshFF(shownIds()).then(render);
         render();
+        break;
+      }
+      case 'ff-reload': {
+        // e.g. after the gym: FF depends on your own stats, so skip the 30-minute cache
+        if (ffLoading) break;
+        GM_setValue('ffCache', {});
+        GM_setValue('ffError', '');
+        const done = refreshFF(shownIds()).then(render);
+        render();
+        done.catch(() => {});
         break;
       }
       case 'import': $('.twl-import-input').click(); break;

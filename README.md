@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.12.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.12.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -66,6 +66,7 @@ Shows every player's **fair fight score** from [ffscouter.com](https://ffscouter
 - **Color:** blue = easy, green/yellow = moderate, red = difficult.
 - **Tooltip:** estimated stats and how old the estimate is.
 - **Requests:** up to 100 players per call, cached for 30 minutes.
+- **🔄 Reload FF** (⚙ → FF Scouter) clears that cache and fetches all scores right away – handy after the gym, since FF depends on your own stats too.
 
 ### ⛓ Chain timer with alarm
 - The script reads the chain straight from the page (sidebar or attack page) and shows it big. This costs no API calls.
@@ -225,6 +226,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.12.1** | „🔄 Reload FF“ button to refetch all FF scores right away |
 | **2.12.0** | English as the default language, code comments and README in English |
 | **2.11.0** | Automatic updates via GitHub, version display and „Check for updates“, anonymized legend |
 | **2.10.x** | Legend in the settings, scrollbars in the panel style, requests/min in the footer |
