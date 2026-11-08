@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.13.0
+// @version      2.13.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -947,7 +947,15 @@
     .twl-rate.twl-warn { color: #ff9a3c; }
     .twl-empty { color: #999; padding: 4px 0; }
     /* Buttons in Torn's ranked war member list (outside the panel) */
-    .twl-war-actions { display: inline-flex; gap: 2px; margin-left: 4px; flex-shrink: 0; vertical-align: middle; }
+    /* Hidden until the row is hovered, then floats over the right end of the name cell like a tooltip */
+    .twl-war-cell { position: relative; }
+    .twl-war-actions { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); z-index: 5;
+      display: inline-flex; gap: 3px; padding: 2px; border: 1px solid #ff7518; border-radius: 4px;
+      background: rgba(27, 27, 31, .95); box-shadow: 0 2px 8px rgba(0, 0, 0, .7);
+      opacity: 0; pointer-events: none; transition: opacity .12s; }
+    li:hover > .twl-war-cell > .twl-war-actions, .twl-war-actions:focus-within { opacity: 1; pointer-events: auto; }
+    /* Touch screens have no hover – always show the buttons there */
+    @media (hover: none) { .twl-war-actions { opacity: 1; pointer-events: auto; } }
     .twl-war-btn { box-sizing: border-box; width: 18px; height: 18px; padding: 0; display: inline-flex; align-items: center;
       justify-content: center; border-radius: 3px; border: 1px solid #5a3a1e; background: #2a1a0e; color: #ff9a3c;
       font: bold 13px/1 Arial, sans-serif; cursor: pointer; }
@@ -2142,8 +2150,10 @@
       // React may reuse a row for another player – then rebuild the buttons
       if (box && box.dataset.id !== String(info.id)) { box.remove(); box = null; }
       if (!box) {
-        const cell = li.querySelector('[class*="userInfoBox"]') || li.querySelector('[class*="member"]');
+        // The name cell is a direct child of the row (class "member … member___xY12")
+        const cell = [...li.children].find((el) => /(^|\s)member/.test(el.className)) || li.firstElementChild;
         if (!cell) continue;
+        cell.classList.add('twl-war-cell');
         box = document.createElement('span');
         box.className = 'twl-war-actions';
         box.dataset.id = info.id;
