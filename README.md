@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.12.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.13.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -44,6 +44,13 @@
 - **Cheap on calls:** a faction costs **one single API call** (`/v2/faction/{id}/members`), no matter how many members it has.
 - **Hiding:** hide single faction members with ✕, bring them all back with ↺.
 - **Groups:** players are grouped by faction, and each group can be collapsed. The colored counters in the group header show who has been away how long, even when the group is collapsed.
+
+### ⚔ Buttons in the ranked war list
+On the ranked war page, every enemy gets two small buttons right next to their name:
+- **+** puts the player on your watchlist. Once they are on it, it turns into a green **✓** – click it again to remove them.
+- **📋 Copy** puts `Name [ID]` into the clipboard as a link to their profile, plus a plain-text version (`Name [ID] – profile link`) for chats that only take text.
+
+Both read name and ID straight from the row – no API calls. They also survive Torn redrawing the list and work alongside other scripts' columns (e.g. FF Scouter).
 
 ### 🟢🟠🔴 Colors by last action
 | Color | Meaning |
@@ -226,6 +233,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.13.0** | + and copy buttons next to every enemy in the ranked war list |
 | **2.12.1** | „🔄 Reload FF“ button to refetch all FF scores right away |
 | **2.12.0** | English as the default language, code comments and README in English |
 | **2.11.0** | Automatic updates via GitHub, version display and „Check for updates“, anonymized legend |

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.12.1
+// @version      2.13.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -190,6 +190,11 @@
       lgRestore: 'Ausgeblendete Spieler der Faction wieder anzeigen',
       lgSort: 'Sortierung: Wer nicht im Hospital ist, steht oben (am längsten inaktiv zuerst), danach nach Hospital-Restzeit.',
       lgHover: 'Tipp: Maus über eine Zeile bzw. den FF-Wert zeigt Details (Last Action, geschätzte Stats).',
+      warAdd: 'Zur Watchlist hinzufügen',
+      warOnList: 'Steht auf der Watchlist – klicken zum Entfernen',
+      warCopy: 'Name [ID] mit Profil-Link kopieren',
+      warCopied: 'Kopiert!',
+      warCopyFailed: 'Kopieren fehlgeschlagen',
     },
     en: {
       dragHint: 'Drag to move, double-click to dock',
@@ -306,6 +311,11 @@
       lgRestore: 'Show the hidden players of the faction again',
       lgSort: 'Sorting: players not in hospital come first (longest inactive on top), then by hospital time left.',
       lgHover: 'Tip: hover a row or the FF score for details (last action, estimated stats).',
+      warAdd: 'Add to watchlist',
+      warOnList: 'On the watchlist – click to remove',
+      warCopy: 'Copy name [ID] with profile link',
+      warCopied: 'Copied!',
+      warCopyFailed: 'Copy failed',
     },
   };
   // English is the default; German only when chosen in the settings
@@ -936,6 +946,15 @@
     .twl-rate { color: #999; }
     .twl-rate.twl-warn { color: #ff9a3c; }
     .twl-empty { color: #999; padding: 4px 0; }
+    /* Buttons in Torn's ranked war member list (outside the panel) */
+    .twl-war-actions { display: inline-flex; gap: 2px; margin-left: 4px; flex-shrink: 0; vertical-align: middle; }
+    .twl-war-btn { box-sizing: border-box; width: 18px; height: 18px; padding: 0; display: inline-flex; align-items: center;
+      justify-content: center; border-radius: 3px; border: 1px solid #5a3a1e; background: #2a1a0e; color: #ff9a3c;
+      font: bold 13px/1 Arial, sans-serif; cursor: pointer; }
+    .twl-war-btn:hover { background: #ff7518; border-color: #ff7518; color: #fff; }
+    .twl-war-btn.twl-on { background: #1f7a35; border-color: #2ea44f; color: #fff; }
+    .twl-war-btn.twl-on:hover { background: #a3191c; border-color: #ff5a5a; }
+    .twl-war-btn svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2; }
   `;
   document.head.appendChild(style);
 
@@ -2094,6 +2113,118 @@
     file.text().then(importSettings, () => alert(t('importReadFail')));
   });
 
+  // ---- Ranked war page: ➕ and copy buttons next to every enemy's name ---------------------
+  // Torn renders the member list with React and redraws rows all the time, so a
+  // MutationObserver re-adds missing buttons. Name and ID come straight from the row.
+  const WAR_ROW_SEL = 'ul[class*="members-list"] > li[class*="enemy"]';
+  const COPY_ICON = '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+
+  function warRowInfo(li) {
+    const link = li.querySelector('a[href*="profiles.php?XID="]');
+    if (!link) return null;
+    const id = parseInt(new URL(link.getAttribute('href'), location.origin).searchParams.get('XID'), 10);
+    if (!id) return null;
+    const nameEl = li.querySelector('.honor-text:not(.honor-text-svg)');
+    const name = (nameEl && nameEl.textContent.trim())
+      || (link.getAttribute('aria-label') || '').replace(/^View profile of\s*/i, '').trim()
+      || String(id);
+    return { id, name };
+  }
+
+  function decorateWarRows() {
+    const rows = document.querySelectorAll(WAR_ROW_SEL);
+    if (!rows.length) return;
+    const onList = new Set(shownIds());
+    for (const li of rows) {
+      const info = warRowInfo(li);
+      if (!info) continue;
+      let box = li.querySelector('.twl-war-actions');
+      // React may reuse a row for another player – then rebuild the buttons
+      if (box && box.dataset.id !== String(info.id)) { box.remove(); box = null; }
+      if (!box) {
+        const cell = li.querySelector('[class*="userInfoBox"]') || li.querySelector('[class*="member"]');
+        if (!cell) continue;
+        box = document.createElement('span');
+        box.className = 'twl-war-actions';
+        box.dataset.id = info.id;
+        box.innerHTML = '<button type="button" class="twl-war-btn" data-twl="add"></button>'
+          + `<button type="button" class="twl-war-btn" data-twl="copy">${COPY_ICON}</button>`;
+        cell.appendChild(box);
+      }
+      box.dataset.name = info.name;
+      const add = box.querySelector('[data-twl="add"]');
+      const on = onList.has(info.id);
+      // Only touch the DOM when something changed, so the observer doesn't loop
+      if (add.dataset.on !== String(on) || add.title !== t(on ? 'warOnList' : 'warAdd')) {
+        add.dataset.on = String(on);
+        add.classList.toggle('twl-on', on);
+        add.textContent = on ? '✓' : '+';
+        add.title = t(on ? 'warOnList' : 'warAdd');
+      }
+      const copy = box.querySelector('[data-twl="copy"]');
+      // Restore the icon after the ✓/✕ feedback (also if the row was redrawn meanwhile)
+      if (!(+copy.dataset.busyUntil > Date.now()) && (copy.title !== t('warCopy') || !copy.querySelector('svg'))) {
+        delete copy.dataset.busyUntil;
+        copy.innerHTML = COPY_ICON;
+        copy.title = t('warCopy');
+      }
+    }
+  }
+
+  // Copies "Name [ID]" as a link to the profile (HTML) plus a plain text version for chats
+  async function copyPlayer(name, id) {
+    const url = `https://www.torn.com/profiles.php?XID=${id}`;
+    const label = `${name} [${id}]`;
+    const text = `${label} – ${url}`;
+    const html = `<a href="${url}">${esc(label)}</a>`;
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([new ClipboardItem({
+        'text/html': new Blob([html], { type: 'text/html' }),
+        'text/plain': new Blob([text], { type: 'text/plain' }),
+      })]);
+      return;
+    }
+    // Fallback for browsers without ClipboardItem: plain text only
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    if (!ok) throw new Error('copy failed');
+  }
+
+  // Capture phase, so Torn's own row handlers don't see the click
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.twl-war-btn');
+    if (!btn) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const box = btn.closest('.twl-war-actions');
+    const id = parseInt(box.dataset.id, 10);
+    if (btn.dataset.twl === 'add') {
+      if (btn.dataset.on === 'true') removePlayer(id);
+      else addPlayer(id);
+      decorateWarRows();
+      return;
+    }
+    const done = (ok) => {
+      btn.dataset.busyUntil = Date.now() + 1200;
+      btn.textContent = ok ? '✓' : '✕';
+      btn.title = t(ok ? 'warCopied' : 'warCopyFailed');
+      setTimeout(decorateWarRows, 1300); // puts the copy icon back
+    };
+    copyPlayer(box.dataset.name || String(id), id).then(() => done(true), () => done(false));
+  }, true);
+
+  let warTimer = null;
+  new MutationObserver(() => {
+    if (warTimer) return;
+    warTimer = setTimeout(() => { warTimer = null; decorateWarRows(); }, 200);
+  }).observe(document.body, { childList: true, subtree: true });
+  decorateWarRows();
+
   // Apply changes from other tabs
   GM_addValueChangeListener('nyan', (_k, _o, _n, remote) => { if (remote) applyNyan(); });
   GM_addValueChangeListener('list', (_k, _o, _n, remote) => { if (remote) render(); });
@@ -2125,6 +2256,7 @@
   let tick = 0;
   setInterval(() => {
     render();
+    decorateWarRows(); // keeps ➕/✓ in sync when the list changes in another tab
     if (++tick % 5 === 0) refreshAll(false);
   }, 1000);
 })();
