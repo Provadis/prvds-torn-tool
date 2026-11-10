@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.16.3
+// @version      2.16.4
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -1916,7 +1916,9 @@
   let apiChainLoading = false;
   let apiChainDenied = false;   // key can't read the faction chain – stop asking
   let apiChainCount = null;     // count last seen in Torn's bar
-  const useApiChain = () => IS_TOUCH && !apiChainDenied && !!getKey() && !isPaused();
+  // Only when something needs the chain: the chain timer (setting) or the bomb sound
+  const useApiChain = () => IS_TOUCH && !apiChainDenied && !!getKey() && !isPaused()
+    && (chainEnabled() || soundEnabled());
   const apiChainRunning = () => !!apiChain && apiChain.current > 0 && apiChain.end > Date.now();
 
   async function fetchApiChain() {
@@ -1979,14 +1981,14 @@
   function updateChain() {
     const box = $('.twl-chain');
     const show = chainEnabled();
-    const chain = show || soundEnabled() || headerMode ? readChain() : null;
+    const chain = show || soundEnabled() ? readChain() : null;
     box.style.display = show && chain ? '' : 'none';
     const left = chain ? parseClock(chain.time) : null;
     updateBomb(left);
     // Header: the P always stays; while a chain runs a timer badge "⛓ mm:ss" sits next to it,
     // red and blinking below 1:30
     if (headerMode) {
-      const running = left != null && left > 0;
+      const running = show && left != null && left > 0; // chain timer switched off → only the P
       const label = running ? (headerTimer.classList.contains('twl-compact') ? chain.time : `⛓ ${chain.time}`) : '';
       if (headerTimer.textContent !== label) headerTimer.textContent = label;
       headerTimer.classList.toggle('twl-on', running);
