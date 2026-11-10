@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.20.0
+// @version      2.20.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -982,7 +982,7 @@
          Safari's bottom address bar instead of running under it */
       height: max(260px, calc(100vh - var(--twl-top, 0px) - 6px)) !important;
       height: max(260px, calc(100dvh - var(--twl-top, 0px) - 6px)) !important; }
-    #twl-panel.twl-inline.twl-collapsed { display: none !important; }
+    #twl-panel.twl-inline.twl-collapsed, #twl-panel.twl-wait { display: none !important; }
     #twl-panel.twl-inline .twl-resize, #twl-panel.twl-inline button.twl-mini { display: none !important; }
     #twl-panel.twl-inline .twl-head { cursor: default; }
     #twl-panel.twl-inline [data-act="side"] { display: none; } /* docking makes no sense inline */
@@ -1336,6 +1336,13 @@
   const headerTimer = document.createElement('span');
   headerTimer.className = 'twl-htimer';
   let headerMode = false;
+  // Torn draws its header a moment after the page loads (and redraws it now and then). Until we
+  // had a fair chance to find it, the floating fallback stays hidden – otherwise the old floating
+  // "P" flashes up on every page load before it jumps into the header.
+  const HEADER_WAIT_LOAD_MS = 4000;
+  const HEADER_WAIT_REDRAW_MS = 2000;
+  let headerWaitUntil = IS_TOUCH ? Date.now() + HEADER_WAIT_LOAD_MS : 0;
+  let headerWaitTimer = 0;
   const input = $('.twl-add input');
 
   // Position: either docked to the right/left edge ("side") or moved freely ("pos").
@@ -1361,6 +1368,7 @@
     // Header mode: the panel lives in the page right below Torn's header, in full screen height
     panel.classList.toggle('twl-inline', headerMode);
     if (headerMode) {
+      panel.classList.remove('twl-wait');
       const collapsed = GM_getValue('collapsed', false);
       const root = document.getElementById('header-root');
       if (root && root.nextElementSibling !== panel) root.after(panel);
@@ -1377,6 +1385,10 @@
       return;
     }
     if (panel.parentElement !== document.body) document.body.appendChild(panel);
+    const waiting = IS_TOUCH && Date.now() < headerWaitUntil;
+    panel.classList.toggle('twl-wait', waiting);
+    clearTimeout(headerWaitTimer);
+    if (waiting) headerWaitTimer = setTimeout(applyLayout, headerWaitUntil - Date.now() + 50); // still no header → fallback
     const pos = GM_getValue('pos', null);
     const side = pos ? 'left' : GM_getValue('side', 'right');
     panel.classList.toggle('twl-right', side === 'right');
@@ -1524,6 +1536,7 @@
     placeHeaderBtn();
     if (headerBtn.isConnected !== headerMode) {
       headerMode = headerBtn.isConnected;
+      if (!headerMode) headerWaitUntil = Date.now() + HEADER_WAIT_REDRAW_MS; // header just redrawn: wait a bit
       applyLayout();
     }
   }
