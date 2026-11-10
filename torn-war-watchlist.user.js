@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.16.1
+// @version      2.16.2
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -1926,15 +1926,23 @@
     const key = getKey();
     if (!key || apiChainLoading) return;
     apiChainLoading = true;
-    apiChainAttempt = Date.now();
+    const sent = Date.now();
+    apiChainAttempt = sent;
     try {
-      const d = await apiGet('faction/?selections=chain', key);
+      // "timestamp" bypasses Torn's API cache – a cached answer would carry an old "timeout"
+      // and make the countdown jump back up every few seconds
+      const d = await apiGet(`v2/faction/chain?timestamp=${Math.floor(sent / 1000)}`, key);
       if (d.error) {
         if (KEY_ERRORS.includes(d.error.code) || d.error.code === 7) apiChainDenied = true;
         return;
       }
       const c = d.chain || {};
-      apiChain = { current: c.current || 0, max: c.max || 0, end: Date.now() + (c.timeout || 0) * 1000 };
+      // Absolute break time: "seconds left" counted from the middle of the request (network delay)
+      const end = Math.round((sent + Date.now()) / 2) + (c.timeout || 0) * 1000;
+      // Torn only sends whole seconds – ignore differences below 1.5 s so the timer doesn't
+      // wobble; a hit (count changed) or a real correction always goes through
+      const keep = apiChain && apiChain.current === c.current && Math.abs(apiChain.end - end) < 1500;
+      apiChain = { current: c.current || 0, max: c.max || 0, end: keep ? apiChain.end : end };
     } catch {
       // network hiccup – try again with the next poll
     } finally {
