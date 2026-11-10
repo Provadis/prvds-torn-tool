@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.19.0
+// @version      2.20.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -973,6 +973,9 @@
     .twl-htimer.twl-on { display: inline-flex; }
     .twl-htimer.twl-compact { font-size: 12px; padding: 0 4px; }
     .twl-htimer.twl-alert { background: #d00000; box-shadow: 0 0 10px 2px rgba(255,0,0,.8); animation: twl-blink 1s steps(1) infinite; }
+    /* Same badge on a profile page: FF score, dark with the FF color (text + border) */
+    .twl-htimer.twl-ffbadge { background: #1b1b1f; border-color: currentColor; animation: none; box-shadow: none; }
+    .twl-htimer.twl-ffbadge.twl-alert-ring { box-shadow: 0 0 10px 2px rgba(255,0,0,.8); }
     #twl-panel.twl-inline { position: relative !important; left: auto !important; top: auto !important; right: auto !important;
       width: auto !important; margin: 6px; z-index: 5;
       /* Fills the screen below Torn's header (--twl-top = where the panel starts), so it ends above
@@ -2343,6 +2346,26 @@
     return parts.length >= 2 && parts.every(Number.isFinite) ? parts.reduce((s, n) => s * 60 + n, 0) : null;
   };
 
+  // FF score of the profile being viewed, for the header badge (touch header only)
+  const BADGE_SWITCH_MS = 2000;
+  const PROFILE_FF_RETRY_MS = 15000;
+  let profileFfTry = { id: null, at: 0 };
+  function profileFfBadge() {
+    const id = currentProfileId();
+    if (!id || !ffEnabled() || !getFfKey()) return null;
+    const d = getFfCache()[id];
+    // Not cached (or older than 30 min): fetch just this player, at most every 15 s
+    if ((!d || Date.now() - d.fetched > FF_MAX_AGE_MS) && !ffLoading
+        && (profileFfTry.id !== id || Date.now() - profileFfTry.at > PROFILE_FF_RETRY_MS)) {
+      profileFfTry = { id, at: Date.now() };
+      refreshFF([id]).then(render).catch(() => {});
+    }
+    if (!d) return ffLoading ? { text: 'FF …', color: '#bbb' } : null; // failed (e.g. key not registered): no badge
+    const f = ffInfo(d, Math.floor(Date.now() / 1000));
+    if (!f.color) return null; // FF Scouter has no estimate for this player
+    return { text: `FF ${f.text}`, color: f.color };
+  }
+
   function updateChain() {
     const box = $('.twl-chain');
     const show = chainEnabled();
@@ -2351,13 +2374,23 @@
     const left = chain ? parseClock(chain.time) : null;
     updateBomb(left);
     // Header: the P always stays; while a chain runs a timer badge "⛓ mm:ss" sits next to it,
-    // red and blinking below 1:30
+    // red and blinking below 1:30. On a profile page the badge shows that player's FF score;
+    // with a running chain both take turns every 2 seconds.
     if (headerMode) {
       const running = show && left != null && left > 0; // chain timer switched off → only the P
-      const label = running ? (headerTimer.classList.contains('twl-compact') ? chain.time : `⛓ ${chain.time}`) : '';
+      const alert = running && left < CHAIN_ALERT_S;
+      const ff = profileFfBadge();
+      const showFf = ff && (!running || Math.floor(Date.now() / BADGE_SWITCH_MS) % 2 === 1);
+      let label = '';
+      if (showFf) label = ff.text;
+      else if (running) label = headerTimer.classList.contains('twl-compact') ? chain.time : `⛓ ${chain.time}`;
       if (headerTimer.textContent !== label) headerTimer.textContent = label;
-      headerTimer.classList.toggle('twl-on', running);
-      headerTimer.classList.toggle('twl-alert', running && left < CHAIN_ALERT_S);
+      const color = showFf ? ff.color : '';
+      if (headerTimer.style.color !== color) headerTimer.style.color = color;
+      headerTimer.classList.toggle('twl-on', !!label);
+      headerTimer.classList.toggle('twl-ffbadge', !!showFf);
+      headerTimer.classList.toggle('twl-alert', alert && !showFf);
+      headerTimer.classList.toggle('twl-alert-ring', alert && !!showFf); // chain still urgent while FF shows
     }
     const alert = show && left != null && left > 0 && left < CHAIN_ALERT_S;
     box.classList.toggle('twl-chain-alert', alert);
