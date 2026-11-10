@@ -231,6 +231,14 @@ The chain is read from Torn's sidebar or the attack page. Check that ⚙ → Cha
 </details>
 
 <details>
+<summary><b>iPhone: the install link only shows code / Tampermonkey finds no update</b></summary>
+
+- **Code instead of an install screen:** Tampermonkey can only take over pages it is allowed on. Allow it for all websites (*Settings → Safari → Extensions → Tampermonkey*), or open the link and choose *Aa / puzzle icon → Tampermonkey → Always allow on this website*. If it still shows code, briefly turn off Safari's pop-up blocker while installing.
+- **No update found:** GitHub can serve the old file for up to ~5 minutes after a release – try again a little later. If the script was created by pasting the code, install it once via the link instead, so Tampermonkey keeps it updated.
+
+</details>
+
+<details>
 <summary><b>My list is gone after a reload</b></summary>
 
 The script restores its browser backup automatically. If something is still missing: ⚙ → ⬆ Import with your latest export file.
@@ -242,7 +250,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
-| **2.16.4** | Header timer badge (and its API requests) respect the chain timer setting |
+| **2.16.4** | Header timer badge (and its API requests) respect the chain timer setting; install link after the update check always gets the fresh file |
 | **2.16.3** | No tooltip on the header P button (it stuck on iPhone after a tap) |
 | **2.16.2** | Smooth mobile chain timer: bypasses Torn's API cache and counts down to an absolute end time (no more jumping back up) |
 | **2.16.1** | P button in the header reliably toggles on iPhone (reacts to the touch directly, sits above Torn's header elements) |

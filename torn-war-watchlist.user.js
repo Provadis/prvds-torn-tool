@@ -1710,7 +1710,8 @@
         const m = r.status === 200 && r.responseText.match(/@version\s+([\d.]+)/);
         if (!m) { status.textContent = t('updFailed'); status.classList.add('twl-ff-err'); return; }
         if (!newerVersion(m[1], SCRIPT_VERSION)) { status.textContent = t('updLatest'); return; }
-        status.innerHTML = `${esc(t('updAvailable', m[1]))} · <a href="${esc(UPDATE_URL)}" target="_blank" `
+        // "?v=…" makes GitHub's CDN (caches up to ~5 min) hand out the fresh file
+        status.innerHTML = `${esc(t('updAvailable', m[1]))} · <a href="${esc(`${UPDATE_URL}?v=${m[1]}`)}" target="_blank" `
           + `rel="noopener" title="${esc(t('updInstallTitle'))}">${esc(t('updInstall'))}</a>`;
         status.classList.add('twl-upd-new');
       },
