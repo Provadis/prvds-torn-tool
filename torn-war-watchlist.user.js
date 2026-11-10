@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.16.2
+// @version      2.16.3
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -99,7 +99,6 @@
       updInstallTitle: 'Am PC zeigt Tampermonkey dann den Update-Dialog. Am iPhone: in Safari das Tampermonkey-Menü öffnen → „Nach Userscript-Updates suchen“.',
       updFailed: 'Prüfung fehlgeschlagen',
       miniTitle: 'Watchlist öffnen (ziehen zum Verschieben)',
-      hbtnTitle: 'Watchlist öffnen / schließen',
       apiKey: '🔑 Torn API-Key',
       apiKeyTitle: 'Torn API-Key setzen',
       apiKeySet: 'gesetzt',
@@ -228,7 +227,6 @@
       updInstallTitle: 'On a PC, Tampermonkey then shows its update dialog. On iPhone: open the Tampermonkey menu in Safari → "Check for userscript updates".',
       updFailed: 'Check failed',
       miniTitle: 'Open the watchlist (drag to move)',
-      hbtnTitle: 'Open / close the watchlist',
       apiKey: '🔑 Torn API key',
       apiKeyTitle: 'Set Torn API key',
       apiKeySet: 'set',
@@ -1120,7 +1118,7 @@
   const headerBtn = document.createElement('button');
   headerBtn.type = 'button';
   headerBtn.className = 'twl-hbtn';
-  headerBtn.textContent = 'P';
+  headerBtn.textContent = 'P'; // no title: on iOS its tooltip sticks after a tap
   // Chain timer badge right next to the P (only while a chain runs); the P stays visible
   const headerTimer = document.createElement('span');
   headerTimer.className = 'twl-htimer';
@@ -1793,7 +1791,6 @@
     for (const el of panel.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
     langSelect.value = getLang();
     $('.twl-version').textContent = t('version', SCRIPT_VERSION);
-    headerBtn.title = t('hbtnTitle');
     $('[data-act="update-check"]').style.display = UPDATE_URL ? '' : 'none';
     renderLegend();
   }
