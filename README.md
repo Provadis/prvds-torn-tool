@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.16.4-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.16.5-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -234,7 +234,7 @@ The chain is read from Torn's sidebar or the attack page. Check that ⚙ → Cha
 <summary><b>iPhone: the install link only shows code / Tampermonkey finds no update</b></summary>
 
 - **Code instead of an install screen:** Tampermonkey can only take over pages it is allowed on. Allow it for all websites (*Settings → Safari → Extensions → Tampermonkey*), or open the link and choose *Aa / puzzle icon → Tampermonkey → Always allow on this website*. If it still shows code, briefly turn off Safari's pop-up blocker while installing.
-- **No update found:** GitHub can serve the old file for up to ~5 minutes after a release – try again a little later. If the script was created by pasting the code, install it once via the link instead, so Tampermonkey keeps it updated.
+- **No update found:** GitHub serves the normal file address from a cache for up to ~5 minutes after a release, so Tampermonkey's own check may still see the old version – try again a little later, or use ⚙ → 🔄 Check for updates, which sees new releases right away and links the install to the fresh file. If the script was created by pasting the code, install it once via the link, so Tampermonkey keeps it updated.
 
 </details>
 
@@ -250,7 +250,8 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
-| **2.16.4** | Header timer badge (and its API requests) respect the chain timer setting; install link after the update check always gets the fresh file |
+| **2.16.5** | „Check for updates“ finds a new release right away (asks GitHub for the newest commit instead of the cached file) and links the install to exactly that file |
+| **2.16.4** | Header timer badge (and its API requests) respect the chain timer setting |
 | **2.16.3** | No tooltip on the header P button (it stuck on iPhone after a tap) |
 | **2.16.2** | Smooth mobile chain timer: bypasses Torn's API cache and counts down to an absolute end time (no more jumping back up) |
 | **2.16.1** | P button in the header reliably toggles on iPhone (reacts to the touch directly, sits above Torn's header elements) |

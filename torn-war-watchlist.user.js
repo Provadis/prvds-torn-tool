@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.16.4
+// @version      2.16.5
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -16,6 +16,7 @@
 // @connect      api.torn.com
 // @connect      ffscouter.com
 // @connect      raw.githubusercontent.com
+// @connect      api.github.com
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -1698,26 +1699,48 @@
     }
     return false;
   };
-  function checkForUpdate() {
+  // GitHub's raw CDN caches the file for ~5 minutes and ignores query strings, so right after a
+  // release "…/main/…" can still be the old version. Asking the GitHub API for the newest commit
+  // and loading the file pinned to that commit always gives the current one (install link too).
+  const GH_RAW = UPDATE_URL.match(/^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.+)$/);
+  const httpGet = (url, headers = {}) => new Promise((resolve, reject) => {
+    GM_xmlhttpRequest({
+      method: 'GET', url, headers, timeout: 15000,
+      onload: resolve,
+      onerror: () => reject(new Error('network')),
+      ontimeout: () => reject(new Error('timeout')),
+    });
+  });
+  async function latestFileUrl() {
+    if (!GH_RAW) return UPDATE_URL;
+    const [, owner, repo, ref, path] = GH_RAW;
+    try {
+      const r = await httpGet(`https://api.github.com/repos/${owner}/${repo}/commits/${ref}`,
+        { Accept: 'application/vnd.github+json' });
+      const sha = r.status === 200 && JSON.parse(r.responseText).sha;
+      if (sha) return `https://raw.githubusercontent.com/${owner}/${repo}/${sha}/${path}`;
+    } catch {
+      // API not reachable or rate limit (60/h) – fall back to the normal (maybe cached) address
+    }
+    return UPDATE_URL;
+  }
+  async function checkForUpdate() {
     const status = $('.twl-upd-status');
+    const fail = () => { status.textContent = t('updFailed'); status.classList.add('twl-ff-err'); };
     status.className = 'twl-upd-status';
     status.textContent = t('updChecking');
-    GM_xmlhttpRequest({
-      method: 'GET',
-      url: `${UPDATE_URL}?t=${Date.now()}`, // skip caches
-      timeout: 15000,
-      onload: (r) => {
-        const m = r.status === 200 && r.responseText.match(/@version\s+([\d.]+)/);
-        if (!m) { status.textContent = t('updFailed'); status.classList.add('twl-ff-err'); return; }
-        if (!newerVersion(m[1], SCRIPT_VERSION)) { status.textContent = t('updLatest'); return; }
-        // "?v=…" makes GitHub's CDN (caches up to ~5 min) hand out the fresh file
-        status.innerHTML = `${esc(t('updAvailable', m[1]))} · <a href="${esc(`${UPDATE_URL}?v=${m[1]}`)}" target="_blank" `
-          + `rel="noopener" title="${esc(t('updInstallTitle'))}">${esc(t('updInstall'))}</a>`;
-        status.classList.add('twl-upd-new');
-      },
-      onerror: () => { status.textContent = t('updFailed'); status.classList.add('twl-ff-err'); },
-      ontimeout: () => { status.textContent = t('updFailed'); status.classList.add('twl-ff-err'); },
-    });
+    try {
+      const fileUrl = await latestFileUrl();
+      const r = await httpGet(fileUrl);
+      const m = r.status === 200 && r.responseText.match(/@version\s+([\d.]+)/);
+      if (!m) return fail();
+      if (!newerVersion(m[1], SCRIPT_VERSION)) { status.textContent = t('updLatest'); return; }
+      status.innerHTML = `${esc(t('updAvailable', m[1]))} · <a href="${esc(fileUrl)}" target="_blank" `
+        + `rel="noopener" title="${esc(t('updInstallTitle'))}">${esc(t('updInstall'))}</a>`;
+      status.classList.add('twl-upd-new');
+    } catch {
+      fail();
+    }
   }
 
   // Show the settings page instead of the list (per tab, not saved).
