@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.15.0
+// @version      2.16.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -99,6 +99,7 @@
       updInstallTitle: 'Am PC zeigt Tampermonkey dann den Update-Dialog. Am iPhone: in Safari das Tampermonkey-Menü öffnen → „Nach Userscript-Updates suchen“.',
       updFailed: 'Prüfung fehlgeschlagen',
       miniTitle: 'Watchlist öffnen (ziehen zum Verschieben)',
+      hbtnTitle: 'Watchlist öffnen / schließen',
       apiKey: '🔑 Torn API-Key',
       apiKeyTitle: 'Torn API-Key setzen',
       apiKeySet: 'gesetzt',
@@ -227,6 +228,7 @@
       updInstallTitle: 'On a PC, Tampermonkey then shows its update dialog. On iPhone: open the Tampermonkey menu in Safari → "Check for userscript updates".',
       updFailed: 'Check failed',
       miniTitle: 'Open the watchlist (drag to move)',
+      hbtnTitle: 'Open / close the watchlist',
       apiKey: '🔑 Torn API key',
       apiKeyTitle: 'Set Torn API key',
       apiKeySet: 'set',
@@ -891,6 +893,20 @@
     #twl-panel.twl-mini-mode > button.twl-mini { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
       padding: 0; border-radius: 8px; border: 2px solid #2a1a0e; background: #ff7518; color: #fff;
       font: bold 20px/1 Arial, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.6); touch-action: none; }
+    /* Header mode: button after Torn's ☰ menu, panel inline below the header in full screen height */
+    .twl-hbtn { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-sizing: border-box;
+      height: 30px; min-width: 30px; padding: 0 7px; margin: 0 6px; border-radius: 6px; border: 2px solid #2a1a0e;
+      background: #ff7518; color: #fff; font: bold 17px/1 Arial, sans-serif; white-space: nowrap; cursor: pointer;
+      -webkit-tap-highlight-color: transparent; }
+    .twl-hbtn.twl-hbtn-chain { font-size: 14px; }
+    .twl-hbtn.twl-hbtn-open { background: #c4560f; box-shadow: inset 0 2px 4px rgba(0,0,0,.4); }
+    .twl-hbtn.twl-hbtn-alert { background: #d00000; box-shadow: 0 0 10px 2px rgba(255,0,0,.8); animation: twl-blink 1s steps(1) infinite; }
+    #twl-panel.twl-inline { position: relative !important; left: auto !important; top: auto !important; right: auto !important;
+      width: auto !important; height: calc(100vh - 12px) !important; height: calc(100dvh - 12px) !important; margin: 6px; z-index: 5; }
+    #twl-panel.twl-inline.twl-collapsed { display: none !important; }
+    #twl-panel.twl-inline .twl-resize, #twl-panel.twl-inline button.twl-mini { display: none !important; }
+    #twl-panel.twl-inline .twl-head { cursor: default; }
+    #twl-panel.twl-inline [data-act="side"] { display: none; } /* docking makes no sense inline */
     /* Chain alarm also shows on the square */
     #twl-panel.twl-mini-mode.twl-alert > button.twl-mini { background: #d00000; box-shadow: 0 0 12px 3px rgba(255,0,0,.8);
       animation: twl-blink 1s steps(1) infinite; }
@@ -1094,6 +1110,14 @@
   const $ = (sel) => panel.querySelector(sel);
   // Touch screen (iPhone, iPad, Android): bigger handles, "P" square instead of a collapsed panel
   const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches;
+  // Header mode (touch only): a "P" button right after the ☰ menu in Torn's header, and the panel
+  // sits inline below the header instead of floating. Without a spot in the header, the floating
+  // "P" square stays in use.
+  const headerBtn = document.createElement('button');
+  headerBtn.type = 'button';
+  headerBtn.className = 'twl-hbtn';
+  headerBtn.textContent = 'P';
+  let headerMode = false;
   const input = $('.twl-add input');
 
   // Position: either docked to the right/left edge ("side") or moved freely ("pos").
@@ -1107,6 +1131,20 @@
   }
 
   function applyLayout() {
+    // Header mode: the panel lives in the page right below Torn's header, in full screen height
+    panel.classList.toggle('twl-inline', headerMode);
+    if (headerMode) {
+      const collapsed = GM_getValue('collapsed', false);
+      const root = document.getElementById('header-root');
+      if (root && root.nextElementSibling !== panel) root.after(panel);
+      panel.classList.toggle('twl-collapsed', collapsed);
+      panel.classList.remove('twl-mini-mode', 'twl-right', 'twl-left');
+      panel.classList.add('twl-sized'); // flex layout, the list scrolls inside
+      panel.style.left = panel.style.top = panel.style.right = panel.style.width = panel.style.height = '';
+      headerBtn.classList.toggle('twl-hbtn-open', !collapsed);
+      return;
+    }
+    if (panel.parentElement !== document.body) document.body.appendChild(panel);
     const pos = GM_getValue('pos', null);
     const side = pos ? 'left' : GM_getValue('side', 'right');
     panel.classList.toggle('twl-right', side === 'right');
@@ -1140,7 +1178,7 @@
   // Moving: drag the header (not the buttons). Double-click docks it to the edge again.
   const head = $('.twl-head');
   head.addEventListener('pointerdown', (ev) => {
-    if (ev.button !== 0 || ev.target.closest('button')) return;
+    if (ev.button !== 0 || ev.target.closest('button') || headerMode) return; // inline panel stays put
     ev.preventDefault();
     head.setPointerCapture(ev.pointerId);
     const rect = panel.getBoundingClientRect();
@@ -1168,7 +1206,7 @@
     head.addEventListener('pointercancel', up);
   });
   head.addEventListener('dblclick', (ev) => {
-    if (ev.target.closest('button')) return;
+    if (ev.target.closest('button') || headerMode) return;
     GM_setValue('pos', null);
     applyLayout();
   });
@@ -1205,6 +1243,42 @@
     mini.addEventListener('pointermove', move);
     mini.addEventListener('pointerup', up);
     mini.addEventListener('pointercancel', up);
+  });
+
+  // Header mode: find Torn's ☰ menu in the mobile header and put our button right after it.
+  // Torn's class names carry random suffixes, so we match on typical parts of them.
+  const HEADER_SPOT_SELECTORS = [
+    '[class*="burger" i]', '[class*="hamburger" i]', 'button[aria-label*="menu" i]', '[aria-label*="menu" i]',
+  ];
+  function findHeaderSpot() {
+    const root = document.getElementById('header-root');
+    if (!root) return null;
+    const visible = (el) => el.getClientRects().length > 0 && !panel.contains(el);
+    for (const sel of HEADER_SPOT_SELECTORS) {
+      const el = [...root.querySelectorAll(sel)].find(visible);
+      // An icon inside the menu button? Then go after the button itself, not inside it
+      if (el) return el.closest('button, a, [role="button"]') || el;
+    }
+    return null;
+  }
+  function syncHeaderMode() {
+    if (!IS_TOUCH) return;
+    if (!headerBtn.isConnected) {
+      const spot = findHeaderSpot();
+      if (spot) spot.after(headerBtn); // Torn redraws its header now and then – put it back
+    }
+    if (headerBtn.isConnected !== headerMode) {
+      headerMode = headerBtn.isConnected;
+      applyLayout();
+    }
+  }
+  headerBtn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const open = GM_getValue('collapsed', false);
+    GM_setValue('collapsed', !open);
+    applyLayout();
+    if (open) window.scrollTo({ top: 0, behavior: 'smooth' }); // header + panel in view, even when scrolled down
   });
 
   // Resize from any of the four corners (mouse and touch). The opposite corner stays put.
@@ -1670,6 +1744,7 @@
     for (const el of panel.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
     langSelect.value = getLang();
     $('.twl-version').textContent = t('version', SCRIPT_VERSION);
+    headerBtn.title = t('hbtnTitle');
     $('[data-act="update-check"]').style.display = UPDATE_URL ? '' : 'none';
     renderLegend();
   }
@@ -1794,10 +1869,18 @@
   function updateChain() {
     const box = $('.twl-chain');
     const show = chainEnabled();
-    const chain = show || soundEnabled() ? readChain() : null;
+    const chain = show || soundEnabled() || headerMode ? readChain() : null;
     box.style.display = show && chain ? '' : 'none';
     const left = chain ? parseClock(chain.time) : null;
     updateBomb(left);
+    // Header button: "P", or "⛓ mm:ss" while a chain runs – red and blinking below 1:30
+    if (headerMode) {
+      const running = left != null && left > 0;
+      const label = running ? `⛓ ${chain.time}` : 'P';
+      if (headerBtn.textContent !== label) headerBtn.textContent = label;
+      headerBtn.classList.toggle('twl-hbtn-chain', running);
+      headerBtn.classList.toggle('twl-hbtn-alert', running && left < CHAIN_ALERT_S);
+    }
     const alert = show && left != null && left > 0 && left < CHAIN_ALERT_S;
     box.classList.toggle('twl-chain-alert', alert);
     panel.classList.toggle('twl-alert', alert);
@@ -2375,7 +2458,7 @@
   let warTimer = null;
   new MutationObserver(() => {
     if (warTimer) return;
-    warTimer = setTimeout(() => { warTimer = null; decorateWarRows(); }, 200);
+    warTimer = setTimeout(() => { warTimer = null; decorateWarRows(); syncHeaderMode(); }, 200);
   }).observe(document.body, { childList: true, subtree: true });
   decorateWarRows();
 
@@ -2400,6 +2483,7 @@
   });
 
   applyLayout();
+  syncHeaderMode();
   render();
   refreshAll(false);
   scheduleNyan();
@@ -2411,6 +2495,7 @@
   setInterval(() => {
     render();
     decorateWarRows(); // keeps ➕/✓ in sync when the list changes in another tab
+    syncHeaderMode();
     if (++tick % 5 === 0) refreshAll(false);
   }, 1000);
 })();
