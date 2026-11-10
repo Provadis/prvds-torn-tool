@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.14.0
+// @version      2.15.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -98,6 +98,7 @@
       updInstall: 'Installieren',
       updInstallTitle: 'Am PC zeigt Tampermonkey dann den Update-Dialog. Am iPhone: in Safari das Tampermonkey-Menü öffnen → „Nach Userscript-Updates suchen“.',
       updFailed: 'Prüfung fehlgeschlagen',
+      miniTitle: 'Watchlist öffnen (ziehen zum Verschieben)',
       apiKey: '🔑 Torn API-Key',
       apiKeyTitle: 'Torn API-Key setzen',
       apiKeySet: 'gesetzt',
@@ -225,6 +226,7 @@
       updInstall: 'Install',
       updInstallTitle: 'On a PC, Tampermonkey then shows its update dialog. On iPhone: open the Tampermonkey menu in Safari → "Check for userscript updates".',
       updFailed: 'Check failed',
+      miniTitle: 'Open the watchlist (drag to move)',
       apiKey: '🔑 Torn API key',
       apiKeyTitle: 'Set Torn API key',
       apiKeySet: 'set',
@@ -882,6 +884,16 @@
     .twl-chain.twl-chain-alert { animation: twl-blink 1s steps(1) infinite; }
     @keyframes twl-blink { 0% { background: #d00000; } 50% { background: #15151a; } }
     #twl-panel.twl-alert { border-color: #ff2020; box-shadow: 0 0 14px 3px rgba(255,0,0,.7); }
+    /* Touch screens: a collapsed panel shrinks to a small "P" square – tap to open, drag to move */
+    #twl-panel button.twl-mini { display: none; }
+    #twl-panel.twl-mini-mode { width: auto !important; height: auto !important; border: 0; background: transparent; box-shadow: none; }
+    #twl-panel.twl-mini-mode > :not(.twl-mini) { display: none !important; }
+    #twl-panel.twl-mini-mode > button.twl-mini { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+      padding: 0; border-radius: 8px; border: 2px solid #2a1a0e; background: #ff7518; color: #fff;
+      font: bold 20px/1 Arial, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.6); touch-action: none; }
+    /* Chain alarm also shows on the square */
+    #twl-panel.twl-mini-mode.twl-alert > button.twl-mini { background: #d00000; box-shadow: 0 0 12px 3px rgba(255,0,0,.8);
+      animation: twl-blink 1s steps(1) infinite; }
     #twl-panel.twl-collapsed .twl-body { display: none; }
     .twl-body { padding: 6px; }
     .twl-profile { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
@@ -995,6 +1007,7 @@
   const panel = document.createElement('div');
   panel.id = 'twl-panel';
   panel.innerHTML = `
+    <button type="button" class="twl-mini" data-i18n-title="miniTitle">P</button>
     <div class="twl-head">
       <span class="twl-title" data-i18n-title="dragHint">🎃 Watchlist <span class="twl-count"></span></span>
       <button data-act="pause" class="twl-pause"></button>
@@ -1079,6 +1092,8 @@
   document.body.appendChild(panel);
 
   const $ = (sel) => panel.querySelector(sel);
+  // Touch screen (iPhone, iPad, Android): bigger handles, "P" square instead of a collapsed panel
+  const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches;
   const input = $('.twl-add input');
 
   // Position: either docked to the right/left edge ("side") or moved freely ("pos").
@@ -1098,6 +1113,7 @@
     panel.classList.toggle('twl-left', side === 'left');
     const collapsed = GM_getValue('collapsed', false);
     panel.classList.toggle('twl-collapsed', collapsed);
+    panel.classList.toggle('twl-mini-mode', collapsed && IS_TOUCH);
     // Saved size, but never bigger than the screen (e.g. a size imported from a PC onto a phone).
     // Only the display is limited – the saved value stays as it is.
     const size = GM_getValue('size', null);
@@ -1155,6 +1171,40 @@
     if (ev.target.closest('button')) return;
     GM_setValue('pos', null);
     applyLayout();
+  });
+
+  // The "P" square of a collapsed panel on touch screens: a tap opens the panel again,
+  // dragging moves the square (and with it the panel).
+  const mini = $('.twl-mini');
+  mini.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    mini.setPointerCapture(ev.pointerId);
+    const rect = panel.getBoundingClientRect();
+    const start = { x: ev.clientX, y: ev.clientY, left: rect.left, top: rect.top };
+    let pos = null;
+    const move = (e) => {
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!pos && Math.abs(dx) + Math.abs(dy) < 8) return; // a finger tap wobbles a bit
+      pos = clampPos(start.left + dx, start.top + dy);
+      panel.style.left = `${pos.x}px`;
+      panel.style.top = `${pos.y}px`;
+      panel.style.right = 'auto';
+    };
+    const up = (e) => {
+      mini.removeEventListener('pointermove', move);
+      mini.removeEventListener('pointerup', up);
+      mini.removeEventListener('pointercancel', up);
+      if (pos) {
+        GM_setValue('pos', pos);
+      } else if (e.type === 'pointerup') {
+        GM_setValue('collapsed', false);
+        applyLayout();
+      }
+    };
+    mini.addEventListener('pointermove', move);
+    mini.addEventListener('pointerup', up);
+    mini.addEventListener('pointercancel', up);
   });
 
   // Resize from any of the four corners (mouse and touch). The opposite corner stays put.
@@ -2079,16 +2129,19 @@
     };
   }
 
+  const panelCollapsed = () => panel.classList.contains('twl-collapsed');
+
   function runNyan() {
     if (!nyanEnabled()) return;
-    if (document.hidden) return scheduleNyan();
+    if (document.hidden || panelCollapsed()) return scheduleNyan(); // no laps around a collapsed panel
     const start = performance.now();
     nyan.style.display = trail.style.display = 'block';
     const step = (t) => {
       const path = nyanPath(panel.getBoundingClientRect()); // live, in case the panel is being resized
       const d = ((t - start) / 1000) * NYAN_SPEED;
       // One lap: the cat runs back to the start, then the trail "flows" after it.
-      if (d - NYAN_TAIL_GAP - NYAN_TRAIL >= path.length) {
+      // Collapsed in the middle of a lap? Then stop right away.
+      if (d - NYAN_TAIL_GAP - NYAN_TRAIL >= path.length || panelCollapsed()) {
         nyan.style.display = trail.style.display = 'none';
         scheduleNyan();
         return;

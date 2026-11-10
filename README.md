@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.14.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.15.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -110,7 +110,7 @@ All options live on their own settings page behind **⚙**. The UI is available 
 - **Automatic backup:** everything is also backed up in the browser's storage and restored automatically on load if the Tampermonkey storage ever ends up empty.
 
 ### 🌈 Nyan Cat
-Runs around the panel border every now and then, rainbow included. Can be switched off. Just because.
+Runs around the panel border every now and then, rainbow included – but not while the panel is collapsed. Can be switched off. Just because.
 
 ---
 
@@ -127,7 +127,7 @@ Works with [Tampermonkey for Safari](https://apps.apple.com/app/tampermonkey/id6
 3. Open the [install link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js) in **Safari** and install.
 4. Move your list and keys over with ⬇ Export on the PC and ⬆ Import on the phone.
 
-On touch screens the resize corners are bigger and the war list buttons are always visible.
+On touch screens the resize corners are bigger and the war list buttons are always visible. Collapsing the panel (–) shrinks it to a small orange **P** square – tap it to open the panel again, drag it to move it. During a chain alarm the square blinks red.
 
 ### Updates
 - **Automatic:** Tampermonkey checks for new versions on its own, once a day by default. You can change the interval under *Tampermonkey → Settings → Script update check interval*.
@@ -242,6 +242,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.15.0** | „P“ square for a collapsed panel on touch screens, Nyan Cat pauses while collapsed |
 | **2.14.0** | Resize from all four corners (touch-friendly), panel always fits the screen, update check inside the script, iPhone instructions |
 | **2.13.1** | War list buttons only appear on hover, as a small overlay |
 | **2.13.0** | + and copy buttons next to every enemy in the ranked war list |
