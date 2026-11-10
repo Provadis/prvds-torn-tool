@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.16.0
+// @version      2.16.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -894,12 +894,12 @@
       padding: 0; border-radius: 8px; border: 2px solid #2a1a0e; background: #ff7518; color: #fff;
       font: bold 20px/1 Arial, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.6); touch-action: none; }
     /* Header mode: button after Torn's ☰ menu, panel inline below the header in full screen height */
-    .twl-hbtn { position: absolute; z-index: 10; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+    .twl-hbtn { position: absolute; z-index: 2147483000; pointer-events: auto !important; touch-action: manipulation; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
       height: 30px; min-width: 30px; padding: 0 7px; margin: 0; border-radius: 6px; border: 2px solid #2a1a0e;
       background: #ff7518; color: #fff; font: bold 17px/1 Arial, sans-serif; white-space: nowrap; cursor: pointer;
       -webkit-tap-highlight-color: transparent; }
     .twl-hbtn.twl-hbtn-open { background: #c4560f; box-shadow: inset 0 2px 4px rgba(0,0,0,.4); }
-    .twl-htimer { position: absolute; z-index: 10; display: none; align-items: center; box-sizing: border-box; height: 30px;
+    .twl-htimer { position: absolute; z-index: 2147483000; display: none; align-items: center; box-sizing: border-box; height: 30px;
       padding: 0 7px; border-radius: 6px; border: 2px solid #2a1a0e; background: #ff7518; color: #fff;
       font: bold 14px/1 Arial, sans-serif; white-space: nowrap; pointer-events: none; }
     .twl-htimer.twl-on { display: inline-flex; }
@@ -1303,13 +1303,29 @@
     }
   }
   window.addEventListener('resize', placeHeaderBtn);
-  headerBtn.addEventListener('click', (ev) => {
-    ev.preventDefault();
-    ev.stopPropagation();
+  // The P toggles the panel. It reacts to the finger lifting (pointerup) instead of "click":
+  // Torn's header handles touches itself, and on iOS that can swallow the click entirely.
+  // Touches on the P never reach Torn's handlers. "click" stays as a fallback (keyboard etc.).
+  let headerToggleAt = 0;
+  function toggleFromHeader() {
+    if (Date.now() - headerToggleAt < 500) return; // pointerup and click from the same tap
+    headerToggleAt = Date.now();
     const open = GM_getValue('collapsed', false);
     GM_setValue('collapsed', !open);
     applyLayout();
     if (open) window.scrollTo({ top: 0, behavior: 'smooth' }); // header + panel in view, even when scrolled down
+  }
+  for (const type of ['pointerdown', 'touchstart', 'touchend', 'mousedown']) {
+    headerBtn.addEventListener(type, (ev) => ev.stopPropagation(), { passive: true });
+  }
+  headerBtn.addEventListener('pointerup', (ev) => {
+    ev.stopPropagation();
+    if (ev.isPrimary !== false && ev.button <= 0) toggleFromHeader();
+  });
+  headerBtn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    toggleFromHeader();
   });
 
   // Resize from any of the four corners (mouse and touch). The opposite corner stays put.
