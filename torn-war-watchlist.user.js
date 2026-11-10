@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.18.0
+// @version      2.18.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -964,7 +964,11 @@
     .twl-htimer.twl-compact { font-size: 12px; padding: 0 4px; }
     .twl-htimer.twl-alert { background: #d00000; box-shadow: 0 0 10px 2px rgba(255,0,0,.8); animation: twl-blink 1s steps(1) infinite; }
     #twl-panel.twl-inline { position: relative !important; left: auto !important; top: auto !important; right: auto !important;
-      width: auto !important; height: calc(100vh - 12px) !important; height: calc(100dvh - 12px) !important; margin: 6px; z-index: 5; }
+      width: auto !important; margin: 6px; z-index: 5;
+      /* Fills the screen below Torn's header (--twl-top = where the panel starts), so it ends above
+         Safari's bottom address bar instead of running under it */
+      height: max(260px, calc(100vh - var(--twl-top, 0px) - 6px)) !important;
+      height: max(260px, calc(100dvh - var(--twl-top, 0px) - 6px)) !important; }
     #twl-panel.twl-inline.twl-collapsed { display: none !important; }
     #twl-panel.twl-inline .twl-resize, #twl-panel.twl-inline button.twl-mini { display: none !important; }
     #twl-panel.twl-inline .twl-head { cursor: default; }
@@ -1111,7 +1115,9 @@
     /* Header buttons: real refresh icon; on touch the dock button is gone, collapse too when the header P toggles */
     .twl-refresh svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6;
       stroke-linecap: round; stroke-linejoin: round; vertical-align: -2px; }
-    #twl-panel.twl-touch .twl-head [data-act="side"], #twl-panel.twl-touch.twl-inline .twl-head [data-act="collapse"] { display: none; }
+    /* Pause lives in the settings grid on touch screens */
+    #twl-panel.twl-touch .twl-head [data-act="side"], #twl-panel.twl-touch .twl-head .twl-pause,
+    #twl-panel.twl-touch.twl-inline .twl-head [data-act="collapse"] { display: none; }
     #twl-panel.twl-touch .twl-head button.twl-refresh, #twl-panel.twl-touch .twl-head button.twl-settings-btn {
       display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 28px; font-size: 15px; }
     #twl-panel.twl-touch .twl-head .twl-refresh svg { width: 16px; height: 16px; vertical-align: 0; }
@@ -1325,6 +1331,15 @@
     };
   }
 
+  // Inline panel: remember where it starts on the page, the CSS height subtracts that
+  let headerObserved = false;
+  function fitInline() {
+    if (!panel.classList.contains('twl-inline') || panel.classList.contains('twl-collapsed')) return;
+    const marginTop = 6;
+    const top = Math.max(0, Math.round(panel.getBoundingClientRect().top + window.scrollY - marginTop));
+    panel.style.setProperty('--twl-top', `${top + marginTop}px`);
+  }
+
   function applyLayout() {
     // Header mode: the panel lives in the page right below Torn's header, in full screen height
     panel.classList.toggle('twl-inline', headerMode);
@@ -1337,6 +1352,11 @@
       panel.classList.add('twl-sized'); // flex layout, the list scrolls inside
       panel.style.left = panel.style.top = panel.style.right = panel.style.width = panel.style.height = '';
       headerBtn.classList.toggle('twl-hbtn-open', !collapsed);
+      fitInline();
+      if (root && !headerObserved && window.ResizeObserver) {
+        headerObserved = true;
+        new ResizeObserver(fitInline).observe(root); // e.g. the news ticker loads later
+      }
       return;
     }
     if (panel.parentElement !== document.body) document.body.appendChild(panel);
