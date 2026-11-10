@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.17.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.18.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -129,7 +129,7 @@ Works with [Tampermonkey for Safari](https://apps.apple.com/app/tampermonkey/id6
 
 On touch screens the resize corners are bigger and the war list buttons are always visible. In Torn's mobile header a small orange **P** button sits right after the ☰ menu. While a chain runs, a timer badge appears next to it (e.g. **⛓ 03:45**, just **03:45** if space is tight) and blinks red below 1:30. Torn's mobile chain bar has no timer, so on touch screens the timer comes from the Torn API – every 6 seconds while a chain runs, and not at all otherwise (plus one request on page load and whenever the chain count changes). Tapping it opens the watchlist right below Torn's header in full screen height – the rest of Torn moves down underneath; tap again (or –) to close it. If the header layout isn't recognized, the panel falls back to a floating **P** square you can tap and drag.
 
-The ⚙ settings page is touch-friendly too: every on/off option is a big tile you tap (orange = on, grey = off), keys and data are dashed tiles, and language and update interval are tap bars (15 s – 5 min).
+The ⚙ settings page is touch-friendly too: every on/off option is a big tile you tap (orange = on, grey = off), keys and data are dashed tiles, and language and update interval are tap bars (15 s – 5 min). Under **View** you can switch the list to big **tiles** (2 columns, with the last action on each tile): tap a tile to open the profile, long-press it for attack, profile, copy and remove.
 
 ### Updates
 - **Automatic:** Tampermonkey checks for new versions on its own, once a day by default. You can change the interval under *Tampermonkey → Settings → Script update check interval*.
@@ -252,6 +252,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.18.0** | New view setting: list or 2-column tiles (tap = profile, long press = attack / profile / copy / remove). Refresh button with a real icon; on touch screens bigger ⚙ and refresh buttons, no dock button and no – while the header P toggles the panel |
 | **2.17.0** | Touch settings as a grid: on/off tiles (orange = on), key tiles, tap bars for language and update interval; volume only shows while the bomb sound is on. Desktop keeps the classic rows |
 | **2.16.5** | „Check for updates“ finds a new release right away (asks GitHub for the newest commit instead of the cached file) and links the install to exactly that file |
 | **2.16.4** | Header timer badge (and its API requests) respect the chain timer setting |

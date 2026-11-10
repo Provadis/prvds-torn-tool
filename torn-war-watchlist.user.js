@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.17.0
+// @version      2.18.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -73,6 +73,7 @@
     ffOn: isBool,
     ffKey: (v) => typeof v === 'string',
     lang: (v) => v === 'de' || v === 'en',
+    view: (v) => v === 'list' || v === 'tiles',
   };
 
   // ---- Language (English / German) ----------------------------------------
@@ -96,6 +97,15 @@
       secInterval: 'Update-Intervall',
       secData: 'Daten',
       secHelp: 'Hilfe',
+      secView: 'Ansicht',
+      viewList: 'Liste',
+      viewTiles: 'Kacheln',
+      seen: (age) => `vor ${age}`,
+      seenNow: 'online',
+      menuAttack: '⚔ Angreifen',
+      menuProfile: '👤 Profil',
+      menuCopy: '📋 Kopieren',
+      menuRemove: '✕ Entfernen',
       tileOn: 'AN',
       tileOff: 'AUS',
       tileChain: 'Chain-Timer',
@@ -238,6 +248,15 @@
       secInterval: 'Update interval',
       secData: 'Data',
       secHelp: 'Help',
+      secView: 'View',
+      viewList: 'List',
+      viewTiles: 'Tiles',
+      seen: (age) => `${age} ago`,
+      seenNow: 'online',
+      menuAttack: '⚔ Attack',
+      menuProfile: '👤 Profile',
+      menuCopy: '📋 Copy',
+      menuRemove: '✕ Remove',
       tileOn: 'ON',
       tileOff: 'OFF',
       tileChain: 'Chain timer',
@@ -846,6 +865,17 @@
     }
   }
 
+  const getView = () => (GM_getValue('view', 'list') === 'tiles' ? 'tiles' : 'list');
+  // Rough "last action" for the tiles: 3 min / 2 h / 4 d
+  function seenLabel(ageS) {
+    if (ageS == null) return '';
+    if (ageS < 120) return t('seenNow');
+    const m = Math.floor(ageS / 60);
+    if (m < 60) return t('seen', `${m} min`);
+    const h = Math.floor(m / 60);
+    return t('seen', h < 24 ? `${h} h` : `${Math.floor(h / 24)} d`);
+  }
+
   function colorClass(ageS) {
     if (ageS == null) return 'twl-unknown';
     if (ageS > GREEN_AFTER_S) return 'twl-green';
@@ -1078,6 +1108,41 @@
     #twl-panel.twl-touch .twl-legend summary { padding: 11px 0; }
     #twl-panel.twl-touch .twl-legend[open] { padding-bottom: 10px; }
     #twl-panel.twl-touch .twl-spage { padding-bottom: 8px; }
+    /* Header buttons: real refresh icon; on touch the dock button is gone, collapse too when the header P toggles */
+    .twl-refresh svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6;
+      stroke-linecap: round; stroke-linejoin: round; vertical-align: -2px; }
+    #twl-panel.twl-touch .twl-head [data-act="side"], #twl-panel.twl-touch.twl-inline .twl-head [data-act="collapse"] { display: none; }
+    #twl-panel.twl-touch .twl-head button.twl-refresh, #twl-panel.twl-touch .twl-head button.twl-settings-btn {
+      display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 28px; font-size: 15px; }
+    #twl-panel.twl-touch .twl-head .twl-refresh svg { width: 16px; height: 16px; vertical-align: 0; }
+    /* Tile view of the list: 2 columns, tap = profile, long press / right click = action menu */
+    .twl-seen { display: none; }
+    .twl-list.twl-view-tiles .twl-grows { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding-left: 4px; }
+    .twl-list.twl-view-tiles .twl-grows > :not(.twl-row) { grid-column: 1 / -1; }
+    .twl-list.twl-view-tiles .twl-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: "who ff" "age seen"; align-items: center; gap: 6px 4px; min-height: 54px; margin: 0;
+      padding: 6px 7px; border-radius: 7px; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .twl-list.twl-view-tiles .twl-row:active { filter: brightness(1.15); }
+    .twl-view-tiles .twl-who { grid-area: who; font-size: 12.5px; }
+    .twl-view-tiles .twl-who .twl-id, .twl-view-tiles .twl-x { display: none; }
+    .twl-view-tiles .twl-who a { -webkit-touch-callout: none; }
+    .twl-view-tiles .twl-who a::after { content: ""; position: absolute; inset: 0; } /* whole tile opens the profile */
+    .twl-view-tiles .twl-ff { grid-area: ff; text-shadow: none; }
+    .twl-view-tiles .twl-age { grid-area: age; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+    .twl-view-tiles .twl-seen { display: block; grid-area: seen; font-size: 10px; opacity: .75; white-space: nowrap; }
+    .twl-view-tiles .twl-row.twl-green { background: linear-gradient(#24893d, #1a6a2e); }
+    .twl-view-tiles .twl-row.twl-orange { background: linear-gradient(#d97700, #ad5c00); }
+    .twl-view-tiles .twl-row.twl-red { background: linear-gradient(#b51f22, #8c1518); }
+    .twl-view-tiles .twl-row.twl-hosp { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .55); }
+    .twl-pmenu { position: absolute; z-index: 10; min-width: 150px; padding: 4px; border: 1px solid #ff7518; border-radius: 8px;
+      background: #1b1b1f; box-shadow: 0 6px 20px rgba(0, 0, 0, .8); }
+    .twl-pmenu[hidden] { display: none; }
+    .twl-pm-title { padding: 4px 6px 6px; color: #ffcf9e; font-weight: bold; white-space: nowrap; }
+    .twl-pm-title span { color: #999; font-weight: normal; }
+    #twl-panel .twl-pmenu button { display: block; width: 100%; margin-top: 3px; padding: 8px 10px; border-radius: 6px;
+      text-align: left; font-weight: bold; background: #26262c; border-color: #3a3a42; }
+    #twl-panel .twl-pmenu button[data-act="menu-remove"] { color: #ff9a9a; }
     .twl-rate { color: #999; }
     .twl-rate.twl-warn { color: #ff9a3c; }
     .twl-empty { color: #999; padding: 4px 0; }
@@ -1108,7 +1173,7 @@
     <div class="twl-head">
       <span class="twl-title" data-i18n-title="dragHint">🎃 Watchlist <span class="twl-count"></span></span>
       <button data-act="pause" class="twl-pause"></button>
-      <button data-act="refresh" data-i18n-title="refreshNow">⟳</button>
+      <button data-act="refresh" class="twl-refresh" data-i18n-title="refreshNow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
       <button data-act="settings" class="twl-settings-btn" data-i18n-title="settings">⚙</button>
       <button data-act="side" data-i18n-title="dock">⇄</button>
       <button data-act="collapse" data-i18n-title="collapse">–</button>
@@ -1157,6 +1222,11 @@
             <button type="button" data-act="seg-lang" data-v="de">Deutsch</button>
             <button type="button" data-act="seg-lang" data-v="en">English</button>
           </div>
+          <div class="twl-sec" data-i18n="secView"></div>
+          <div class="twl-seg">
+            <button type="button" data-act="seg-view" data-v="list">☰ <span data-i18n="viewList"></span></button>
+            <button type="button" data-act="seg-view" data-v="tiles">▦ <span data-i18n="viewTiles"></span></button>
+          </div>
           <div class="twl-sec" data-i18n="secInterval"></div>
           <div class="twl-seg">
             ${REFRESH_PRESETS.map((v) => `<button type="button" data-act="seg-interval" data-v="${v}">${v < 60 ? `${v} s` : `${v / 60} min`}</button>`).join('')}
@@ -1176,6 +1246,8 @@
         <div class="twl-settings twl-s-old">
           <span data-i18n="language"></span>
           <select class="twl-lang"><option value="de">Deutsch</option><option value="en">English</option></select>
+          <span data-i18n="secView"></span>
+          <select class="twl-view"><option value="list" data-i18n="viewList"></option><option value="tiles" data-i18n="viewTiles"></option></select>
         </div>
         <div class="twl-settings twl-s-ver">
           <span class="twl-version"></span>
@@ -1589,6 +1661,7 @@
         </div>
         <span class="twl-age"></span>
         <span class="twl-ff"></span>
+        <span class="twl-seen"></span>
         <button class="twl-x" data-act="remove" data-id="${e.id}" title="${t('remove')}">✕</button>
       </div>`;
     // Extra lines of a watched faction: error / no data yet / restore button
@@ -1628,13 +1701,17 @@
       : `<div class="twl-empty">${t('emptyList')}</div>`);
     const ffOn = ffEnabled();
     const ffCache = ffOn ? getFfCache() : {};
+    const tilesView = getView() === 'tiles';
+    $('.twl-list').classList.toggle('twl-view-tiles', tilesView);
     for (const e of rows) {
       const row = $(`.twl-row[data-id="${e.id}"]`);
       if (!row) continue; // group collapsed
       // Color still by last action, the status (hospital countdown) is displayed
-      row.className = `twl-row ${colorClass(e.age)}`;
+      row.className = `twl-row ${colorClass(e.age)}${e.hosp ? ' twl-hosp' : ''}`;
       row.querySelector('.twl-age').textContent = statusLabel(e.status, now);
       row.title = e.age == null ? '' : t('lastAction', formatAge(e.age));
+      // Tile view shows the last action right on the tile (no tooltips on phones)
+      if (tilesView) row.querySelector('.twl-seen').textContent = seenLabel(e.age);
       const ffEl = row.querySelector('.twl-ff');
       ffEl.style.display = ffOn ? '' : 'none';
       if (ffOn) {
@@ -1820,6 +1897,28 @@
         intervalInput.value = btn.dataset.v;
         intervalInput.dispatchEvent(new Event('change'));
         break;
+      case 'seg-view':
+        setView(btn.dataset.v);
+        break;
+      // Action menu of a tile (long press)
+      case 'menu-attack':
+        hidePlayerMenu();
+        location.href = `https://www.torn.com/loader.php?sid=attack&user2ID=${id}`;
+        break;
+      case 'menu-profile':
+        hidePlayerMenu();
+        location.href = `https://www.torn.com/profiles.php?XID=${id}`;
+        break;
+      case 'menu-copy':
+        copyPlayer(btn.dataset.name, id)
+          .then(() => { btn.textContent = `✓ ${t('warCopied')}`; })
+          .catch(() => { btn.textContent = t('warCopyFailed'); })
+          .finally(() => setTimeout(hidePlayerMenu, 700));
+        break;
+      case 'menu-remove':
+        hidePlayerMenu();
+        removePlayer(id);
+        break;
     }
   });
 
@@ -1960,6 +2059,79 @@
     updateChain();
   });
   applyLang();
+
+  const viewSelect = $('.twl-view');
+  function setView(v) {
+    GM_setValue('view', v === 'tiles' ? 'tiles' : 'list');
+    viewSelect.value = getView();
+    hidePlayerMenu();
+    render();
+  }
+  viewSelect.value = getView();
+  viewSelect.addEventListener('change', () => setView(viewSelect.value));
+
+  // ---- Tile view: tap = profile, long press (or right click) = small action menu -----------
+  const LONG_PRESS_MS = 450;
+  const pmenu = document.createElement('div');
+  pmenu.className = 'twl-pmenu';
+  pmenu.hidden = true;
+  panel.appendChild(pmenu);
+  function hidePlayerMenu() { pmenu.hidden = true; }
+  function openPlayerMenu(row, x, y) {
+    const id = parseInt(row.dataset.id, 10);
+    const link = row.querySelector('.twl-who a');
+    const name = link ? link.textContent.trim() : String(id);
+    const item = (act, label) => `<button type="button" data-act="${act}" data-id="${id}" data-name="${esc(name)}">${esc(t(label))}</button>`;
+    pmenu.innerHTML = `<div class="twl-pm-title">${esc(name)} <span>[${id}]</span></div>`
+      + item('menu-attack', 'menuAttack') + item('menu-profile', 'menuProfile')
+      + item('menu-copy', 'menuCopy') + item('menu-remove', 'menuRemove');
+    pmenu.hidden = false;
+    // Next to the finger, but always fully inside the panel
+    const pr = panel.getBoundingClientRect();
+    const w = pmenu.offsetWidth;
+    const h = pmenu.offsetHeight;
+    pmenu.style.left = `${Math.max(4, Math.min(x - pr.left - w / 2, pr.width - w - 4))}px`;
+    pmenu.style.top = `${Math.max(4, Math.min(y - pr.top + 12, pr.height - h - 4))}px`;
+  }
+  const listEl = $('.twl-list');
+  let pressTimer = 0;
+  let pressAt = null;
+  let pressFired = false;
+  let suppressClickUntil = 0;
+  const cancelPress = () => { clearTimeout(pressTimer); pressAt = null; };
+  listEl.addEventListener('pointerdown', (ev) => {
+    const row = getView() === 'tiles' && ev.button === 0 && ev.target.closest('.twl-row');
+    if (!row) return;
+    cancelPress();
+    pressFired = false;
+    pressAt = { x: ev.clientX, y: ev.clientY };
+    pressTimer = setTimeout(() => {
+      pressFired = true;
+      openPlayerMenu(row, pressAt.x, pressAt.y);
+      if (navigator.vibrate) navigator.vibrate(15);
+    }, LONG_PRESS_MS);
+  });
+  listEl.addEventListener('pointermove', (ev) => {
+    if (pressAt && Math.hypot(ev.clientX - pressAt.x, ev.clientY - pressAt.y) > 10) cancelPress();
+  });
+  listEl.addEventListener('pointerup', () => {
+    if (pressFired) suppressClickUntil = Date.now() + 400; // the release must not open the profile
+    cancelPress();
+  });
+  listEl.addEventListener('pointercancel', cancelPress);
+  listEl.addEventListener('click', (ev) => {
+    if (Date.now() < suppressClickUntil) { ev.preventDefault(); ev.stopPropagation(); }
+  }, true);
+  listEl.addEventListener('contextmenu', (ev) => {
+    const row = getView() === 'tiles' && ev.target.closest('.twl-row');
+    if (!row) return;
+    ev.preventDefault();
+    cancelPress();
+    openPlayerMenu(row, ev.clientX, ev.clientY);
+  });
+  document.addEventListener('pointerdown', (ev) => {
+    if (!pmenu.hidden && !pmenu.contains(ev.target)) hidePlayerMenu();
+  }, true);
 
   function addFromInput(add) {
     const id = parseInt(input.value.replace(/\D/g, ''), 10);
@@ -2570,6 +2742,7 @@
     setText(reload.querySelector('.twl-ic'), ffLoading ? '⏳' : '🔄');
 
     for (const b of panel.querySelectorAll('[data-act="seg-lang"]')) b.classList.toggle('twl-on', b.dataset.v === getLang());
+    for (const b of panel.querySelectorAll('[data-act="seg-view"]')) b.classList.toggle('twl-on', b.dataset.v === getView());
     const secs = getRefreshS();
     for (const b of panel.querySelectorAll('[data-act="seg-interval"]')) b.classList.toggle('twl-on', Number(b.dataset.v) === secs);
     const rate = $('.twl-rate');
@@ -2788,6 +2961,7 @@
   GM_addValueChangeListener('soundOn', (_k, _o, n, remote) => { if (remote) soundToggle.checked = n; });
   GM_addValueChangeListener('ffOn', (_k, _o, n, remote) => { if (remote) { ffToggle.checked = n; render(); } });
   GM_addValueChangeListener('lang', (_k, _o, _n, remote) => { if (remote) { applyLang(); render(); } });
+  GM_addValueChangeListener('view', (_k, _o, _n, remote) => { if (remote) { viewSelect.value = getView(); render(); } });
   GM_addValueChangeListener('soundVol', (_k, _o, n, remote) => {
     if (!remote) return;
     volInput.value = n;
