@@ -127,7 +127,7 @@ Works with [Tampermonkey for Safari](https://apps.apple.com/app/tampermonkey/id6
 3. Open the [install link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js) in **Safari** and install.
 4. Move your list and keys over with ⬇ Export on the PC and ⬆ Import on the phone.
 
-On touch screens the resize corners are bigger and the war list buttons are always visible. In Torn's mobile header a small orange **P** button sits right after the ☰ menu. While a chain runs it shows the chain timer instead (e.g. **⛓ 03:45**) and blinks red below 1:30. Tapping it opens the watchlist right below Torn's header in full screen height – the rest of Torn moves down underneath; tap again (or –) to close it. If the header layout isn't recognized, the panel falls back to a floating **P** square you can tap and drag.
+On touch screens the resize corners are bigger and the war list buttons are always visible. In Torn's mobile header a small orange **P** button sits right after the ☰ menu. While a chain runs, a timer badge appears next to it (e.g. **⛓ 03:45**, just **03:45** if space is tight) and blinks red below 1:30. Torn's mobile chain bar has no timer, so on touch screens the timer comes from the Torn API – every 6 seconds while a chain runs, and not at all otherwise (plus one request on page load and whenever the chain count changes). Tapping it opens the watchlist right below Torn's header in full screen height – the rest of Torn moves down underneath; tap again (or –) to close it. If the header layout isn't recognized, the panel falls back to a floating **P** square you can tap and drag.
 
 ### Updates
 - **Automatic:** Tampermonkey checks for new versions on its own, once a day by default. You can change the interval under *Tampermonkey → Settings → Script update check interval*.
@@ -242,7 +242,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
-| **2.16.0** | Touch screens: P / chain timer button in Torn's header, watchlist opens inline below the header in full height |
+| **2.16.0** | Touch screens: P button and chain timer badge in Torn's header, watchlist opens inline below the header in full height, chain timer via API (every 6 s while a chain runs) |
 | **2.15.0** | „P“ square for a collapsed panel on touch screens, Nyan Cat pauses while collapsed |
 | **2.14.0** | Resize from all four corners (touch-friendly), panel always fits the screen, update check inside the script, iPhone instructions |
 | **2.13.1** | War list buttons only appear on hover, as a small overlay |

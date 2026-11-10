@@ -898,10 +898,13 @@
       height: 30px; min-width: 30px; padding: 0 7px; margin: 0; border-radius: 6px; border: 2px solid #2a1a0e;
       background: #ff7518; color: #fff; font: bold 17px/1 Arial, sans-serif; white-space: nowrap; cursor: pointer;
       -webkit-tap-highlight-color: transparent; }
-    .twl-hbtn.twl-hbtn-chain { font-size: 14px; }
-    .twl-hbtn.twl-hbtn-chain.twl-hbtn-compact { font-size: 12px; padding: 0 4px; }
     .twl-hbtn.twl-hbtn-open { background: #c4560f; box-shadow: inset 0 2px 4px rgba(0,0,0,.4); }
-    .twl-hbtn.twl-hbtn-alert { background: #d00000; box-shadow: 0 0 10px 2px rgba(255,0,0,.8); animation: twl-blink 1s steps(1) infinite; }
+    .twl-htimer { position: absolute; z-index: 10; display: none; align-items: center; box-sizing: border-box; height: 30px;
+      padding: 0 7px; border-radius: 6px; border: 2px solid #2a1a0e; background: #ff7518; color: #fff;
+      font: bold 14px/1 Arial, sans-serif; white-space: nowrap; pointer-events: none; }
+    .twl-htimer.twl-on { display: inline-flex; }
+    .twl-htimer.twl-compact { font-size: 12px; padding: 0 4px; }
+    .twl-htimer.twl-alert { background: #d00000; box-shadow: 0 0 10px 2px rgba(255,0,0,.8); animation: twl-blink 1s steps(1) infinite; }
     #twl-panel.twl-inline { position: relative !important; left: auto !important; top: auto !important; right: auto !important;
       width: auto !important; height: calc(100vh - 12px) !important; height: calc(100dvh - 12px) !important; margin: 6px; z-index: 5; }
     #twl-panel.twl-inline.twl-collapsed { display: none !important; }
@@ -1118,6 +1121,9 @@
   headerBtn.type = 'button';
   headerBtn.className = 'twl-hbtn';
   headerBtn.textContent = 'P';
+  // Chain timer badge right next to the P (only while a chain runs); the P stays visible
+  const headerTimer = document.createElement('span');
+  headerTimer.className = 'twl-htimer';
   let headerMode = false;
   const input = $('.twl-add input');
 
@@ -1273,18 +1279,22 @@
     const top = `${headerSpot.offsetTop + Math.round((headerSpot.offsetHeight - headerBtn.offsetHeight) / 2)}px`;
     if (headerBtn.style.left !== left) headerBtn.style.left = left;
     if (headerBtn.style.top !== top) headerBtn.style.top = top;
+    // Timer badge right next to the P
+    const tLeft = `${headerBtn.offsetLeft + headerBtn.offsetWidth + 4}px`;
+    if (headerTimer.style.left !== tLeft) headerTimer.style.left = tLeft;
+    if (headerTimer.style.top !== top) headerTimer.style.top = top;
     // Not enough room before Torn's icons on the right for "⛓ 01:12"? Then a compact "01:12"
     const nav = document.querySelector('#header-root .header-navigation');
     if (nav) {
-      const room = nav.getBoundingClientRect().left - headerBtn.getBoundingClientRect().left - 4;
-      headerBtn.classList.toggle('twl-hbtn-compact', room < 80);
+      const room = nav.getBoundingClientRect().left - headerBtn.getBoundingClientRect().right - 8; // works while hidden too
+      headerTimer.classList.toggle('twl-compact', room < 76);
     }
   }
   function syncHeaderMode() {
     if (!IS_TOUCH) return;
-    if (!headerBtn.isConnected || !headerSpot || !headerSpot.isConnected) {
+    if (!headerBtn.isConnected || !headerTimer.isConnected || !headerSpot || !headerSpot.isConnected) {
       headerSpot = findHeaderSpot();
-      if (headerSpot) headerSpot.after(headerBtn); // Torn redraws its header now and then – put it back
+      if (headerSpot) headerSpot.after(headerBtn, headerTimer); // Torn redraws its header now and then – put it back
     }
     placeHeaderBtn();
     if (headerBtn.isConnected !== headerMode) {
@@ -1520,7 +1530,9 @@
     const hits = getHits();
     const hitsCall = hitsEnabled() && !(hits.denied && GM_getValue('hitsDeniedKey', '') === getKey()) ? 1 : 0;
     const calls = factions.length + list.filter((e) => !covered.has(e.id)).length + hitsCall;
-    const perMin = Math.round(calls * 60 / getRefreshS());
+    // plus the chain timer on touch screens: every 6 s while a chain runs
+    const chainPerMin = useApiChain() && apiChainRunning() ? Math.round(60000 / CHAIN_POLL_RUNNING_MS) : 0;
+    const perMin = Math.round(calls * 60 / getRefreshS()) + chainPerMin;
     const rate = $('.twl-rate');
     rate.textContent = t('perMin', perMin);
     rate.title = t('callsPerUpdate', calls);
@@ -1802,7 +1814,8 @@
   // Finds the chain bar in the sidebar. Torn appends random suffixes to class names
   // (e.g. "bar-value___xY12"), hence partial matches; as a fallback via the label "Chain:".
   function findChainBar() {
-    const bar = document.querySelector('#barChain, [id^="barChain"], [class*="chain-bar"]');
+    // Desktop: #barChain / chain-bar; mobile: <a class="chainBar___…"> (count only, no timer)
+    const bar = document.querySelector('#barChain, [id^="barChain"], [class*="chain-bar"], a[class*="chainBar"]');
     if (bar) return bar;
     const label = [...document.querySelectorAll('#sidebar p, #sidebar span, [class*="sidebar"] p, [class*="sidebar"] span')]
       .find((el) => /^chain:?$/i.test(el.textContent.trim()));
@@ -1835,7 +1848,7 @@
   function readSidebarChain() {
     const bar = findChainBar();
     if (!bar || panel.contains(bar)) return null;
-    const valueEl = bar.querySelector('[class*="bar-value"]');
+    const valueEl = bar.querySelector('[class*="bar-value"], [class*="barValue"]');
     const timeEl = bar.querySelector('[class*="bar-timeleft"]');
     // Strip the time first so it isn't read as part of the maximum
     const rawValue = visibleText(valueEl || bar).replace(/\d{1,2}:\d{2}(?::\d{2})?/g, ' ').replace(/\s+/g, ' ');
@@ -1880,7 +1893,62 @@
     return { value: max ? `${fmtCount(cur)} / ${fmtCount(max)}` : fmtCount(cur), time };
   }
 
-  const readChain = () => readSidebarChain() || readAttackChain();
+  // Torn's mobile chain bar only shows the count ("4 / 10"), no timer. On touch screens the
+  // timer therefore comes from the API (faction chain): every 6 s while a chain runs, counted
+  // down locally in between. Without a running chain there is no polling – only one request on
+  // page load and one whenever the count in Torn's bar changes (chain started, hit landed).
+  const CHAIN_POLL_RUNNING_MS = 6000;
+  let apiChain = null;          // { current, max, end (ms timestamp) }
+  let apiChainAttempt = 0;      // last request (also failed ones), so errors don't hammer the API
+  let apiChainLoading = false;
+  let apiChainDenied = false;   // key can't read the faction chain – stop asking
+  let apiChainCount = null;     // count last seen in Torn's bar
+  const useApiChain = () => IS_TOUCH && !apiChainDenied && !!getKey() && !isPaused();
+  const apiChainRunning = () => !!apiChain && apiChain.current > 0 && apiChain.end > Date.now();
+
+  async function fetchApiChain() {
+    const key = getKey();
+    if (!key || apiChainLoading) return;
+    apiChainLoading = true;
+    apiChainAttempt = Date.now();
+    try {
+      const d = await apiGet('faction/?selections=chain', key);
+      if (d.error) {
+        if (KEY_ERRORS.includes(d.error.code) || d.error.code === 7) apiChainDenied = true;
+        return;
+      }
+      const c = d.chain || {};
+      apiChain = { current: c.current || 0, max: c.max || 0, end: Date.now() + (c.timeout || 0) * 1000 };
+    } catch {
+      // network hiccup – try again with the next poll
+    } finally {
+      apiChainLoading = false;
+    }
+  }
+
+  function readApiChain(barCount) {
+    if (!useApiChain()) return null;
+    const now = Date.now();
+    if (barCount != null && barCount !== apiChainCount) {
+      const first = apiChainCount === null;
+      apiChainCount = barCount;
+      if (!first) setTimeout(fetchApiChain, 1500); // hit landed – the timer was reset
+    }
+    const due = apiChainAttempt === 0 || (apiChainRunning() && now - apiChainAttempt > CHAIN_POLL_RUNNING_MS);
+    if (due) fetchApiChain();
+    if (!apiChainRunning()) return null;
+    const left = Math.ceil((apiChain.end - now) / 1000);
+    const time = `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`;
+    const value = apiChain.max ? `${fmtCount(apiChain.current)} / ${fmtCount(apiChain.max)}` : fmtCount(apiChain.current);
+    return { value, time };
+  }
+
+  // Page first (free); if it has no timer (mobile), fill in from the API
+  const readChain = () => {
+    const page = readSidebarChain() || readAttackChain();
+    if (page && page.time) return page;
+    return readApiChain(page ? page.value : null) || page;
+  };
 
   const parseClock = (t) => {
     const parts = t.split(':').map(Number);
@@ -1894,14 +1962,14 @@
     box.style.display = show && chain ? '' : 'none';
     const left = chain ? parseClock(chain.time) : null;
     updateBomb(left);
-    // Header button: "P", or "⛓ mm:ss" while a chain runs – red and blinking below 1:30
+    // Header: the P always stays; while a chain runs a timer badge "⛓ mm:ss" sits next to it,
+    // red and blinking below 1:30
     if (headerMode) {
       const running = left != null && left > 0;
-      const compact = headerBtn.classList.contains('twl-hbtn-compact');
-      const label = running ? (compact ? chain.time : `⛓ ${chain.time}`) : 'P';
-      if (headerBtn.textContent !== label) headerBtn.textContent = label;
-      headerBtn.classList.toggle('twl-hbtn-chain', running);
-      headerBtn.classList.toggle('twl-hbtn-alert', running && left < CHAIN_ALERT_S);
+      const label = running ? (headerTimer.classList.contains('twl-compact') ? chain.time : `⛓ ${chain.time}`) : '';
+      if (headerTimer.textContent !== label) headerTimer.textContent = label;
+      headerTimer.classList.toggle('twl-on', running);
+      headerTimer.classList.toggle('twl-alert', running && left < CHAIN_ALERT_S);
     }
     const alert = show && left != null && left > 0 && left < CHAIN_ALERT_S;
     box.classList.toggle('twl-chain-alert', alert);
