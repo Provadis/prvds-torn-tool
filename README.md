@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.13.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.14.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -91,7 +91,7 @@ Counts your **successful attacks since 00:00 TCT**. This needs a key with Limite
 
 ### 🪟 Movable & resizable
 - **Move:** drag the header. Double-click docks the panel back to the edge.
-- **Resize** via the bottom corner.
+- **Resize** from any of the four corners (bigger handles on touch screens). A saved size that doesn't fit the screen – e.g. imported from a PC onto a phone – is shrunk to fit automatically.
 - **Collapse** with –.
 
 Everything is saved and shared across all Torn tabs.
@@ -120,9 +120,18 @@ Runs around the panel border every now and then, rainbow included. Can be switch
 2. **[Open this link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)** → Tampermonkey shows its install page → **Install**.
 3. Reload [torn.com](https://www.torn.com) – the 🎃 panel appears on the right.
 
+### 📱 iPhone / iPad
+Works with [Tampermonkey for Safari](https://apps.apple.com/app/tampermonkey/id6738342400) (iOS 15+):
+1. Install Tampermonkey from the App Store.
+2. *Settings → Safari → Extensions → Tampermonkey*: turn it on and allow it for torn.com (or all websites).
+3. Open the [install link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js) in **Safari** and install.
+4. Move your list and keys over with ⬇ Export on the PC and ⬆ Import on the phone.
+
+On touch screens the resize corners are bigger and the war list buttons are always visible.
+
 ### Updates
 - **Automatic:** Tampermonkey checks for new versions on its own, once a day by default. You can change the interval under *Tampermonkey → Settings → Script update check interval*.
-- **Right away:** ⚙ → **🔄 Check for updates**, or *Check for userscript updates* in the Tampermonkey dashboard.
+- **Right away:** ⚙ → **🔄 Check for updates** shows whether a newer version is on GitHub. To install it, use *Check for userscript updates* in the Tampermonkey menu (on a PC the „Install“ link next to the result works too).
 - **Your data survives updates:** list, keys and settings stay.
 
 ---
@@ -233,6 +242,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.14.0** | Resize from all four corners (touch-friendly), panel always fits the screen, update check inside the script, iPhone instructions |
 | **2.13.1** | War list buttons only appear on hover, as a small overlay |
 | **2.13.0** | + and copy buttons next to every enemy in the ranked war list |
 | **2.12.1** | „🔄 Reload FF“ button to refetch all FF scores right away |

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.13.1
+// @version      2.14.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -15,6 +15,7 @@
 // @grant        GM_xmlhttpRequest
 // @connect      api.torn.com
 // @connect      ffscouter.com
+// @connect      raw.githubusercontent.com
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -90,7 +91,13 @@
       language: 'Sprache',
       version: (v) => `Version ${v}`,
       checkUpdates: '🔄 Nach Updates suchen',
-      checkUpdatesTitle: 'Öffnet die Skript-Datei – Tampermonkey zeigt dann, ob es eine neuere Version gibt',
+      checkUpdatesTitle: 'Prüft auf GitHub, ob es eine neuere Version gibt',
+      updChecking: 'Prüfe…',
+      updLatest: '✓ Aktuell',
+      updAvailable: (v) => `⬆ ${v} verfügbar`,
+      updInstall: 'Installieren',
+      updInstallTitle: 'Am PC zeigt Tampermonkey dann den Update-Dialog. Am iPhone: in Safari das Tampermonkey-Menü öffnen → „Nach Userscript-Updates suchen“.',
+      updFailed: 'Prüfung fehlgeschlagen',
       apiKey: '🔑 Torn API-Key',
       apiKeyTitle: 'Torn API-Key setzen',
       apiKeySet: 'gesetzt',
@@ -211,7 +218,13 @@
       language: 'Language',
       version: (v) => `Version ${v}`,
       checkUpdates: '🔄 Check for updates',
-      checkUpdatesTitle: 'Opens the script file – Tampermonkey then shows whether a newer version exists',
+      checkUpdatesTitle: 'Checks GitHub for a newer version',
+      updChecking: 'Checking…',
+      updLatest: '✓ Up to date',
+      updAvailable: (v) => `⬆ ${v} available`,
+      updInstall: 'Install',
+      updInstallTitle: 'On a PC, Tampermonkey then shows its update dialog. On iPhone: open the Tampermonkey menu in Safari → "Check for userscript updates".',
+      updFailed: 'Check failed',
       apiKey: '🔑 Torn API key',
       apiKeyTitle: 'Set Torn API key',
       apiKeySet: 'set',
@@ -832,19 +845,29 @@
     #twl-panel.twl-sized .twl-spage { flex: 1; min-height: 0; max-height: none; }
     .twl-spage { max-height: 70vh; overflow-y: auto; }
     #twl-panel .twl-main[hidden], #twl-panel .twl-spage[hidden] { display: none; }
-    .twl-resize { position: absolute; bottom: 0; width: 14px; height: 14px; touch-action: none; opacity: .7; }
+    /* Resize handles in all four corners; bigger on touch screens */
+    .twl-resize { position: absolute; z-index: 2; width: 12px; height: 12px; touch-action: none; opacity: .55; }
     .twl-resize:hover { opacity: 1; }
-    #twl-panel.twl-right .twl-resize { left: 0; cursor: nesw-resize;
-      background: linear-gradient(45deg, #ff7518 0 2px, transparent 2px 5px, #ff7518 5px 7px, transparent 7px); border-radius: 0 0 0 6px; }
-    #twl-panel.twl-left .twl-resize { right: 0; cursor: nwse-resize;
-      background: linear-gradient(-45deg, #ff7518 0 2px, transparent 2px 5px, #ff7518 5px 7px, transparent 7px); border-radius: 0 0 6px 0; }
+    .twl-resize[data-corner="tl"] { top: 0; left: 0; cursor: nwse-resize; border-radius: 6px 0 0 0;
+      background: linear-gradient(135deg, #ff7518 0 2px, transparent 2px 5px, #ff7518 5px 7px, transparent 7px); }
+    .twl-resize[data-corner="tr"] { top: 0; right: 0; cursor: nesw-resize; border-radius: 0 6px 0 0;
+      background: linear-gradient(-135deg, #ff7518 0 2px, transparent 2px 5px, #ff7518 5px 7px, transparent 7px); }
+    .twl-resize[data-corner="bl"] { bottom: 0; left: 0; cursor: nesw-resize; border-radius: 0 0 0 6px;
+      background: linear-gradient(45deg, #ff7518 0 2px, transparent 2px 5px, #ff7518 5px 7px, transparent 7px); }
+    .twl-resize[data-corner="br"] { bottom: 0; right: 0; cursor: nwse-resize; border-radius: 0 0 6px 0;
+      background: linear-gradient(-45deg, #ff7518 0 2px, transparent 2px 5px, #ff7518 5px 7px, transparent 7px); }
+    @media (pointer: coarse) {
+      .twl-resize { width: 24px; height: 24px; opacity: .8; }
+      .twl-resize[data-corner="tl"], .twl-resize[data-corner="tr"] { width: 16px; height: 16px; } /* don't cover the header buttons */
+    }
     #twl-panel.twl-collapsed .twl-resize { display: none; }
     #twl-panel.twl-right { right: 6px; }
     #twl-panel.twl-left { left: 6px; }
     #twl-panel button { background: #333; color: #eee; border: 1px solid #555; border-radius: 3px; cursor: pointer; padding: 1px 6px; font: inherit; }
     #twl-panel button:hover { background: #444; }
-    .twl-head { display: flex; align-items: center; gap: 4px; padding: 5px 6px; background: #2a1a0e; border-radius: 6px 6px 0 0;
+    .twl-head { display: flex; align-items: center; gap: 4px; padding: 5px 12px; background: #2a1a0e; border-radius: 6px 6px 0 0;
       cursor: move; user-select: none; touch-action: none; }
+    @media (pointer: coarse) { .twl-head { padding: 7px 17px; } } /* room for the bigger corner handles */
     .twl-title { flex: 1; font-weight: bold; color: #ff9a3c; }
     #twl-panel button.twl-hits { display: block; width: 100%; text-align: left; padding: 4px 8px; border: 0;
       border-bottom: 1px solid #5a3a1e; border-radius: 0; background: #22160c; color: #ffcf9e; font-weight: bold; }
@@ -917,6 +940,9 @@
     .twl-sp-head { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid #5a3a1e; color: #ff9a3c; }
     .twl-settings select { background: #111; color: #eee; border: 1px solid #555; border-radius: 3px; padding: 1px 3px; font: inherit; }
     .twl-key-status { color: #999; }
+    .twl-upd-status { color: #999; }
+    .twl-upd-status.twl-upd-new { color: #ff9a3c; font-weight: bold; }
+    #twl-panel .twl-upd-status a { color: #ffcf9e; text-decoration: underline; }
     .twl-legend { padding: 6px 2px; }
     .twl-legend summary { cursor: pointer; color: #ffcf9e; font-weight: bold; }
     .twl-lg-ex { margin: 6px 0 2px; font-size: 10px; color: #999; }
@@ -1007,6 +1033,7 @@
         <div class="twl-settings">
           <span class="twl-version"></span>
           <button data-act="update-check" data-i18n="checkUpdates" data-i18n-title="checkUpdatesTitle"></button>
+          <span class="twl-upd-status"></span>
         </div>
         <div class="twl-settings">
           <button data-act="key" data-i18n="apiKey" data-i18n-title="apiKeyTitle"></button>
@@ -1045,7 +1072,10 @@
       </div>
       <div class="twl-foot"><span class="twl-foot-text"></span><span class="twl-foot-rate"></span></div>
     </div>
-    <div class="twl-resize" data-i18n-title="resize"></div>`;
+    <div class="twl-resize" data-corner="tl" data-i18n-title="resize"></div>
+    <div class="twl-resize" data-corner="tr" data-i18n-title="resize"></div>
+    <div class="twl-resize" data-corner="bl" data-i18n-title="resize"></div>
+    <div class="twl-resize" data-corner="br" data-i18n-title="resize"></div>`;
   document.body.appendChild(panel);
 
   const $ = (sel) => panel.querySelector(sel);
@@ -1068,15 +1098,26 @@
     panel.classList.toggle('twl-left', side === 'left');
     const collapsed = GM_getValue('collapsed', false);
     panel.classList.toggle('twl-collapsed', collapsed);
+    // Saved size, but never bigger than the screen (e.g. a size imported from a PC onto a phone).
+    // Only the display is limited – the saved value stays as it is.
     const size = GM_getValue('size', null);
-    panel.style.width = size ? `${size.w}px` : '';
-    panel.style.height = size && !collapsed ? `${size.h}px` : '';
+    const maxW = Math.max(MIN_W, window.innerWidth - 8);
+    const maxH = Math.max(MIN_H, window.innerHeight - 8);
+    panel.style.width = size ? `${Math.min(size.w, maxW)}px` : '';
+    panel.style.height = size && !collapsed ? `${Math.min(size.h, maxH)}px` : '';
     panel.classList.toggle('twl-sized', !!size && !collapsed);
     // Only display the saved position, don't overwrite it – push it on screen in a smaller window
     const p = pos ? clampPos(pos.x, pos.y) : null;
     panel.style.left = p ? `${p.x}px` : '';
     panel.style.top = p ? `${p.y}px` : '';
     panel.style.right = p ? 'auto' : '';
+    // Still sticking out at the bottom? Then shorten it so the bottom corners stay reachable
+    if (size && !collapsed) {
+      const r = panel.getBoundingClientRect();
+      if (r.bottom > window.innerHeight - 4) {
+        panel.style.height = `${Math.max(MIN_H, Math.floor(window.innerHeight - 4 - r.top))}px`;
+      }
+    }
   }
   window.addEventListener('resize', applyLayout);
 
@@ -1116,38 +1157,58 @@
     applyLayout();
   });
 
-  // Resize via the handle in the bottom corner (towards the screen center, or to the right when
-  // the panel is moved freely).
-  const handle = $('.twl-resize');
-  handle.addEventListener('pointerdown', (ev) => {
-    ev.preventDefault();
-    handle.setPointerCapture(ev.pointerId);
-    const rect = panel.getBoundingClientRect();
-    const start = { x: ev.clientX, y: ev.clientY, w: rect.width, h: rect.height };
-    const dir = panel.classList.contains('twl-right') ? -1 : 1;
-    let size = null;
-    const move = (e) => {
-      const w = Math.min(window.innerWidth - 20, Math.max(180, start.w + dir * (e.clientX - start.x)));
-      const h = Math.min(window.innerHeight - rect.top - 10, Math.max(120, start.h + (e.clientY - start.y)));
-      size = { w: Math.round(w), h: Math.round(h) };
-      panel.style.width = `${size.w}px`;
-      panel.style.height = `${size.h}px`;
-      panel.classList.add('twl-sized');
-    };
-    const up = () => {
-      handle.removeEventListener('pointermove', move);
-      handle.removeEventListener('pointerup', up);
-      handle.removeEventListener('pointercancel', up);
-      if (size) GM_setValue('size', size);
-    };
-    handle.addEventListener('pointermove', move);
-    handle.addEventListener('pointerup', up);
-    handle.addEventListener('pointercancel', up);
-  });
-  handle.addEventListener('dblclick', () => {
-    GM_setValue('size', null);
-    applyLayout();
-  });
+  // Resize from any of the four corners (mouse and touch). The opposite corner stays put.
+  // A docked panel stays docked as long as its docked edge and its top don't move.
+  const MIN_W = 180;
+  const MIN_H = 120;
+  for (const handle of panel.querySelectorAll('.twl-resize')) {
+    const corner = handle.dataset.corner;
+    const fromLeft = corner.includes('l');
+    const fromTop = corner.includes('t');
+    handle.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      handle.setPointerCapture(ev.pointerId);
+      const r = panel.getBoundingClientRect();
+      const start = { x: ev.clientX, y: ev.clientY, l: r.left, t: r.top, rt: r.right, b: r.bottom };
+      let box = null;
+      const move = (e) => {
+        const dx = e.clientX - start.x;
+        const dy = e.clientY - start.y;
+        let { l, t, rt, b } = start;
+        if (fromLeft) l = Math.min(Math.max(0, l + dx), rt - MIN_W);
+        else rt = Math.max(Math.min(window.innerWidth, rt + dx), l + MIN_W);
+        if (fromTop) t = Math.min(Math.max(0, t + dy), b - MIN_H);
+        else b = Math.max(Math.min(window.innerHeight, b + dy), t + MIN_H);
+        box = { x: Math.round(l), y: Math.round(t), w: Math.round(rt - l), h: Math.round(b - t) };
+        panel.style.left = `${box.x}px`;
+        panel.style.top = `${box.y}px`;
+        panel.style.right = 'auto';
+        panel.style.width = `${box.w}px`;
+        panel.style.height = `${box.h}px`;
+        panel.classList.add('twl-sized');
+      };
+      const up = () => {
+        handle.removeEventListener('pointermove', move);
+        handle.removeEventListener('pointerup', up);
+        handle.removeEventListener('pointercancel', up);
+        if (!box) return;
+        const docked = !GM_getValue('pos', null);
+        const side = GM_getValue('side', 'right');
+        const keepsDock = docked && !fromTop && (side === 'right' ? fromLeft : !fromLeft);
+        GM_setValue('size', { w: box.w, h: box.h });
+        if (!keepsDock) GM_setValue('pos', { x: box.x, y: box.y });
+        applyLayout();
+      };
+      handle.addEventListener('pointermove', move);
+      handle.addEventListener('pointerup', up);
+      handle.addEventListener('pointercancel', up);
+    });
+    handle.addEventListener('dblclick', () => {
+      GM_setValue('size', null);
+      applyLayout();
+    });
+  }
 
   function setHtml(el, html) {
     if (el.dataset.html === html) return;
@@ -1451,11 +1512,41 @@
         showSettings($('.twl-spage').hidden);
         break;
       case 'update-check':
-        // Tampermonkey intercepts .user.js links and shows its update dialog or "up to date"
-        if (UPDATE_URL) window.open(UPDATE_URL, '_blank');
+        checkForUpdate();
         break;
     }
   });
+
+  // Compare the installed version with the one on GitHub. Opening the .user.js link only works
+  // as an update on desktop – Safari on iOS just shows the source – so the check runs here.
+  const newerVersion = (a, b) => {
+    const pa = a.split('.').map(Number);
+    const pb = b.split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) > (pb[i] || 0);
+    }
+    return false;
+  };
+  function checkForUpdate() {
+    const status = $('.twl-upd-status');
+    status.className = 'twl-upd-status';
+    status.textContent = t('updChecking');
+    GM_xmlhttpRequest({
+      method: 'GET',
+      url: `${UPDATE_URL}?t=${Date.now()}`, // skip caches
+      timeout: 15000,
+      onload: (r) => {
+        const m = r.status === 200 && r.responseText.match(/@version\s+([\d.]+)/);
+        if (!m) { status.textContent = t('updFailed'); status.classList.add('twl-ff-err'); return; }
+        if (!newerVersion(m[1], SCRIPT_VERSION)) { status.textContent = t('updLatest'); return; }
+        status.innerHTML = `${esc(t('updAvailable', m[1]))} · <a href="${esc(UPDATE_URL)}" target="_blank" `
+          + `rel="noopener" title="${esc(t('updInstallTitle'))}">${esc(t('updInstall'))}</a>`;
+        status.classList.add('twl-upd-new');
+      },
+      onerror: () => { status.textContent = t('updFailed'); status.classList.add('twl-ff-err'); },
+      ontimeout: () => { status.textContent = t('updFailed'); status.classList.add('twl-ff-err'); },
+    });
+  }
 
   // Show the settings page instead of the list (per tab, not saved).
   // If the panel is collapsed, ⚙ expands it.
