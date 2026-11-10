@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.16.5
+// @version      2.17.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -27,6 +27,7 @@
   const DEFAULT_REFRESH_S = 60;   // default: refresh the whole list every 60 s (changeable in the panel)
   const MIN_REFRESH_S = 15;
   const MAX_REFRESH_S = 600;
+  const REFRESH_PRESETS = [15, 30, 60, 120, 300]; // choices in the touch settings grid
   const REQUEST_GAP_MS = 700;     // gap between API calls (Torn limit: 100/min)
   // Version and update URL come from the header (@version / @downloadURL)
   const GMI = typeof GM_info !== 'undefined' ? GM_info : null;
@@ -90,6 +91,20 @@
       resize: 'Größe ändern (Doppelklick: zurücksetzen)',
       back: '← Zurück',
       language: 'Sprache',
+      secFeatures: 'Funktionen',
+      secKeys: 'Keys',
+      secInterval: 'Update-Intervall',
+      secData: 'Daten',
+      secHelp: 'Hilfe',
+      tileOn: 'AN',
+      tileOff: 'AUS',
+      tileChain: 'Chain-Timer',
+      tileSound: 'Bomben-Sound',
+      tilePaused: 'API pausiert',
+      tileApiKey: 'Torn API-Key',
+      tileFfKey: 'FF-Key',
+      tileFfReload: 'FF neu laden',
+      customInterval: (s) => `eigener Wert: ${s} s`,
       version: (v) => `Version ${v}`,
       checkUpdates: '🔄 Nach Updates suchen',
       checkUpdatesTitle: 'Prüft auf GitHub, ob es eine neuere Version gibt',
@@ -218,6 +233,20 @@
       resize: 'Resize (double-click: reset)',
       back: '← Back',
       language: 'Language',
+      secFeatures: 'Features',
+      secKeys: 'Keys',
+      secInterval: 'Update interval',
+      secData: 'Data',
+      secHelp: 'Help',
+      tileOn: 'ON',
+      tileOff: 'OFF',
+      tileChain: 'Chain timer',
+      tileSound: 'Bomb sound',
+      tilePaused: 'API paused',
+      tileApiKey: 'Torn API key',
+      tileFfKey: 'FF key',
+      tileFfReload: 'Reload FF',
+      customInterval: (s) => `custom value: ${s} s`,
       version: (v) => `Version ${v}`,
       checkUpdates: '🔄 Check for updates',
       checkUpdatesTitle: 'Checks GitHub for a newer version',
@@ -1000,6 +1029,55 @@
     #twl-nyan-trail { position: fixed; left: 0; top: 0; z-index: 1000000; pointer-events: none; display: none; }
     #twl-nyan-trail .twl-rb { position: absolute; left: 0; top: 0; width: 5px; height: 15px; will-change: transform, opacity;
       background: linear-gradient(#ff0000 0 16.66%, #ff9900 0 33.33%, #ffff00 0 50%, #33ff00 0 66.66%, #0099ff 0 83.33%, #6633ff 0); }
+    /* Touch settings: grid of tiles instead of checkbox rows (desktop keeps the rows) */
+    #twl-panel:not(.twl-touch) .twl-sgrid, #twl-panel:not(.twl-touch) .twl-touch-only,
+    #twl-panel.twl-touch .twl-s-old { display: none; }
+    .twl-sec { margin: 12px 0 6px; color: #999; font-size: 10px; text-transform: uppercase; letter-spacing: .8px; font-weight: bold; }
+    .twl-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .twl-tiles.twl-tiles-2 { grid-template-columns: repeat(2, 1fr); }
+    #twl-panel button.twl-tile { position: relative; min-height: 68px; margin: 0; padding: 6px 4px; border-radius: 8px;
+      background: #26262c; border: 1px solid #3a3a42; color: #bbb; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px; text-align: center; font: inherit;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    #twl-panel button.twl-tile:active { transform: scale(.96); }
+    #twl-panel button.twl-tile:disabled { opacity: .45; }
+    .twl-tile .twl-ic { font-size: 20px; line-height: 1; }
+    .twl-tile .twl-lb { font-size: 11px; font-weight: bold; line-height: 1.15; }
+    .twl-tile .twl-pill { position: absolute; top: 4px; right: 5px; padding: 1px 4px; border-radius: 6px;
+      font-size: 8px; font-weight: bold; background: #3a3a42; color: #999; }
+    #twl-panel button.twl-tile.twl-on { background: linear-gradient(#3a230f, #2a1a0e); border-color: #ff7518; color: #ffcf9e;
+      box-shadow: inset 0 0 0 1px rgba(255, 117, 24, .25); }
+    .twl-tile.twl-on .twl-pill { background: #ff7518; color: #fff; }
+    #twl-panel button.twl-tile.twl-act { background: #22222a; border-style: dashed; }
+    .twl-tile .twl-sub { font-size: 9px; color: #8f8; }
+    .twl-tile .twl-sub.twl-ff-err { color: #ff8080; }
+    .twl-seg { display: flex; border: 1px solid #555; border-radius: 6px; overflow: hidden; }
+    #twl-panel .twl-seg button { flex: 1; margin: 0; padding: 9px 0; border: 0; border-right: 1px solid #444; border-radius: 0;
+      background: #26262c; color: #bbb; font: bold 12px Arial, sans-serif; touch-action: manipulation; }
+    #twl-panel .twl-seg button:last-child { border-right: 0; }
+    #twl-panel .twl-seg button.twl-on { background: #ff7518; color: #fff; }
+    .twl-hint { margin-top: 4px; text-align: right; font-size: 10px; color: #999; }
+    .twl-hint.twl-warn { color: #ff9a3c; }
+    .twl-vol { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px;
+      background: #26262c; border: 1px solid #3a3a42; }
+    #twl-panel .twl-vol input { flex: 1; min-width: 0; accent-color: #ff7518; }
+    #twl-panel .twl-vol button { padding: 6px 10px; font-weight: bold; }
+    #twl-panel.twl-touch .twl-s-ver { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; border: 0; }
+    #twl-panel.twl-touch .twl-s-ver .twl-version, #twl-panel.twl-touch .twl-s-ver .twl-upd-status {
+      display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px 0 0 8px;
+      background: #26262c; border: 1px solid #3a3a42; border-right: 0; color: #ddd; font-size: 13px; font-weight: bold; }
+    #twl-panel.twl-touch .twl-s-ver .twl-version { flex: 1; }
+    #twl-panel.twl-touch .twl-s-ver .twl-upd-status { order: 1; margin-left: -6px; border-radius: 0 8px 8px 0;
+      border-left: 0; border-right: 1px solid #3a3a42; font-size: 11px; font-weight: normal; color: #8f8; }
+    #twl-panel.twl-touch .twl-s-ver .twl-upd-status:empty { padding: 0 6px; }
+    #twl-panel.twl-touch .twl-s-ver .twl-upd-status.twl-upd-new { color: #ff9a3c; font-weight: bold; }
+    #twl-panel.twl-touch .twl-s-ver .twl-upd-status.twl-ff-err { color: #ff8080; }
+    #twl-panel.twl-touch .twl-s-ver [data-act="update-check"] { order: 2; flex-basis: 100%; min-height: 40px;
+      border-radius: 8px; background: #26262c; border-color: #3a3a42; color: #ffcf9e; font-weight: bold; font-size: 13px; }
+    #twl-panel.twl-touch .twl-legend { margin: 0; padding: 0 12px; border-radius: 8px; background: #1f1f24; border: 1px solid #3a3a42; }
+    #twl-panel.twl-touch .twl-legend summary { padding: 11px 0; }
+    #twl-panel.twl-touch .twl-legend[open] { padding-bottom: 10px; }
+    #twl-panel.twl-touch .twl-spage { padding-bottom: 8px; }
     .twl-rate { color: #999; }
     .twl-rate.twl-warn { color: #ff9a3c; }
     .twl-empty { color: #999; padding: 4px 0; }
@@ -1058,45 +1136,83 @@
           <button data-act="settings" data-i18n="back"></button>
           <b data-i18n="settings"></b>
         </div>
-        <div class="twl-settings">
+        <div class="twl-sgrid">
+          <div class="twl-sec" data-i18n="secFeatures"></div>
+          <div class="twl-tiles">
+            <button type="button" class="twl-tile" data-act="tile" data-for=".twl-chain-toggle"><span class="twl-pill"></span><span class="twl-ic">⛓</span><span class="twl-lb" data-i18n="tileChain"></span></button>
+            <button type="button" class="twl-tile" data-act="tile" data-for=".twl-ff-toggle"><span class="twl-pill"></span><span class="twl-ic">📊</span><span class="twl-lb">FF Scouter</span></button>
+            <button type="button" class="twl-tile" data-act="tile" data-for=".twl-hits-toggle"><span class="twl-pill"></span><span class="twl-ic">🎯</span><span class="twl-lb">Today's Hits</span></button>
+            <button type="button" class="twl-tile" data-act="tile" data-for=".twl-sound-toggle"><span class="twl-pill"></span><span class="twl-ic">💣</span><span class="twl-lb" data-i18n="tileSound"></span></button>
+            <button type="button" class="twl-tile" data-act="tile" data-for=".twl-nyan-toggle"><span class="twl-pill"></span><span class="twl-ic">🌈</span><span class="twl-lb">Nyan Cat</span></button>
+            <button type="button" class="twl-tile" data-act="pause" data-tile="pause"><span class="twl-pill"></span><span class="twl-ic">⏸</span><span class="twl-lb" data-i18n="tilePaused"></span></button>
+          </div>
+          <div class="twl-sec" data-i18n="secKeys"></div>
+          <div class="twl-tiles">
+            <button type="button" class="twl-tile twl-act" data-act="key"><span class="twl-ic">🔑</span><span class="twl-lb" data-i18n="tileApiKey"></span><span class="twl-sub twl-g-key"></span></button>
+            <button type="button" class="twl-tile twl-act" data-act="ff-key"><span class="twl-ic">🔑</span><span class="twl-lb" data-i18n="tileFfKey"></span><span class="twl-sub twl-g-ffkey"></span></button>
+            <button type="button" class="twl-tile twl-act twl-g-ffreload" data-act="ff-reload"><span class="twl-ic">🔄</span><span class="twl-lb" data-i18n="tileFfReload"></span></button>
+          </div>
+          <div class="twl-sec" data-i18n="language"></div>
+          <div class="twl-seg">
+            <button type="button" data-act="seg-lang" data-v="de">Deutsch</button>
+            <button type="button" data-act="seg-lang" data-v="en">English</button>
+          </div>
+          <div class="twl-sec" data-i18n="secInterval"></div>
+          <div class="twl-seg">
+            ${REFRESH_PRESETS.map((v) => `<button type="button" data-act="seg-interval" data-v="${v}">${v < 60 ? `${v} s` : `${v / 60} min`}</button>`).join('')}
+          </div>
+          <div class="twl-hint twl-g-rate"></div>
+          <div class="twl-g-sound">
+            <div class="twl-sec" data-i18n="tileSound"></div>
+            <div class="twl-vol">🔈<input type="range" class="twl-g-vol" min="0" max="100" step="5" />🔊<button type="button" data-act="sound-test">▶ Test</button></div>
+          </div>
+          <div class="twl-sec" data-i18n="secData"></div>
+          <div class="twl-tiles twl-tiles-2">
+            <button type="button" class="twl-tile twl-act" data-act="export"><span class="twl-ic">⬇</span><span class="twl-lb">Export</span></button>
+            <button type="button" class="twl-tile twl-act" data-act="import"><span class="twl-ic">⬆</span><span class="twl-lb">Import</span></button>
+          </div>
+          <div class="twl-sec">Version</div>
+        </div>
+        <div class="twl-settings twl-s-old">
           <span data-i18n="language"></span>
           <select class="twl-lang"><option value="de">Deutsch</option><option value="en">English</option></select>
         </div>
-        <div class="twl-settings">
+        <div class="twl-settings twl-s-ver">
           <span class="twl-version"></span>
           <button data-act="update-check" data-i18n="checkUpdates" data-i18n-title="checkUpdatesTitle"></button>
           <span class="twl-upd-status"></span>
         </div>
-        <div class="twl-settings">
+        <div class="twl-settings twl-s-old">
           <button data-act="key" data-i18n="apiKey" data-i18n-title="apiKeyTitle"></button>
           <span class="twl-key-status"></span>
         </div>
-        <div class="twl-settings">
+        <div class="twl-settings twl-s-old">
           <span data-i18n="updateEvery"></span>
           <input type="number" class="twl-interval" min="${MIN_REFRESH_S}" max="${MAX_REFRESH_S}" step="5" /> s
           <span class="twl-rate"></span>
         </div>
-        <div class="twl-settings">
+        <div class="twl-settings twl-s-old">
           <label><input type="checkbox" class="twl-ff-toggle" /> 📊 FF Scouter</label>
           <button data-act="ff-key" data-i18n="ffKey" data-i18n-title="ffKeyTitle"></button>
           <button data-act="ff-reload" class="twl-ff-reload" data-i18n="ffReload" data-i18n-title="ffReloadTitle"></button>
           <span class="twl-ff-status"></span>
         </div>
-        <div class="twl-settings">
+        <div class="twl-settings twl-s-old">
           <label><input type="checkbox" class="twl-hits-toggle" /> 🎯 Today's Hits</label>
           <label><input type="checkbox" class="twl-chain-toggle" /> <span data-i18n="chainToggle"></span></label>
           <label><input type="checkbox" class="twl-nyan-toggle" /> 🌈 Nyan Cat</label>
         </div>
-        <div class="twl-settings">
+        <div class="twl-settings twl-s-old">
           <label data-i18n-title="soundTitle"><input type="checkbox" class="twl-sound-toggle" /> <span data-i18n="sound"></span></label>
           <input type="range" class="twl-sound-vol" min="0" max="100" step="5" data-i18n-title="volume" />
           <button data-act="sound-test" data-i18n-title="soundTestTitle">▶ Test</button>
         </div>
-        <div class="twl-settings">
+        <div class="twl-settings twl-s-old">
           <button data-act="export" data-i18n-title="exportTitle">⬇ Export</button>
           <button data-act="import" data-i18n-title="importTitle">⬆ Import</button>
           <input type="file" accept=".json,application/json" class="twl-import-input" hidden />
         </div>
+        <div class="twl-sec twl-touch-only" data-i18n="secHelp"></div>
         <details class="twl-legend">
           <summary data-i18n="legend"></summary>
           <div class="twl-legend-body"></div>
@@ -1113,6 +1229,7 @@
   const $ = (sel) => panel.querySelector(sel);
   // Touch screen (iPhone, iPad, Android): bigger handles, "P" square instead of a collapsed panel
   const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches;
+  panel.classList.toggle('twl-touch', IS_TOUCH); // settings as a grid of tiles
   // Header mode (touch only): a "P" button right after the ☰ menu in Torn's header, and the panel
   // sits inline below the header instead of floating. Without a spot in the header, the floating
   // "P" square stays in use.
@@ -1573,6 +1690,7 @@
     const keyStatus = $('.twl-key-status');
     keyStatus.textContent = getKey() ? t('apiKeySet') : t('apiKeyMissing');
     keyStatus.classList.toggle('twl-ff-err', !getKey());
+    syncGrid();
 
     const paused = isPaused();
     const pauseBtn = $('.twl-pause');
@@ -1685,6 +1803,22 @@
         break;
       case 'update-check':
         checkForUpdate();
+        break;
+      // Touch settings grid: the tiles drive the (hidden) desktop controls, so all logic stays in one place
+      case 'tile': {
+        const cb = $(btn.dataset.for);
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+        syncGrid();
+        break;
+      }
+      case 'seg-lang':
+        langSelect.value = btn.dataset.v;
+        langSelect.dispatchEvent(new Event('change'));
+        break;
+      case 'seg-interval':
+        intervalInput.value = btn.dataset.v;
+        intervalInput.dispatchEvent(new Event('change'));
         break;
     }
   });
@@ -2405,6 +2539,47 @@
     GM_setValue('nyan', nyanToggle.checked);
     applyNyan();
   });
+
+  // ---- Touch settings grid: mirror the current state onto tiles and segments -----------------
+  const gridVol = $('.twl-g-vol');
+  gridVol.addEventListener('input', () => {
+    volInput.value = gridVol.value;
+    volInput.dispatchEvent(new Event('input'));
+  });
+  function syncGrid() {
+    if (!IS_TOUCH) return;
+    const setOn = (tile, on) => {
+      tile.classList.toggle('twl-on', on);
+      const pill = tile.querySelector('.twl-pill');
+      const txt = on ? t('tileOn') : t('tileOff');
+      if (pill && pill.textContent !== txt) pill.textContent = txt;
+    };
+    const setText = (el, txt) => { if (el.textContent !== txt) el.textContent = txt; };
+    for (const tile of panel.querySelectorAll('.twl-tile[data-for]')) setOn(tile, $(tile.dataset.for).checked);
+    setOn($('.twl-tile[data-tile="pause"]'), isPaused());
+
+    const key = $('.twl-g-key');
+    setText(key, getKey() ? `✓ ${t('apiKeySet')}` : t('apiKeyMissing'));
+    key.classList.toggle('twl-ff-err', !getKey());
+    const ffErr = GM_getValue('ffError', '');
+    const ffKey = $('.twl-g-ffkey');
+    setText(ffKey, ffErr || (GM_getValue('ffKey', '') ? t('ffOwnKey') : getKey() ? t('ffWatchlistKey') : t('ffNoKey')));
+    ffKey.classList.toggle('twl-ff-err', !!ffErr);
+    const reload = $('.twl-g-ffreload');
+    reload.disabled = !ffEnabled() || ffLoading || !getFfKey();
+    setText(reload.querySelector('.twl-ic'), ffLoading ? '⏳' : '🔄');
+
+    for (const b of panel.querySelectorAll('[data-act="seg-lang"]')) b.classList.toggle('twl-on', b.dataset.v === getLang());
+    const secs = getRefreshS();
+    for (const b of panel.querySelectorAll('[data-act="seg-interval"]')) b.classList.toggle('twl-on', Number(b.dataset.v) === secs);
+    const rate = $('.twl-rate');
+    const hint = $('.twl-g-rate');
+    setText(hint, (REFRESH_PRESETS.includes(secs) ? '' : `${t('customInterval', secs)} · `) + rate.textContent);
+    hint.classList.toggle('twl-warn', rate.classList.contains('twl-warn'));
+
+    $('.twl-g-sound').hidden = !soundToggle.checked;
+    if (document.activeElement !== gridVol) gridVol.value = GM_getValue('soundVol', 60);
+  }
 
   // ---- Export / import of the settings (incl. API key, players, factions) -------------------
   const EXPORT_APP = 'torn-war-watchlist';
