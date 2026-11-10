@@ -894,11 +894,12 @@
       padding: 0; border-radius: 8px; border: 2px solid #2a1a0e; background: #ff7518; color: #fff;
       font: bold 20px/1 Arial, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,.6); touch-action: none; }
     /* Header mode: button after Torn's ☰ menu, panel inline below the header in full screen height */
-    .twl-hbtn { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-sizing: border-box;
-      height: 30px; min-width: 30px; padding: 0 7px; margin: 0 6px; border-radius: 6px; border: 2px solid #2a1a0e;
+    .twl-hbtn { position: absolute; z-index: 10; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+      height: 30px; min-width: 30px; padding: 0 7px; margin: 0; border-radius: 6px; border: 2px solid #2a1a0e;
       background: #ff7518; color: #fff; font: bold 17px/1 Arial, sans-serif; white-space: nowrap; cursor: pointer;
       -webkit-tap-highlight-color: transparent; }
     .twl-hbtn.twl-hbtn-chain { font-size: 14px; }
+    .twl-hbtn.twl-hbtn-chain.twl-hbtn-compact { font-size: 12px; padding: 0 4px; }
     .twl-hbtn.twl-hbtn-open { background: #c4560f; box-shadow: inset 0 2px 4px rgba(0,0,0,.4); }
     .twl-hbtn.twl-hbtn-alert { background: #d00000; box-shadow: 0 0 10px 2px rgba(255,0,0,.8); animation: twl-blink 1s steps(1) infinite; }
     #twl-panel.twl-inline { position: relative !important; left: auto !important; top: auto !important; right: auto !important;
@@ -1246,10 +1247,13 @@
   });
 
   // Header mode: find Torn's ☰ menu in the mobile header and put our button right after it.
-  // Torn's class names carry random suffixes, so we match on typical parts of them.
+  // Torn's ☰ is button#fly-out-menu-button ("Show sidebar"). Careful: the ⓘ info button and the
+  // avatar are also labelled "Open menu", so a plain "menu" match would hit the wrong button.
   const HEADER_SPOT_SELECTORS = [
-    '[class*="burger" i]', '[class*="hamburger" i]', 'button[aria-label*="menu" i]', '[aria-label*="menu" i]',
+    '#fly-out-menu-button', 'button[aria-controls="fly-out-panel"]', '[class*="menuButton" i]',
+    'button[aria-label*="sidebar" i]', '[class*="hamburger" i]', '[class*="burger" i]',
   ];
+  let headerSpot = null;
   function findHeaderSpot() {
     const root = document.getElementById('header-root');
     if (!root) return null;
@@ -1261,17 +1265,34 @@
     }
     return null;
   }
+  // Torn moves the ☰ next to the logo with CSS, so its place in the HTML says little about where
+  // it shows up. Our button is positioned by the ☰'s real spot: right next to it, centred.
+  function placeHeaderBtn() {
+    if (!headerSpot || !headerSpot.isConnected || !headerBtn.isConnected) return;
+    const left = `${headerSpot.offsetLeft + headerSpot.offsetWidth + 6}px`;
+    const top = `${headerSpot.offsetTop + Math.round((headerSpot.offsetHeight - headerBtn.offsetHeight) / 2)}px`;
+    if (headerBtn.style.left !== left) headerBtn.style.left = left;
+    if (headerBtn.style.top !== top) headerBtn.style.top = top;
+    // Not enough room before Torn's icons on the right for "⛓ 01:12"? Then a compact "01:12"
+    const nav = document.querySelector('#header-root .header-navigation');
+    if (nav) {
+      const room = nav.getBoundingClientRect().left - headerBtn.getBoundingClientRect().left - 4;
+      headerBtn.classList.toggle('twl-hbtn-compact', room < 80);
+    }
+  }
   function syncHeaderMode() {
     if (!IS_TOUCH) return;
-    if (!headerBtn.isConnected) {
-      const spot = findHeaderSpot();
-      if (spot) spot.after(headerBtn); // Torn redraws its header now and then – put it back
+    if (!headerBtn.isConnected || !headerSpot || !headerSpot.isConnected) {
+      headerSpot = findHeaderSpot();
+      if (headerSpot) headerSpot.after(headerBtn); // Torn redraws its header now and then – put it back
     }
+    placeHeaderBtn();
     if (headerBtn.isConnected !== headerMode) {
       headerMode = headerBtn.isConnected;
       applyLayout();
     }
   }
+  window.addEventListener('resize', placeHeaderBtn);
   headerBtn.addEventListener('click', (ev) => {
     ev.preventDefault();
     ev.stopPropagation();
@@ -1876,7 +1897,8 @@
     // Header button: "P", or "⛓ mm:ss" while a chain runs – red and blinking below 1:30
     if (headerMode) {
       const running = left != null && left > 0;
-      const label = running ? `⛓ ${chain.time}` : 'P';
+      const compact = headerBtn.classList.contains('twl-hbtn-compact');
+      const label = running ? (compact ? chain.time : `⛓ ${chain.time}`) : 'P';
       if (headerBtn.textContent !== label) headerBtn.textContent = label;
       headerBtn.classList.toggle('twl-hbtn-chain', running);
       headerBtn.classList.toggle('twl-hbtn-alert', running && left < CHAIN_ALERT_S);
