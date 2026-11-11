@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.23.1
+// @version      2.23.2
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -1534,6 +1534,11 @@
   // Touch screen (iPhone, iPad, Android): bigger handles, "P" square instead of a collapsed panel
   const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches;
   panel.classList.toggle('twl-touch', IS_TOUCH); // touch layout of the header buttons
+  // Open/closed: on PC remembered across pages; on touch screens every page starts closed
+  // (reload, tapping a target in the list …) – open it with the P when you need it.
+  let touchCollapsed = true;
+  const isCollapsed = () => (IS_TOUCH ? touchCollapsed : GM_getValue('collapsed', false));
+  const setCollapsed = (v) => { if (IS_TOUCH) touchCollapsed = v; else GM_setValue('collapsed', v); };
   // Header mode (touch only): a "P" button right after the ☰ menu in Torn's header, and the panel
   // sits inline below the header instead of floating. Without a spot in the header, the floating
   // "P" square stays in use.
@@ -1578,7 +1583,7 @@
     panel.classList.toggle('twl-inline', headerMode);
     if (headerMode) {
       panel.classList.remove('twl-wait');
-      const collapsed = GM_getValue('collapsed', false);
+      const collapsed = isCollapsed();
       const root = document.getElementById('header-root');
       if (root && root.nextElementSibling !== panel) root.after(panel);
       panel.classList.toggle('twl-collapsed', collapsed);
@@ -1602,7 +1607,7 @@
     const side = pos ? 'left' : GM_getValue('side', 'right');
     panel.classList.toggle('twl-right', side === 'right');
     panel.classList.toggle('twl-left', side === 'left');
-    const collapsed = GM_getValue('collapsed', false);
+    const collapsed = isCollapsed();
     panel.classList.toggle('twl-collapsed', collapsed);
     panel.classList.toggle('twl-mini-mode', collapsed && IS_TOUCH);
     // Saved size, but never bigger than the screen (e.g. a size imported from a PC onto a phone).
@@ -1689,7 +1694,7 @@
       if (pos) {
         GM_setValue('pos', pos);
       } else if (e.type === 'pointerup') {
-        GM_setValue('collapsed', false);
+        setCollapsed(false);
         applyLayout();
       }
     };
@@ -1757,8 +1762,8 @@
   function toggleFromHeader() {
     if (Date.now() - headerToggleAt < 500) return; // pointerup and click from the same tap
     headerToggleAt = Date.now();
-    const open = GM_getValue('collapsed', false);
-    GM_setValue('collapsed', !open);
+    const open = isCollapsed();
+    setCollapsed(!open);
     applyLayout();
     if (open) window.scrollTo({ top: 0, behavior: 'smooth' }); // header + panel in view, even when scrolled down
   }
@@ -2169,7 +2174,7 @@
         applyLayout();
         break;
       case 'collapse':
-        GM_setValue('collapsed', !GM_getValue('collapsed', false));
+        setCollapsed(!isCollapsed());
         applyLayout();
         break;
       case 'gen-key':
@@ -2333,8 +2338,8 @@
     $('.twl-spage').hidden = !open;
     applyTab();
     $('.twl-settings-btn').classList.toggle('twl-on', open);
-    if (open && GM_getValue('collapsed', false)) {
-      GM_setValue('collapsed', false);
+    if (open && isCollapsed()) {
+      setCollapsed(false);
       applyLayout();
     }
   }
@@ -3341,7 +3346,7 @@
   GM_addValueChangeListener('list', (_k, _o, _n, remote) => { if (remote) render(); });
   GM_addValueChangeListener('factions', (_k, _o, _n, remote) => { if (remote) render(); });
   GM_addValueChangeListener('side', (_k, _o, _n, remote) => { if (remote) applyLayout(); });
-  GM_addValueChangeListener('collapsed', (_k, _o, _n, remote) => { if (remote) applyLayout(); });
+  GM_addValueChangeListener('collapsed', (_k, _o, _n, remote) => { if (remote && !IS_TOUCH) applyLayout(); });
   GM_addValueChangeListener('size', (_k, _o, _n, remote) => { if (remote) applyLayout(); });
   GM_addValueChangeListener('pos', (_k, _o, _n, remote) => { if (remote) applyLayout(); });
   GM_addValueChangeListener('refreshS', (_k, _o, n, remote) => { if (remote) intervalInput.value = n; });
