@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.21.0
+// @version      2.21.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -1255,7 +1255,7 @@
     #twl-panel .twl-tabs button.twl-on { color: #ffcf9e; background: #22160c; box-shadow: inset 0 -2px 0 #ff7518; }
     #twl-panel.twl-touch .twl-tabs button { padding: 9px 0; font-size: 13px; }
     /* Honor tracker */
-    #twl-panel .twl-honors[hidden] { display: none; }
+    #twl-panel .twl-honors[hidden] { display: none !important; } /* else the sized flex rule below wins */
     #twl-panel.twl-sized .twl-honors { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     .twl-honors > .twl-seg { margin: 2px 0 6px; }
     .twl-hon-list { max-height: 60vh; overflow-y: auto; }
