@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.23.0
+// @version      2.23.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -122,7 +122,7 @@
       honLoading: 'Lade Honors…',
       honNoKey: 'Bitte zuerst einen Torn API-Key setzen (⚙ → Torn API-Key).',
       honNoData: 'Noch keine Daten – ⟳ lädt sie.',
-      honAccess: 'Der API-Key hat dafür nicht genug Zugriff. „✨ Key erstellen“ in ⚙ legt einen passenden an.',
+      honAccess: 'Der API-Key hat dafür nicht genug Zugriff. „✨ Custom-Key erstellen“ in ⚙ legt einen passenden an.',
       honEmpty: 'Nichts passt zu deinen Filtern.',
       honTierLeft: (n) => `${n} offen`,
       honTierDone: (n) => `alle ${n} erhalten ✓`,
@@ -158,9 +158,8 @@
       tileApiKey: 'Torn API-Key',
       tileFfKey: 'FF-Key',
       tileFfReload: 'FF neu laden',
-      tileGenKey: 'Key erstellen',
+      tileGenKey: 'Custom-Key erstellen',
       genKeyTitle: 'Öffnet Torns API-Key-Seite mit einem fertig ausgefüllten Key, der nur die nötigen Rechte hat. Dort selbst auf „Create“ tippen und den Key hier unter „Torn API-Key“ eintragen.',
-      genKeySub: 'nur nötige Rechte',
       keysTos: '🔒 Deine Keys bleiben nur in diesem Browser und gehen nur an api.torn.com (und ffscouter.com, wenn FF Scouter an ist).',
       keysTosLink: 'Details',
       chainTip: 'Chain-Zähler und Timer im Panel, unter 1:30 rot blinkend',
@@ -183,7 +182,7 @@
       apiKeyTitle: 'Torn API-Key setzen',
       apiKeySet: 'gesetzt',
       apiKeyMissing: 'fehlt',
-      apiKeyPrompt: 'Torn API-Key:\n(Tipp: „✨ Key erstellen“ in den Einstellungen legt bei Torn einen passenden Key an.)'
+      apiKeyPrompt: 'Torn API-Key:\n(Tipp: „✨ Custom-Key erstellen“ in den Einstellungen legt bei Torn einen passenden Key an.)'
         + '\n\n🔒 Der Key bleibt nur in diesem Browser und wird nur an api.torn.com geschickt. Details: README → API Terms of Service.',
       updateEvery: 'Update alle',
       perMin: (n) => `≈ ${n} Abfragen/min`,
@@ -325,7 +324,7 @@
       honLoading: 'Loading honors…',
       honNoKey: 'Set a Torn API key first (⚙ → Torn API key).',
       honNoData: 'No data yet – ⟳ loads it.',
-      honAccess: "The API key doesn't have enough access for this. „✨ Create key“ in ⚙ creates a matching one.",
+      honAccess: "The API key doesn't have enough access for this. „✨ Create custom key“ in ⚙ creates a matching one.",
       honEmpty: 'Nothing matches your filters.',
       honTierLeft: (n) => `${n} to get`,
       honTierDone: (n) => `all ${n} earned ✓`,
@@ -361,9 +360,8 @@
       tileApiKey: 'Torn API key',
       tileFfKey: 'FF key',
       tileFfReload: 'Reload FF',
-      tileGenKey: 'Create key',
+      tileGenKey: 'Create custom key',
       genKeyTitle: "Opens Torn's API key page with a pre-filled key that has only the access this script needs. Tap „Create“ there yourself and enter the key here under „Torn API key“.",
-      genKeySub: 'only needed access',
       keysTos: '🔒 Your keys stay in this browser and are only sent to api.torn.com (and ffscouter.com if FF Scouter is on).',
       keysTosLink: 'Details',
       chainTip: 'Chain count and timer in the panel, blinks red below 1:30',
@@ -386,7 +384,7 @@
       apiKeyTitle: 'Set Torn API key',
       apiKeySet: 'set',
       apiKeyMissing: 'missing',
-      apiKeyPrompt: 'Torn API key:\n(Tip: „✨ Create key“ in the settings creates a matching key at Torn.)'
+      apiKeyPrompt: 'Torn API key:\n(Tip: „✨ Create custom key“ in the settings creates a matching key at Torn.)'
         + '\n\n🔒 The key stays in this browser and is only sent to api.torn.com. Details: README → API Terms of Service.',
       updateEvery: 'Update every',
       perMin: (n) => `≈ ${n} requests/min`,
@@ -1347,7 +1345,6 @@
     .twl-keys-tos { margin-top: 6px; font-size: 10px; line-height: 1.4; color: #999; }
     #twl-panel .twl-keys-tos a { color: #ffcf9e; text-decoration: underline; }
     #twl-panel button.twl-tile.twl-tile-gen { border-color: #ff9a3c; }
-    #twl-panel button.twl-tile.twl-tile-gen .twl-sub { color: #ffcf9e; }
     .twl-rate { color: #999; }
     .twl-rate.twl-warn { color: #ff9a3c; }
     .twl-empty { color: #999; padding: 4px 0; }
@@ -1445,7 +1442,7 @@
           </div>
           <div class="twl-sec" data-i18n="secKeys"></div>
           <div class="twl-tiles twl-tiles-2">
-            <button type="button" class="twl-tile twl-act twl-tile-gen" data-act="gen-key" data-i18n-tip="genKeyTitle"><span class="twl-ic">✨</span><span class="twl-lb" data-i18n="tileGenKey"></span><span class="twl-sub" data-i18n="genKeySub"></span></button>
+            <button type="button" class="twl-tile twl-act twl-tile-gen" data-act="gen-key" data-i18n-tip="genKeyTitle"><span class="twl-ic">✨</span><span class="twl-lb" data-i18n="tileGenKey"></span></button>
             <button type="button" class="twl-tile twl-act" data-act="key" data-i18n-tip="apiKeyTitle"><span class="twl-ic">🔑</span><span class="twl-lb" data-i18n="tileApiKey"></span><span class="twl-sub twl-g-key"></span></button>
             <button type="button" class="twl-tile twl-act" data-act="ff-key" data-i18n-tip="ffKeyTitle"><span class="twl-ic">🔑</span><span class="twl-lb" data-i18n="tileFfKey"></span><span class="twl-sub twl-g-ffkey"></span></button>
             <button type="button" class="twl-tile twl-act twl-g-ffreload" data-act="ff-reload" data-i18n-tip="ffReloadTitle"><span class="twl-ic">🔄</span><span class="twl-lb" data-i18n="tileFfReload"></span></button>
