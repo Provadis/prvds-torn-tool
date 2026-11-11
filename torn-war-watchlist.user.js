@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.20.1
+// @version      2.21.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -74,6 +74,10 @@
     ffKey: (v) => typeof v === 'string',
     lang: (v) => v === 'de' || v === 'en',
     view: (v) => v === 'list' || v === 'tiles',
+    tab: (v) => v === 'list' || v === 'honors',
+    honMode: (v) => v === 'easy' || v === 'cat' || v === 'all',
+    honorsDone: Array.isArray,
+    honorsHidden: Array.isArray,
   };
 
   // ---- Language (English / German) ----------------------------------------
@@ -97,6 +101,44 @@
       secInterval: 'Update-Intervall',
       secData: 'Daten',
       secHelp: 'Hilfe',
+      tabHonors: 'Honors',
+      tabWatchlist: '🎃 Watchlist',
+      honModeEasy: 'Einfach',
+      honModeCat: 'Kategorien',
+      honModeAll: 'Alle',
+      honAllTiers: (n) => `Alle ${n}`,
+      honAllCats: 'Alle',
+      honSearch: 'Honors suchen…',
+      honSortDiff: 'Leichteste zuerst',
+      honSortRarity: 'Seltenste zuerst',
+      honSortName: 'A → Z',
+      honShowEarned: 'Erhaltene zeigen',
+      honHideEarned: 'Erhaltene ausblenden',
+      honShowHidden: 'Ausgeblendete zeigen',
+      honHideHidden: 'Ausgeblendete verstecken',
+      honAgo: (a) => `vor ${a}`,
+      honLoading: 'Lade Honors…',
+      honNoKey: 'Bitte zuerst einen Torn API-Key setzen (⚙ → Torn API-Key).',
+      honNoData: 'Noch keine Daten – ⟳ lädt sie.',
+      honAccess: 'Der API-Key hat dafür nicht genug Zugriff (mindestens Limited).',
+      honEmpty: 'Nichts passt zu deinen Filtern.',
+      honTierLeft: (n) => `${n} offen`,
+      honTierDone: (n) => `alle ${n} erhalten ✓`,
+      honGuide: '▸ Anleitung',
+      honGuideClose: '▾ Anleitung',
+      honNoGuide: 'Noch keine Anleitung – schau ins Torn-Forum.',
+      honDone: '✓ Erledigt',
+      honUndo: 'Rückgängig',
+      honHide: 'Ausblenden',
+      honUnhide: 'Zeigen',
+      honEarnedBadge: 'Erhalten',
+      honMarkedBadge: 'Als erledigt markiert',
+      honTierNames: ['', 'Sofort', 'Leicht', 'Kostet Geld', 'Grind', 'Komplex', 'Unbekannt'],
+      honTierDescs: ['', 'geht sofort, kaum Kosten', 'evtl. mit einem Freund oder kurzer Absprache', 'geht sofort, kostet aber Geld',
+        'einfach, braucht aber Zeit oder Wiederholung', 'mehrstufig, Glück oder knifflig', 'noch keine Anleitung'],
+      honCats: { 0: 'Sonstiges', 1: 'Standard', 2: 'Waffen', 3: 'Tarnung', 4: 'Bildung', 5: 'Verbrechen', 6: 'Drogen',
+        7: 'Reisen', 8: 'Angriff', 9: 'Casino', 10: 'Gym', 11: 'Treue', 12: 'Level', 13: 'Wettbewerbe', 14: 'Geld',
+        15: 'Gefängnis', 16: 'Gegenstände', 17: 'Missionen', 18: 'Krankenhaus' },
       secView: 'Ansicht',
       viewList: 'Liste',
       viewTiles: 'Kacheln',
@@ -253,6 +295,44 @@
       secInterval: 'Update interval',
       secData: 'Data',
       secHelp: 'Help',
+      tabHonors: 'Honors',
+      tabWatchlist: '🎃 Watchlist',
+      honModeEasy: 'Easy wins',
+      honModeCat: 'Categories',
+      honModeAll: 'All',
+      honAllTiers: (n) => `All ${n}`,
+      honAllCats: 'All',
+      honSearch: 'Search honors…',
+      honSortDiff: 'Easiest first',
+      honSortRarity: 'Rarest first',
+      honSortName: 'A → Z',
+      honShowEarned: 'Show earned',
+      honHideEarned: 'Hide earned',
+      honShowHidden: 'Show hidden',
+      honHideHidden: 'Hide hidden',
+      honAgo: (a) => `${a} ago`,
+      honLoading: 'Loading honors…',
+      honNoKey: 'Set a Torn API key first (⚙ → Torn API key).',
+      honNoData: 'No data yet – ⟳ loads it.',
+      honAccess: "The API key doesn't have enough access for this (at least Limited).",
+      honEmpty: 'Nothing matches your filters.',
+      honTierLeft: (n) => `${n} to get`,
+      honTierDone: (n) => `all ${n} earned ✓`,
+      honGuide: '▸ How to get it',
+      honGuideClose: '▾ How to get it',
+      honNoGuide: 'No guide yet — check the Torn forums.',
+      honDone: '✓ Done',
+      honUndo: 'Undo',
+      honHide: 'Hide',
+      honUnhide: 'Show',
+      honEarnedBadge: 'Earned',
+      honMarkedBadge: 'Marked done',
+      honTierNames: ['', 'Instant', 'Easy', 'Costs money', 'Grind', 'Complex', 'Unknown'],
+      honTierDescs: ['', 'do it right now with little or no cost', 'might need a friend or quick coordination',
+        'can do it now but requires spending', 'simple but needs time or repetition', 'multi-step, RNG-heavy or tricky', 'no guide yet'],
+      honCats: { 0: 'Misc', 1: 'Default', 2: 'Weapons', 3: 'Camo', 4: 'Education', 5: 'Crimes', 6: 'Drugs', 7: 'Travel',
+        8: 'Attacking', 9: 'Casino', 10: 'Gym', 11: 'Commitment', 12: 'Level', 13: 'Competitions', 14: 'Money', 15: 'Jail',
+        16: 'Items', 17: 'Missions', 18: 'Hospital' },
       secView: 'View',
       viewList: 'List',
       viewTiles: 'Tiles',
@@ -1166,6 +1246,67 @@
     #twl-panel .twl-pmenu button { display: block; width: 100%; margin-top: 3px; padding: 8px 10px; border-radius: 6px;
       text-align: left; font-weight: bold; background: #26262c; border-color: #3a3a42; }
     #twl-panel .twl-pmenu button[data-act="menu-remove"] { color: #ff9a9a; }
+    /* Tabs: watchlist | honors */
+    .twl-tabs { display: flex; border-bottom: 1px solid #5a3a1e; background: #1b1b1f; }
+    #twl-panel.twl-collapsed .twl-tabs { display: none; }
+    #twl-panel .twl-tabs button { flex: 1; margin: 0; padding: 5px 0; border: 0; border-radius: 0; background: transparent;
+      color: #999; font-weight: bold; white-space: nowrap; }
+    #twl-panel .twl-tabs button:hover { color: #ddd; }
+    #twl-panel .twl-tabs button.twl-on { color: #ffcf9e; background: #22160c; box-shadow: inset 0 -2px 0 #ff7518; }
+    #twl-panel.twl-touch .twl-tabs button { padding: 9px 0; font-size: 13px; }
+    /* Honor tracker */
+    #twl-panel .twl-honors[hidden] { display: none; }
+    #twl-panel.twl-sized .twl-honors { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .twl-honors > .twl-seg { margin: 2px 0 6px; }
+    .twl-hon-list { max-height: 60vh; overflow-y: auto; }
+    #twl-panel.twl-sized .twl-hon-list { flex: 1; min-height: 0; max-height: none; }
+    .twl-hon-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+    .twl-hon-pills[hidden] { display: none; }
+    .twl-hon-pills.twl-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+    #twl-panel .twl-hpill { margin: 0; padding: 2px 8px; border-radius: 10px; border: 1px solid #44444c; background: transparent;
+      color: var(--c, #bbb); font-size: 11px; font-weight: bold; white-space: nowrap; touch-action: manipulation; }
+    #twl-panel .twl-hpill.twl-on { border-color: var(--c, #ff7518); background: #2a1a0e; color: var(--c, #ffcf9e); }
+    .twl-hpill-n { font-weight: normal; opacity: .75; }
+    #twl-panel.twl-touch .twl-hpill { padding: 5px 10px; font-size: 12px; }
+    .twl-hon-ctrl { display: flex; gap: 4px; margin-bottom: 6px; }
+    .twl-hon-ctrl input, .twl-hon-ctrl select { min-width: 0; background: #111; color: #eee; border: 1px solid #555;
+      border-radius: 4px; padding: 3px 5px; font: inherit; }
+    .twl-hon-ctrl input { flex: 1; }
+    #twl-panel.twl-touch .twl-hon-ctrl input, #twl-panel.twl-touch .twl-hon-ctrl select { padding: 6px 7px; font-size: 16px; }
+    .twl-hon-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 6px; font-size: 11px; color: #999; }
+    .twl-hon-status { flex: 1 1 140px; min-width: 0; }
+    .twl-hs-e { color: #4ade80; font-weight: bold; }
+    .twl-hs-m { color: #ff8080; }
+    #twl-panel .twl-hon-sub button { padding: 1px 6px; font-size: 10px; white-space: nowrap; }
+    #twl-panel .twl-hon-sub button.twl-on { border-color: #ff9a3c; color: #ffcf9e; }
+    #twl-panel.twl-touch .twl-hon-sub button { padding: 5px 8px; font-size: 11px; }
+    .twl-hon-msg { padding: 16px 6px; text-align: center; color: #999; }
+    .twl-hon-tier { display: flex; align-items: baseline; gap: 6px; margin: 8px 0 5px; padding: 4px 7px; border-radius: 5px; font-size: 11px; }
+    .twl-hon-tier b { text-transform: uppercase; letter-spacing: .6px; }
+    .twl-hon-tier small { flex: 1; min-width: 0; opacity: .7; font-size: 10px; }
+    .twl-hon-tier span { white-space: nowrap; opacity: .8; font-size: 10px; }
+    .twl-hc { margin-bottom: 5px; padding: 6px 8px; border-radius: 7px; background: #24242a; border: 1px solid #34343c;
+      border-left: 3px solid var(--c); }
+    .twl-hc.twl-hc-earned { border-color: rgba(74, 222, 128, .25); border-left-color: #4ade80; }
+    .twl-hc.twl-hc-dim { opacity: .45; }
+    .twl-hc-bar { display: block; width: 200px; max-width: 100%; height: auto; margin-top: 5px; border-radius: 2px; }
+    .twl-hc-name { color: #eee; font-weight: bold; }
+    .twl-hc-earned .twl-hc-name { color: #4ade80; }
+    .twl-hc-desc { margin-top: 1px; color: #aaa; font-size: 11px; line-height: 1.35; }
+    .twl-hc-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+    .twl-hb { padding: 1px 6px; border-radius: 8px; background: #2e2e36; font-size: 10px; font-weight: bold; }
+    .twl-hp { margin-top: 5px; }
+    .twl-hp-l { display: flex; justify-content: space-between; gap: 6px; margin-bottom: 2px; font-size: 10px; color: #999; }
+    .twl-hp-bar { height: 4px; border-radius: 2px; background: #333; overflow: hidden; }
+    .twl-hp-bar i { display: block; height: 100%; min-width: 2px; border-radius: 2px; }
+    .twl-hp-sub { margin-top: 2px; font-size: 10px; color: #777; }
+    .twl-hc-acts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    #twl-panel .twl-hc-acts button { padding: 2px 7px; border-radius: 5px; background: #2e2e36; border-color: #44444c; font-size: 11px; }
+    #twl-panel .twl-hc-acts button.twl-hc-gbtn { margin-right: auto; color: #ff9a3c; }
+    #twl-panel.twl-touch .twl-hc-acts button { min-height: 32px; padding: 4px 10px; font-size: 12px; }
+    .twl-hc-guide { margin-top: 6px; padding: 6px 8px; border-left: 2px solid #ff7518; background: #1e1e24; color: #c8d0dc;
+      font-size: 11.5px; line-height: 1.5; }
+    .twl-hc-guide .twl-hb { display: inline-block; margin-bottom: 4px; }
     .twl-rate { color: #999; }
     .twl-rate.twl-warn { color: #ff9a3c; }
     .twl-empty { color: #999; padding: 4px 0; }
@@ -1194,12 +1335,16 @@
   panel.innerHTML = `
     <button type="button" class="twl-mini" data-i18n-title="miniTitle">P</button>
     <div class="twl-head">
-      <span class="twl-title" data-i18n-title="dragHint">🎃 Watchlist <span class="twl-count"></span></span>
+      <span class="twl-title" data-i18n-title="dragHint">🎃 <span class="twl-title-name">Watchlist</span> <span class="twl-count"></span></span>
       <button data-act="pause" class="twl-pause"></button>
       <button data-act="refresh" class="twl-refresh" data-i18n-title="refreshNow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
       <button data-act="settings" class="twl-settings-btn" data-i18n-title="settings">⚙</button>
       <button data-act="side" data-i18n-title="dock">⇄</button>
       <button data-act="collapse" data-i18n-title="collapse">–</button>
+    </div>
+    <div class="twl-tabs">
+      <button type="button" data-act="tab" data-v="list" data-i18n="tabWatchlist"></button>
+      <button type="button" data-act="tab" data-v="honors" class="twl-tab-hon"></button>
     </div>
     <button class="twl-hits" data-act="hits"></button>
     <div class="twl-chain" style="display:none">
@@ -1218,6 +1363,28 @@
           <button data-act="add-input-faction" data-i18n="addFaction" data-i18n-title="addFactionTitle"></button>
         </div>
         <div class="twl-list"></div>
+      </div>
+      <div class="twl-honors" hidden>
+        <div class="twl-seg">
+          <button type="button" data-act="hon-mode" data-v="easy" data-i18n="honModeEasy"></button>
+          <button type="button" data-act="hon-mode" data-v="cat" data-i18n="honModeCat"></button>
+          <button type="button" data-act="hon-mode" data-v="all" data-i18n="honModeAll"></button>
+        </div>
+        <div class="twl-hon-pills"></div>
+        <div class="twl-hon-ctrl">
+          <input type="search" class="twl-hon-search" data-i18n-ph="honSearch" autocomplete="off" />
+          <select class="twl-hon-sort">
+            <option value="diff" data-i18n="honSortDiff"></option>
+            <option value="rarity" data-i18n="honSortRarity"></option>
+            <option value="name" data-i18n="honSortName"></option>
+          </select>
+        </div>
+        <div class="twl-hon-sub">
+          <span class="twl-hon-status"></span>
+          <button type="button" data-act="hon-earned"></button>
+          <button type="button" data-act="hon-hidden"></button>
+        </div>
+        <div class="twl-hon-list"></div>
       </div>
       <div class="twl-spage" hidden>
         <div class="twl-sp-head">
@@ -1791,7 +1958,8 @@
     const calls = factions.length + list.filter((e) => !covered.has(e.id)).length + hitsCall;
     // plus the chain timer on touch screens: every 6 s while a chain runs
     const chainPerMin = useApiChain() && apiChainRunning() ? Math.round(60000 / CHAIN_POLL_RUNNING_MS) : 0;
-    const perMin = Math.round(calls * 60 / getRefreshS()) + chainPerMin;
+    const honPerMin = honorsVisible() && getKey() && !isPaused() ? 3 * 60000 / HON_REFRESH_MS : 0;
+    const perMin = Math.round(calls * 60 / getRefreshS() + honPerMin) + chainPerMin;
     const rate = $('.twl-rate');
     rate.textContent = t('perMin', perMin);
     rate.title = t('callsPerUpdate', calls);
@@ -1859,7 +2027,10 @@
       case 'restore': restoreFaction(fid); break;
       case 'add-input': addFromInput(addPlayer); break;
       case 'add-input-faction': addFromInput(addFaction); break;
-      case 'refresh': refreshAll(true); break;
+      case 'refresh':
+        if (getTab() === 'honors' && $('.twl-spage').hidden) refreshHonors(true);
+        else refreshAll(true);
+        break;
       case 'sound-test': testBomb(); break;
       case 'export': exportSettings(); break;
       case 'ff-key': {
@@ -1950,6 +2121,30 @@
       case 'seg-view':
         setView(btn.dataset.v);
         break;
+      // Honor tracker
+      case 'tab': setTab(btn.dataset.v); break;
+      case 'hon-mode':
+        GM_setValue('honMode', btn.dataset.v);
+        hon.tier = 0;
+        renderHonors();
+        $('.twl-hon-list').scrollTop = 0;
+        break;
+      case 'hon-tier': {
+        const d = parseInt(btn.dataset.v, 10);
+        hon.tier = hon.tier === d ? 0 : d;
+        renderHonors();
+        break;
+      }
+      case 'hon-cat': hon.cat = parseInt(btn.dataset.v, 10); renderHonors(); $('.twl-hon-list').scrollTop = 0; break;
+      case 'hon-guide':
+        if (hon.open.has(id)) hon.open.delete(id);
+        else hon.open.add(id);
+        renderHonors();
+        break;
+      case 'hon-done': toggleIn('honorsDone', id); break;
+      case 'hon-hide': toggleIn('honorsHidden', id); break;
+      case 'hon-earned': hon.showEarned = !hon.showEarned; renderHonors(); break;
+      case 'hon-hidden': hon.showHidden = !hon.showHidden; renderHonors(); break;
       // Action menu of a tile (long press)
       case 'menu-attack':
         hidePlayerMenu();
@@ -2030,7 +2225,7 @@
   // If the panel is collapsed, ⚙ expands it.
   function showSettings(open) {
     $('.twl-spage').hidden = !open;
-    $('.twl-main').hidden = open;
+    applyTab();
     $('.twl-settings-btn').classList.toggle('twl-on', open);
     if (open && GM_getValue('collapsed', false)) {
       GM_setValue('collapsed', false);
@@ -2096,6 +2291,7 @@
   function applyLang() {
     for (const el of panel.querySelectorAll('[data-i18n]')) el.textContent = t(el.dataset.i18n);
     for (const el of panel.querySelectorAll('[data-i18n-title]')) el.title = t(el.dataset.i18nTitle);
+    for (const el of panel.querySelectorAll('[data-i18n-ph]')) el.placeholder = t(el.dataset.i18nPh);
     if (!IS_TOUCH) for (const el of panel.querySelectorAll('[data-i18n-tip]')) el.title = t(el.dataset.i18nTip);
     langSelect.value = getLang();
     $('.twl-version').textContent = t('version', SCRIPT_VERSION);
@@ -2107,6 +2303,7 @@
     GM_setValue('lang', langSelect.value);
     applyLang();
     render();
+    renderHonors();
     updateChain();
   });
   applyLang();
@@ -2900,6 +3097,7 @@
     applyNyan();
     applyLayout();
     applyLang();
+    applyTab();
     render();
     updateChain();
     refreshAll(true);
@@ -3048,10 +3246,807 @@
     if (master) master.gain.value = n / 100;
   });
 
+  // ---- Honor tracker: data -----------------------------------------------------------------
+  // Honor guide data, difficulty tiers and progress mapping adapted from
+  // "Torn City - Merit Tracker" v3.2 by Solenya [4053619], https://greasyfork.org/scripts/579300
+  // Licensed under the MIT License:
+  //   Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  //   and associated documentation files (the "Software"), to deal in the Software without
+  //   restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  //   distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+  //   Software is furnished to do so, subject to the following conditions: The above copyright
+  //   notice and this permission notice shall be included in all copies or substantial portions of
+  //   the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+  // Only the data is used here – no requests to other servers (no fonts, no Greasy Fork check).
+  // Tier colors; names and descriptions come from I18N (honTierNames / honTierDescs).
+  const HON_TIER_COLOR = { 1: '#facc15', 2: '#60a5fa', 3: '#fb923c', 4: '#f87171', 5: '#c084fc', 6: '#6b7280' };
+  const HON_TIER_BG = { 1: '#292100', 2: '#0a1628', 3: '#2d1500', 4: '#2d0a0a', 5: '#1a0a28', 6: '#111827' };
+
+  // Honor ID -> d: difficulty tier (1 instant … 5 complex), g: guide (English)
+  const HON_DB = {
+    838:  { d:1, g:"Defeat two players who are married to each other (in any order). The well-known pair monkey_D and Left4Dead12 are a reliable target — defeat one, then the other." },
+    367:  { d:1, g:"Buy Ipecac Syrup from the City (~$45k) and use it from your inventory — it instantly hospitalizes you. Alternatively, use a blood bag of the wrong type (requires Intravenous Therapy education course)." },
+    902:  { d:1, g:"Attack pops333 using ONLY your fists so you lose — he beats you with a trout. Unequip all weapons first or use fists only. You want to lose this fight deliberately." },
+    230:  { d:1, g:"Defeat any player who currently has the Domino Effect honor equipped on their profile. L3Milk is a well-known low-stat player who displays it and is an easy kill." },
+    639:  { d:1, g:"Join an attack as an assist — you must NOT deliver the killing blow. Best method: during Loot Rangers NPC events, join the attack. Or have a friend start an attack on a target and you click Assist without finishing them." },
+    254:  { d:1, g:"Kill any player from full health in a single attack (one-hit-kill). Target low-level inactive players who have 100% life. Just keep attacking them until it procs." },
+    12:   { d:1, g:"Make any deposit in the City Bank. Even $1 for 1 week counts. Go to City → Bank and put any amount in for any duration." },
+    371:  { d:1, g:"Complete the intro mission 'Introduction: Duke'. This is given automatically to new players. Check your Missions tab — it's essentially free XP." },
+    39:   { d:1, g:"Win any 5 attacks. Attack low-level inactive players to get this fast." },
+    40:   { d:1, g:"Win 20 attacks. Keep attacking low-level inactives." },
+    41:   { d:1, g:"Win 50 attacks total." },
+    42:   { d:1, g:"Win 100 attacks total." },
+    43:   { d:4, g:"Win 250 attacks total." },
+    18:   { d:1, g:"Reach level 10. Just keep playing — this comes naturally." },
+    20:   { d:1, g:"Achieve 25 critical hits. These accumulate naturally as you attack anyone." },
+    253:  { d:1, g:"Participate in a faction chain of at least 10 hits. Just join during any chain your faction runs." },
+    255:  { d:1, g:"Participate in a faction chain of at least 100 hits. Join during a planned chain event." },
+    687:  { d:1, g:"Reach 100 total battle stats combined (Str+Spd+Dex+Def). Happens naturally after a few gym sessions." },
+    720:  { d:1, g:"Reach 1,000 total battle stats. A few days of regular gym training." },
+    686:  { d:1, g:"Reach 10,000 total battle stats. Regular gym use over a couple of weeks." },
+    520:  { d:1, g:"Donate a cumulative $100,000 to the Church (City → Church → Donate). Donations stack over time, doesn't need to be all at once." },
+    521:  { d:1, g:"Donate a cumulative $1,000,000 to the Church (City → Church → Donate). Stacks over time." },
+    1326: { d:1, g:"Go to Crimes → Search for Cash → Beach. Search repeatedly — you'll randomly dig up sand. Doesn't take long." },
+    1349: { d:1, g:"Go to Crimes → Burglary, click the area dropdown (shows 'Any Residential' etc.) and pick a specific target like 'Beach Hut', then click Locate. Done — costs 9 nerve." },
+    665:  { d:1, g:"Participate in defeating a lootable NPC (Duke, Jimmy, Leslie). Check yata.yt for the Loot Rangers schedule and just hit the NPC at least once — you don't need top damage." },
+    288:  { d:3, g:"Reset your merits from the Merits page. The first reset may be free; after that it costs 500 points (~$19M). This wipes your current merit allocations — plan accordingly." },
+    606:  { d:1, g:"Achieve 100 total awards (honors + medals combined). Just keep playing and collecting awards naturally." },
+    653:  { d:4, g:"Complete 10 education courses total. Each course takes anywhere from 3 days to over a month — just keep one queued at all times in the Education section." },
+    659:  { d:4, g:"Complete 25 education courses total. Courses range from 3 days to 30+ days each. Keep one queued constantly and this comes naturally over time." },
+    845:  { d:1, g:"Go to Newspaper → Chronicles, open any chronicle, and stay on the page for about 15 minutes without closing or navigating away." },
+    1014: { d:4, g:"Achieve skill level 100 in Crimes → Search for Cash. Requires hundreds of attempts over many days. Do it passively as a daily crime alongside other activities." },
+
+    140:  { d:4, g:"Fire 1,000 rounds total. Equip a minigun for fastest accumulation." },
+    141:  { d:4, g:"Achieve 100 finishing hits with heavy artillery (RPG, M72 LAW, etc.). Set attack preference to 100% primary, equip heavy artillery, attack low-level inactives." },
+    142:  { d:4, g:"Achieve 100 finishing hits with clubbing weapons (baseball bat, nunchaku). Set preference to 100% melee, equip clubbing weapon, attack inactives." },
+    143:  { d:4, g:"Achieve 100 finishing hits with temporary weapons (grenades, HEG). Set preference to 100% temporary and use on inactives — these are one-use items." },
+    144:  { d:4, g:"Achieve 100 finishing hits with machine guns (Para, Minigun). Set preference to 100% primary, equip machine gun, attack inactives." },
+    145:  { d:4, g:"Achieve 100 finishing hits with pistols. Set preference to 100% secondary, equip pistol (QSZ-92, Desert Eagle), attack low-level inactives." },
+    146:  { d:4, g:"Achieve 100 finishing hits with rifles (Armalite, SA80). Set preference to 100% primary, equip rifle, attack inactives." },
+    147:  { d:4, g:"Achieve 100 finishing hits with shotguns. Jackhammer works well. Set preference to 100% primary, equip shotgun, attack inactives." },
+    148:  { d:4, g:"Achieve 100 finishing hits with SMGs (BT MP9, Uzi). Set preference to 100% primary, equip SMG, attack inactives." },
+    149:  { d:4, g:"Achieve 100 finishing hits with piercing weapons (daggers, spears). Always keep a dagger equipped — accumulates passively over time." },
+    150:  { d:4, g:"Achieve 100 finishing hits with slashing weapons (swords, kodachi). Equip a slashing weapon and attack low-level inactives." },
+    151:  { d:4, g:"Fire 10,000 rounds total. Use a minigun — comes naturally with regular attacking over time." },
+    515:  { d:4, g:"Achieve 100 finishing hits with fists or Kick. Fists are always available — use them for the killing blow on low-threat targets. Kick requires completing Introduction to Self-Defense + Kick-boxing education." },
+    740:  { d:5, g:"Deal at least 5,000 damage in a single hit. Requires high Strength, LSD (+35% stats), Hollow Point ammo, high-damage weapon with max merits, and a fully unarmored target." },
+    741:  { d:5, g:"Deal at least 10,000 damage in one hit. Stack LSD + Epinephrine + Hollow Point ammo + max weapon merits against a completely unarmored low-defense target." },
+    786:  { d:5, g:"Deal at least 15,000 damage in one hit. Everything from Obliteration but even harder — requires very high Strength and near-perfect conditions." },
+    834:  { d:4, g:"Fire 100,000 rounds total. Long-term grind — use a minigun. Takes many months of regular attacking." },
+    836:  { d:5, g:"Fire 1,000,000 rounds total. Extremely long-term — years of regular heavy attacking with a minigun or egg launcher." },
+    793:  { d:3, g:"Use 1,000 rounds of special ammo total. Buy from the Mission credit shop (cheapest source). All types of special ammo count cumulatively." },
+    791:  { d:3, g:"Use 10,000 rounds of special ammo total. Keep buying mission ammo and using it in attacks — long-term grind." },
+    851:  { d:3, g:"Own at least 20 weapon mods simultaneously. Buy with Mission Credits, always make sure to keep enough credits for a good book on hand - Tier 1 mods are cheap, Tier 3-4 are very expensive." },
+    491:  { d:3, g:"Equip two Tier 3 or Tier 4 weapon mods on a single weapon simultaneously. High-tier mods are rare and expensive on the item market." },
+    942:  { d:4, g:"Use 2,500 Hollow Point rounds total. Buy from the Mission credit shop — budget your credits since Hollow Points are the most popular ammo type." },
+    943:  { d:4, g:"Use 2,500 Piercing rounds total. Buy from the Mission credit shop." },
+    944:  { d:4, g:"Use 2,500 Incendiary rounds total. Buy from the Mission credit shop." },
+    945:  { d:4, g:"Use 2,500 Tracer rounds total. Buy from the Mission credit shop." },
+    951:  { d:5, g:"Use a 12 Gauge Incendiary round in an attack. These only spawn as mission rewards when you have a shotgun equipped as primary or secondary. Equip a shotgun and keep doing missions — completely RNG." },
+    778:  { d:5, g:"Achieve 100% weapon experience on 25 different weapons. Requires enormous amounts of attacking across many weapon types — very long-term goal." },
+
+    228:  { d:4, g:"Achieve 1,000 attacks AND 1,000 defends. Attacks come from regular play. Defends happen when others attack you and lose — buy losses from the Attack forum (~$250k each) to speed it up." },
+    232:  { d:4, g:"Collect 250 bounties total. Hunt the bounty board regularly, or ask friends to place $50 bounties on your mission targets so you can claim them after." },
+    236:  { d:3, g:"Earn $10,000,000 total from bounty hunting. Ask a friend to bounty a third player for $10M (costs ~$5M in fees), then attack and collect. Or hunt real bounties slowly over time." },
+    270:  { d:4, g:"Stalemate 100 times total. A stalemate happens after 25 turns with no winner. Equip a Pillow and attack a similarly-weak target — just hit 25 turns and neither of you should die." },
+    414:  { d:4, g:"Achieve 3 consecutive headshots in a single attack. Headshots are random — comes naturally with heavy regular play." },
+    490:  { d:4, g:"Assist in 250 attacks total. Join NPC attacks (Loot Rangers events) or assist faction members during wars. You must NOT deliver the killing blow." },
+    517:  { d:4, g:"Achieve 100 one-hit kills total. Attack low-level inactive players repeatedly — every kill from full health in one hit counts. Comes naturally with decent stats over time." },
+    601:  { d:4, g:"Achieve 10,000 total hits (individual attack rounds). Very long-term — comes from years of heavy attacking." },
+    608:  { d:5, g:"Deal exactly 1,337 damage in a single hit. Completely random — no way to force it. Just keep attacking with a mid-damage weapon and it will eventually occur." },
+    763:  { d:4, g:"Win 250 fights without any armor equipped. Remove all armor from your equipped items — you can still use weapons. You'll temporarily get the title 'Nudist'." },
+    843:  { d:2, g:"On May 4th, defeat someone using ONLY fists (unequip all weapons). Attack a low-stat inactive and win. Only works on May 4th each year." },
+    863:  { d:4, g:"Defeat someone you just revived. Revive a player from hospital, then immediately attack and beat them. Coordinate with a willing player who agrees to lose." },
+    870:  { d:4, g:"Revive someone you just defeated. After winning an attack and hospitalizing someone, immediately use a revive on them. Requires revive capability (education)." },
+    846:  { d:4, g:"Defeat 100 players while physically abroad (at a destination, not in transit). Stack energy before flying, then attack inactives at your destination country." },
+    916:  { d:5, g:"Save a chain of 100+ hits by attacking within the last 10 seconds before the timer expires. Requires your faction to deliberately let the chain timer run near-zero — risks the entire chain. Only feasible with full faction coordination." },
+    1001: { d:4, g:"Deal over 10,000,000 total damage across all attacks. Can be rushed by attacking NPCs (Duke, Leslie, Jimmy) at loot events." },
+    1002: { d:4, g:"Deal over 1,000,000 total damage. Should come within weeks or months of active attacking." },
+    1003: { d:5, g:"Deal over 100,000,000 total damage. Very long-term — requires sustained heavy attacking over many months." },
+    1004: { d:1, g:"Deal over 100,000 total damage. Should trigger within a few days of active attacking for most players." },
+
+    234:  { d:4, g:"Own all middleweight gym memberships. Join a 3 stars music store to gain gym exp quickly." },
+    235:  { d:4, g:"Own all heavyweight gym memberships. Join a 3 stars music store to gain gym exp quickly." },
+    240:  { d:4, g:"Gain 1,000,000 Defense. Train Defense daily at the gym. Takes consistent training over months." },
+    241:  { d:4, g:"Gain 1,000,000 Dexterity. Train Dexterity daily." },
+    242:  { d:4, g:"Gain 1,000,000 Speed. Train Speed daily." },
+    243:  { d:4, g:"Gain 1,000,000 Strength. Train Strength daily." },
+    497:  { d:4, g:"Gain 10,000,000 Defense. Long-term gym training — gym memberships and a director who trains you significantly accelerate this." },
+    498:  { d:4, g:"Gain 1,000,000,000 Defense. Very long-term — requires years of consistent training." },
+    505:  { d:4, g:"Gain 10,000,000 Speed. Long-term gym training." },
+    506:  { d:4, g:"Gain 100,000,000 Speed. Long-term gym training." },
+    550:  { d:4, g:"Gain 1,000,000,000 Speed. Extremely long-term goal." },
+    629:  { d:4, g:"Gain 100,000,000 Dexterity. Long-term gym training." },
+    635:  { d:4, g:"Gain 10,000,000 Dexterity. Long-term gym training." },
+    638:  { d:4, g:"Gain 1,000,000,000 Dexterity. Very long-term goal." },
+    640:  { d:4, g:"Gain 100,000,000 Defense. Long-term gym training." },
+    643:  { d:4, g:"Gain 10,000,000 Strength. Long-term gym training." },
+    646:  { d:4, g:"Gain 100,000,000 Strength. Long-term gym training." },
+    647:  { d:4, g:"Gain 1,000,000,000 Strength. Very long-term goal." },
+    679:  { d:4, g:"Attain 100,000,000 total stats. Long-term consistent training across all four stats." },
+    694:  { d:4, g:"Attain 1,000,000 total stats. Several weeks to months of consistent gym training." },
+    708:  { d:4, g:"Attain 10,000,000 total stats. Months of dedicated gym training." },
+    721:  { d:4, g:"Attain 1,000,000,000 total stats. Very long-term — requires years of training." },
+    723:  { d:4, g:"Attain 100,000 total stats. A few weeks of consistent training." },
+    690:  { d:4, g:"Attain 10,000,000,000 total stats. Reserved for veteran players — extremely long-term." },
+    704:  { d:4, g:"Attain 100,000,000,000 total stats. One of the rarest gym milestones in the game." },
+    888:  { d:5, g:"Have the numbers 69 and 420 appear 5 times total across your four battle stats (at least one of each). Example: Str=420,123 / Spd=52,069 / Dex=345,420 / Def=42,069. Use a Torn stat calculator to track — requires precise stat management near each milestone." },
+
+    525:  { d:4, g:"Attain 100,000 Endurance. Work at a company with Endurance training and ask your director to train you. Takes many months of daily training." },
+    530:  { d:4, g:"Attain 100,000 Intelligence. Same approach as Tireless but for Intelligence stat." },
+    533:  { d:4, g:"Attain 100,000 Manual Labor. Requires a company that offers Manual Labor training." },
+
+    53:   { d:4, g:"Complete all courses in the Biology degree. Focus your education queue on Biology. Each Bachelor takes ~200 days with education reduction merits." },
+    54:   { d:4, g:"Complete all courses in the Business degree. Queue Business courses and keep one running at all times." },
+    55:   { d:4, g:"Complete all courses in the Combat degree." },
+    56:   { d:4, g:"Complete all courses in the ICT degree. Also unlocks the online Bootlegging store as a side benefit." },
+    57:   { d:4, g:"Complete all courses in the Defense degree." },
+    58:   { d:4, g:"Complete all courses in General Studies." },
+    59:   { d:4, g:"Complete all courses in Health & Fitness." },
+    60:   { d:4, g:"Complete all courses in History." },
+    61:   { d:4, g:"Complete all courses in Law. Strongly recommended — gives +50% jail bust success." },
+    62:   { d:4, g:"Complete all courses in Mathematics." },
+    63:   { d:4, g:"Complete all courses in Psychology. Gives +10% crime success — very valuable." },
+    64:   { d:4, g:"Complete all courses in Sports Science." },
+
+    30:   { d:4, g:"Use 50 Ecstasy total. Gives a happiness boost. Buy from item market. ~24-hour drug cooldown." },
+    31:   { d:4, g:"Use 50 Ketamine total. Reduces enemy stats in combat. Buy from item market. Drug cooldown applies." },
+    32:   { d:4, g:"Use 50 LSD total. Gives +35% to all battle stats — very useful before important fights. Buy from item market." },
+    33:   { d:4, g:"Use 50 Opium total. Gives energy and nerve boost. Buy from item market. Drug cooldown applies." },
+    34:   { d:4, g:"Use 50 Shrooms total. Gives a happiness boost. Buy from item market." },
+    35:   { d:4, g:"Use 50 Speed total. Gives +35% to Speed stat. Drug cooldown applies." },
+    36:   { d:4, g:"Use 50 PCP total. Gives a stat boost. Drug cooldown applies." },
+    37:   { d:4, g:"Use 50 Xanax total. Gives +250 energy — use before big chains or attacks. Already the most useful drug in the game. Buy from item market or faction stock." },
+    38:   { d:4, g:"Use 50 Vicodin total. Restores life points. Buy from item market. Drug cooldown applies." },
+
+    50:   { d:4, g:"Achieve 50 Hunting skill. World Tiger Day (August 29th) gives 500% bonus hunting XP — stack 1,000 energy and hunt all day on that date. Hunting any other time wastes energy." },
+    51:   { d:4, g:"Achieve 75 Hunting skill. Same approach as Zebra Skin — maximize World Tiger Day trips each year." },
+    52:   { d:5, g:"Achieve 100 Hunting skill (maximum). Requires multiple World Tiger Day events worth of grinding." },
+
+    130:  { d:4, g:"Travel to Argentina 50 times. Combine with importing items each trip for efficiency. Use a Large Suitcase." },
+    131:  { d:4, g:"Travel to Mexico 50 times. Short flight — one of the easier destination honors. Always import items." },
+    132:  { d:4, g:"Travel to UAE 50 times. Longest flight — only prioritize if combining with heavy item importing as it drains energy fast." },
+    133:  { d:4, g:"Travel to Hawaii 50 times. Medium flight. Always bring a suitcase for imports." },
+    134:  { d:4, g:"Travel to Japan 50 times. Long flight — only worth it if combining with item importing." },
+    135:  { d:4, g:"Travel to UK 50 times. Medium flight. Combine with imports." },
+    136:  { d:4, g:"Travel to South Africa 50 times. Long flight — combine with heavy importing." },
+    137:  { d:4, g:"Travel to Switzerland 50 times. Medium flight. Combine with imports." },
+    138:  { d:4, g:"Travel to China 50 times. Long flight — combine with heavy importing." },
+    139:  { d:4, g:"Travel to Canada 50 times. Short flight — one of the easier travel honors." },
+    272:  { d:4, g:"Travel to Cayman Islands 50 times. Short flight — combine with item imports each trip." },
+    543:  { d:4, g:"Import 10,000 items from abroad total. Very long-term — always use a Large Suitcase on every flight. Stacks across all trips." },
+    567:  { d:4, g:"Spend 31 cumulative days in the air (flight time only — time spent at destination doesn't count)." },
+    557:  { d:4, g:"Spend 365 cumulative days in the air. Extremely long-term — achievable only after years of heavy traveling." },
+    853:  { d:3, g:"Purchase the 'perfect souvenir' abroad. Which item depends on the last 2 digits of your Torn ID — check the Torn forum souvenir guide for your specific item, then travel to that country and buy it." },
+
+    269:  { d:4, g:"Spin the roulette wheel 1,000 times. At ~75 spins per day it takes about 14 days. Open multiple tabs to speed it up." },
+    327:  { d:4, g:"Win 50 games of Russian Roulette in the Casino. Play at minimum bet ($1) — you win roughly 1 in 6 games, so expect ~300 games total." },
+    275:  { d:5, g:"Win the jackpot on the slot machine. Pure RNG — no known strategy to increase odds. Just keep playing slots over time." },
+    276:  { d:5, g:"Win one of the Torn City lotteries. Buy tickets regularly from the City and wait." },
+
+    3:    { d:3, g:"Invest $100,000,000 in the stock market. Buy any stock totaling $100M+ and hold or sell for profit." },
+    8:    { d:4, g:"Achieve a high credit score with Duke (City → Duke → Loan). Take a loan and pay it back when requested. A $160k loan works — somewhat random and may take a few months." },
+    9:    { d:3, g:"Own a Private Island with an Airstrip upgrade. You need to own it, not rent it. You can ask a rich friend to give you one, own it for two mintues and then give it back." },
+    10:   { d:3, g:"Make a $1,000,000,000 city bank investment. Save up $1B and deposit it for any duration (minimum 1 week)." },
+    544:  { d:3, g:"Make a $10,000,000 profit in a single stock market sale. Invest in a stock and wait until you're up $10M, then sell. More invested = faster." },
+    548:  { d:3, g:"Make a $100,000,000 profit in a single stock sale. Requires large stock holdings or significant patience." },
+    545:  { d:5, g:"Make a $1,000,000,000 profit in a single stock sale. Requires enormous investment — end-game wealth goal." },
+    546:  { d:4, g:"Receive 100 stock payouts. Dividends are paid weekly (Tuesdays). Hold any dividend-paying stock for ~2 years." },
+    523:  { d:3, g:"Donate $100,000,000 cumulative to the Church (City → Church → Donate). Stacks over time — doesn't need to be all at once." },
+    522:  { d:5, g:"Donate $1,000,000,000 cumulative to the Church. Enormous total cost — very long-term." },
+    273:  { d:3, g:"Win 10 auctions. Bid a fixed amount (e.g. $250k) on many cheap auctions until 10 are won. Sell the items back to break even." },
+    258:  { d:3, g:"Own a yacht. Buy a property with a Yacht upgrade, or ask a friend who has one to loan/lease it for 2 minutes to trigger the honor." },
+    869:  { d:5, g:"Own every stock benefit AND dividend simultaneously. Requires massive investment across all available stocks at once — extreme end-game goal." },
+    1005: { d:4, g:"Achieve $1,000,000,000 in cumulative stock market profits. Long-term investing milestone." },
+    1006: { d:4, g:"Achieve $1,000,000,000 in cumulative stock market losses. Comes from aggressive trading over time." },
+    1007: { d:3, g:"Lose $100,000,000 in a single stock sale. Invest in a stock and deliberately sell at a $100M loss." },
+
+    7:    { d:4, g:"Use 5,000 medical items total. Use blood bags, first aid kits, and other medicals in combat regularly. Very long-term grind." },
+    23:   { d:4, g:"Revive 500 players total. Requires revive skill (education). Revive actively whenever possible." },
+    267:  { d:4, g:"Revive 1,000 players total. Same as Florence Nightingale — keep reviving consistently. Very long-term." },
+    322:  { d:5, g:"Revive 10 different players within 10 minutes. Requires revive skill and a very active hospital. Best during major wars when many players are hospitalized simultaneously — coordinate with faction." },
+    398:  { d:4, g:"Fill 1,000 empty blood bags. Complete Intro to Biochemistry + Intravenous Therapy education first. Always keep a medical cooldown active by filling bags daily." },
+    406:  { d:4, g:"Random chance when using (not filling) a blood bag. Just keep using blood bags for healing and it will eventually trigger." },
+    418:  { d:4, g:"Fill 250 empty blood bags. Complete Intravenous Therapy education. Fill bags as part of your daily routine." },
+
+    1:    { d:4, g:"Find 50 items in the City (City → Look Around). Items spawn randomly — use the Torntools browser extension to help locate them faster." },
+    4:    { d:4, g:"Use 100 job points. Works at both player-owned companies and city jobs (companies give more points per day). Minimum ~10 days." },
+    164:  { d:4, g:"Use 1,000 job points. Takes a minimum of 100 days of consistent working." },
+    238:  { d:4, g:"Find 1,000 items in the City Dump (Crimes → Search for Cash → Dump). Costs 5 energy per search — 5,000 energy total. Do passively during daily crime activities." },
+    527:  { d:3, g:"Use a Stat Enhancer item. The four Stat Enhancers are: Boxing Gloves, Skateboard, Parachute, and Dumbbells — sold at Nikeh Sports city shop for ~$450M each. NOTE: Snowboard is NOT an enhancer — don't get scammed." },
+    538:  { d:4, g:"Drink 500 cans of energy drink total. Buy in bulk from item market. Limited by booster cooldown — ~24 per day max." },
+    539:  { d:4, g:"Read 10 books. Books come from mission rewards and faction subscription rewards — use them from inventory when received." },
+    699:  { d:3, g:"Maintain an impressive display case. Fill it with 5+ rare collectible items and keep them there for 30 days. Check Torn wiki for which items qualify as collectibles." },
+    882:  { d:3, g:"Use a Neumune Tablet to reduce radiation poisoning. First get irradiated: use a Blood Bag: Irradiated (item market, ~$2-3M). Then use a Neumune Tablet. You must be actively irradiated before the tablet works." },
+
+    229:  { d:4, g:"Achieve 250 total awards (honors + medals combined). Comes naturally from active playing and collecting honors over time." },
+    244:  { d:4, g:"Achieve 100 personal perks. Perks come from education courses, faction perks, stock benefits, crime enhancers, and merits. Check your profile → Perks section." },
+    245:  { d:4, g:"Achieve 1,000 hours of activity on Torn. Accumulates passively just from logging in and playing regularly." },
+    216:  { d:4, g:"Code 100 computer viruses (Crimes → Computer Crimes). Each attempt uses nerve. Just keep coding viruses as part of regular crime activities." },
+    259:  { d:4, g:"Reach level 50. Comes naturally from regular play — gain XP from attacking, missions, and activities." },
+    264:  { d:4, g:"Reach level 100. Long-term level goal. Gain XP from attacking high-stat players and completing missions." },
+    265:  { d:4, g:"Reach level 100. You earn both this and The Whole Nine Yards simultaneously upon hitting level 100." },
+    266:  { d:3, g:"Refill your energy bar 250 times using points. Each refill costs 30 points (7,500 total). Only do this if you have excess points." },
+    312:  { d:5, g:"Survive a Torn City server rollback. This is an extremely rare event that cannot be forced — just log in regularly and hope one happens." },
+    334:  { d:3, g:"Refill your Casino tokens 250 times using points. Each refill costs 30 points (7,500 total). Only if you have spare points." },
+    380:  { d:4, g:"Achieve 99,999 happiness (maximum). Gained from working — especially a Toy Shop which gives massive boosts. Keep working and using happiness items." },
+    566:  { d:3, g:"Refill your nerve bar 250 times using points. Each refill costs 30 points (7,500 total). Only if you have spare points." },
+    571:  { d:4, g:"Win 100 races. Set up custom 1-lap Speedway races with a friend — about 20 races per hour. Or just race normally over time." },
+    572:  { d:4, g:"Reach racing skill level 10. Comes naturally from regular racing participation." },
+    607:  { d:4, g:"Achieve 50 personal perks. Perks from education, faction, stocks, crime enhancers, and merits all count." },
+    614:  { d:4, g:"Achieve 500 total awards. Long-term milestone — keep collecting honors and medals." },
+    620:  { d:4, g:"Achieve 150 personal perks. Long-term goal — requires extensive education, stock holdings, and merit investment." },
+    700:  { d:5, g:"Achieve top 250 in one of the personal Hall of Fame leaderboards. Extremely competitive — requires being among the top Torn players in a specific stat category." },
+    729:  { d:3, g:"Unlock a hairstyle from the Token Shop or Points Building. Earn competition tokens from seasonal events and spend them in the Token Shop." },
+    730:  { d:3, g:"Unlock a backdrop from the Token Shop or Points Building. Earn competition tokens from seasonal events." },
+    734:  { d:4, g:"Crash a car during a race. Random event that occurs occasionally while racing — just keep racing and it will happen eventually." },
+    742:  { d:4, g:"Use 10,000 job points total. Takes a minimum of ~1,000 days of working. Work at a player-owned company for more points per day." },
+    217:  { d:4, g:"Refer one friend to Torn who reaches level 10. Share your referral link from your profile. Help them get started to ensure they stick around." },
+    218:  { d:4, g:"Refer two friends to Torn who both reach level 10." },
+    219:  { d:4, g:"Refer three friends to Torn who all reach level 10." },
+    246:  { d:5, g:"Have one of your referrals go on to refer another player who reaches level 10. Cannot be forced — requires luck and patience." },
+    839:  { d:5, g:"This is a secret honor — the unlock condition has never been officially confirmed. Just keep playing normally." },
+
+    248:  { d:4, g:"Bust 1,000 players from jail total. Bust people from the Jail page regularly. Get your Law Bachelor first for +50% success rate." },
+    249:  { d:4, g:"Bust 2,500 players from jail. Long-term jail busting — Law Bachelor is essential." },
+    250:  { d:4, g:"Bust 10,000 players from jail. Very long-term — requires consistent daily busting for years." },
+    252:  { d:4, g:"Make 500 bail payments from jail. Bail yourself or others out of jail 500 times total." },
+    906:  { d:4, g:"Go to jail 250 times total. Comes naturally from failing crimes over time — don't stress about farming this specifically." },
+
+    212:  { d:5, g:"Finish the Elimination competition with your team in 1st, 2nd, or 3rd place. Participate actively when Elimination runs and coordinate with teammates." },
+    213:  { d:5, g:"Participate in the Mr & Ms Torn competition. An official Torn event — watch the announcements for when it runs." },
+    214:  { d:5, g:"Complete the 4th stage of the TC Endurance challenge. Participate in the Endurance competition when it runs." },
+    221:  { d:5, g:"Earn 50 or more Dog Tags in the Dog Tag competition. Stack 1,000 energy before the event, prepare a list of inactive targets, and hit them continuously." },
+    222:  { d:4, g:"Find and collect 10 Easter eggs during the Easter seasonal event. Log in during Easter and click the egg hunt button — 10 eggs are easily found in one session." },
+    224:  { d:5, g:"Complete the 5th stage of the TC Endurance challenge." },
+    225:  { d:5, g:"Complete the bonus task of the TC Endurance challenge." },
+    226:  { d:4, g:"Achieve 50 attacks against enemy team members in the Elimination competition. Participate actively when Elimination runs." },
+    263:  { d:5, g:"Finish Torn of the Dead as a surviving civilian (not infected). Avoid getting infected throughout the event — requires luck and active avoidance of zombie players." },
+    277:  { d:5, g:"Earn 250+ Dog Tags in the Dog Tag competition. Far more intensive than KIA — very competitive." },
+    279:  { d:5, g:"Finish the Elimination competition with your team in 1st place. Very competitive." },
+    280:  { d:5, g:"Finish the Elimination competition within the top 5% of attackers on your team." },
+    306:  { d:4, g:"Attack 50 zombies in the Torn of the Dead event. Participate when it runs and attack infected players." },
+    311:  { d:4, g:"Infect 50 civilians in the Torn of the Dead event. Become a zombie and attack uninfected players." },
+    964:  { d:4, g:"Upgrade your Halloween Basket to 'Terrifying' during Halloween. Buy a basket when the event starts and attack players to fill it. Requires heavy Xanax use — may take two Halloween events at normal pace." },
+    966:  { d:5, g:"Upgrade your Halloween Basket to 'Nightmarish'. Higher tier than Terrifying — requires extremely active participation." },
+    969:  { d:4, g:"Upgrade your Halloween Basket to 'Frightful' (first tier). Achievable within 3 days of the event with consistent attacking." },
+
+    328:  { d:5, g:"Steal a Cluster Ring from the Jewelry Store in Shoplifting. Requires high Shoplifting skill to access the Jewelry Store. The Cluster Ring is a rare steal — keep targeting the Jewelry Store." },
+    676:  { d:4, g:"Successfully burgle all 34 Burglary areas. The final 3 unlock at level 100 (one per district). Work through all areas systematically — each only needs to be burglarized once, some of the locations will be unlocked once you reach level 100. Use torn.report to see what you bugalized already, and check the Wiki for Burglary to see what you're still missing." },
+    1012: { d:4, g:"Find all 7 rotten food and drink items from the City Dump. Requires Trash skill level 45 to unlock all 7 items. Keep searching the Dump regularly." },
+    1025: { d:4, g:"Achieve skill level 100 in Bootlegging. Just keep creating DVDs — you don't need to manually sell them for XP." },
+    1028: { d:4, g:"Sell 10,000 DVDs of each movie genre in Bootlegging. Complete ICT Computer Science education to unlock your online store. Set it up and let it run for ~2 weeks." },
+    1029: { d:4, g:"Achieve skill level 100 in Shoplifting. Grind daily across all Shoplifting areas. Slightly time-gated at first due to notoriety mechanics." },
+    1031: { d:4, g:"Acquire 10,000 customers on your Bootlegging online DVD store. Unlock via ICT Computer Science education, set up the store, and leave it running ~2 weeks." },
+    1032: { d:4, g:"Become initiated into one of Torn's 5 Graffiti crews. Reach Graffiti skill 70 and 500 reputation with the East Side crew, then complete the Unique crime at East Side." },
+    1034: { d:4, g:"Achieve skill level 100 in Graffiti. Grind Graffiti crimes daily across all 7 locations." },
+    1038: { d:4, g:"Achieve 100% notoriety at all Shoplifting stores simultaneously. Best done EARLY before your skill is too high. Have 200+ nerve available, then spam all areas until each hits 100%." },
+    1053: { d:4, g:"Achieve skill level 100 in Card Skimming. Place 20 skimmers at Bus Station and leave for 2-3 weeks at a time. Very low nerve cost per XP — set and forget." },
+    1064: { d:4, g:"Achieve skill level 100 in Burglary. Grind daily. Residential areas generally give better XP. Always case to maximum to avoid critical failures." },
+    1076: { d:5, g:"Pickpocket a police officer's badge. Officers appear as 'running' targets and are rare. Very high critical fail chance — attempt at skill level 0 (no skill to lose) or wait until level 100." },
+    1078: { d:4, g:"Achieve skill level 100 in Pickpocketing. Follow a Pickpocketing guide for safe target selection — avoid running targets to prevent critical fails." },
+    1083: { d:4, g:"Achieve skill level 100 in Hustling. Follow the Hustling compact guide for the most efficient method." },
+    1097: { d:4, g:"Achieve maximum technique in all 4 Hustling confidence tricks. Use each trick type repeatedly until each maxes out." },
+    1104: { d:4, g:"Achieve skill level 100 in Disposal. Use a disposal guide/table to pick safest jobs with best XP per nerve. Daily tasks respawn at midnight TCT." },
+    1106: { d:4, g:"Dissolve a Dead Body in Acid (Crimes → Disposal). Dead Body jobs appear around skill level 85 and spawn 1-2 times per week. Keep grinding Disposal skill." },
+    1118: { d:5, g:"Achieve skill level 100 in Cracking. Brute-force to identify characters, then guess when you have enough info. A Cracking helper script significantly speeds this up. Build an efficient rig using MIPS optimization guides." },
+    1129: { d:4, g:"Successfully guess 250 password characters in Cracking. Use a Cracking guessing tool to accelerate identification. Comes naturally while grinding toward level 100." },
+    1130: { d:5, g:"Achieve skill level 100 in Forgery. Driver's License forgery is most accessible — materials for higher-tier forgeries can be very expensive." },
+    1136: { d:4, g:"Have 10 of the same Forgery project in cooldown simultaneously. License Plates have a 1-hour cooldown. Requires at least 25 Forgery skill — create 10 License Plates at once." },
+    1166: { d:5, g:"In a single successful scam, respond to all four of your target's prompt types: Temptation (blue arrow), Sensitivity (red arrow), Concern (yellow tile), and Hesitation (purple tile). Learn the Scamming tile navigation system." },
+    1218: { d:4, g:"Earn $1,000,000 from a single scam. Target high-value marks and navigate tiles carefully to maximize payout." },
+    1229: { d:4, g:"Sell at least 10,000 card details at once in Card Skimming. With 20 skimmers running, accumulating 10,000 takes several weeks." },
+    1241: { d:4, g:"Run a Cracking rig at 2,500,000 MIPS. Build an optimized rig using a Cracking rig-building guide for best component selection." },
+    1243: { d:4, g:"Create a passport in Forgery. Passports unlock at higher Forgery skill — gather required materials from the market and forge one." },
+    1271: { d:4, g:"Achieve 5/5 reputation in all 7 Graffiti locations simultaneously. Tag consistently across all locations — your rep decays if you neglect any one location." },
+    1277: { d:4, g:"Achieve skill level 100 in Scamming. Follow a Scamming guide to learn efficient tile navigation." },
+    1284: { d:4, g:"Win $100,000 from a single bet in Hustling. Target high-value marks and use optimal technique." },
+    1328: { d:4, g:"In Pickpocketing, steal exclusively from 'skinny' (running) targets for enough successes. Follow the Pickpocketing safe target guide." },
+    1360: { d:4, g:"Clear ALL available Disposal jobs in a single day. Complete every job before midnight TCT when they respawn." },
+    1371: { d:5, g:"Destroy the largest building size in Arson in under 30 seconds. Requires high Arson skill and the optimal ignitor/accelerant combination — check an Arson combo guide." },
+    1374: { d:4, g:"Achieve skill level 100 in Arson. Warehouse Arson (11 nerve, ~95% success) is the most nerve-efficient method. Grind daily." },
+    1387: { d:4, g:"Use all 15 Arson ignitors, accelerants, and dampeners at least once each. These unlock progressively as Arson skill increases — just keep grinding." },
+
+    896:  { d:2, g:"Defeat any co-worker from your current company. Find the weakest player in your company's employee list and attack them." },
+    605:  { d:2, g:"Defeat a fellow faction member. Coordinate with a willing, weaker factionmate — they agree to let you win." },
+    860:  { d:2, g:"Buy a Trailer from Properties (~$1.5M from the city), go to Properties → Trailer → Rent Out, set rent to $0, then ask anyone to rent it. Post in a Torn chat if needed." },
+    739:  { d:2, g:"Get mugged for exactly $1. You need to carry exactly $10 in cash (the mug gives ~10% of what you hold, so $10 → $1 mugged). Have a trusted friend mug you while you hold $10. Put everything else in the bank first." },
+    317:  { d:2, g:"Be defeated by someone, then defeat them within 10 minutes. Coordinate with a friend: they beat you first, you immediately med out and counter-attack. You may need to hospitalize them to win." },
+    519:  { d:2, g:"Beat 10 different unique opponents in Russian Roulette. Set $10 minimum bets in the Casino — lots of players join low-stake games. You need 10 different people defeated, not just 10 wins." },
+    827:  { d:2, g:"You and your spouse must both participate in the same attack. One of you starts the attack, the other clicks Assist. Pick a weak inactive target. Both need to be online at the same time." },
+    955:  { d:2, g:"Mug someone who has just mugged someone else. Have a friend mug any player, then you immediately mug your friend right after their mug resolves." },
+    615:  { d:2, g:"Defeat someone while they are mid-attack on another player. Have a friend start an attack on someone but not finish it — you then attack and defeat your friend before they finish that fight." },
+    247:  { d:2, g:"Make $1,000,000 from a single mugging. Have a trusted friend hold $15M+ in cash (you steal ~10%), then mug them. Use a ghost trade immediately after to protect the cash. Or post in forums to buy a mug." },
+    488:  { d:2, g:"Perform a faction retaliation. When someone attacks a factionmate, you hospitalize the attacker within ~5 minutes. You must be in the same faction as the attacked player." },
+    871:  { d:4, g:"Get a finishing kill using only a Kick. First complete Introduction to Self-Defense → Kick-boxing in Education. Then equip no weapon and kill a low-level inactive using only Kick." },
+    670:  { d:4, g:"Receive actual loot from a defeated NPC. You need to deal any damage during an NPC fight. Check yata.yt for schedules, make sure to hit when the blue distraction icon is there, so you don't get knocked out immediately. It's not a guaranteed drop and will require multiple times to get loot, it's luck." },
+    481:  { d:2, g:"Defeat someone with higher total battle stats than you in a solo attack. Ask a stronger friend to fight you with their armor unequipped and a weak weapon — they intentionally let you win." },
+    627:  { d:2, g:"Defeat someone with at least double your total stats. Ask a friend with 2× your stats to go fully naked (no armor, weak weapon) and deliberately lose. Penguinbob is a known community candidate for lower-stat players." },
+    631:  { d:2, g:"Defeat someone with 5× your stats. Use stat boosters (Epinephrine, etc...). Ask the target to strip all armor and use only a weak weapon. For lower-stat players, penguinbob is commonly recommended." },
+    719:  { d:2, g:"Win a defense against someone who has double your stats. Coordinate with a stronger friend: they attack you while naked with a weak weapon, intentionally losing the attack." },
+    500:  { d:2, g:"Win an attack while at 1% or less life. Drop your health with blood bags to very low, attack a weak target using a Pillow (no damage), and kill them before you die. Have med items ready to recover." },
+    781:  { d:2, g:"Hit 10 different body parts in one attack and then win. Equip a Pillow (~$6k, no damage) to spread many hits around all body parts, then switch to your real weapon to finish. Pick a target that can survive a while." },
+    828:  { d:2, g:"Defeat someone on exactly turn 25 (the final possible turn). Equip a Pillow (~$6k) and keep hitting until turn 24, then switch to your main weapon and finish on turn 25." },
+    800:  { d:2, g:"Use 100 rounds of special ammo total. Buy special ammo from the Mission shop for credits, or steal some from Big Al's. Check your inventory under 'Ammo' to see what you have." },
+    256:  { d:2, g:"Get a single chain hit worth 10+ faction respect. You need decent stats and a good chain target. Pop Xanax before the attack for a stat boost. Only triggers during an active faction chain." },
+    15:   { d:2, g:"Achieve a kill streak of 10 consecutive wins with zero losses (including defends). Best attempted during new player protection (first 14 days). Stay out of forums/chat, close your bazaar, attack only low-stat inactives." },
+    477:  { d:2, g:"Get a single chain hit worth 100+ faction respect. Requires high stats and a high-ranked enemy faction target during war. Ask your faction leader for the right target." },
+
+    395:  { d:3, g:"Reach 1,000 energy. Start from 0 energy and take 4 Xanax in sequence (each gives +250 energy with a 6-8hr drug cooldown between uses). Each Xanax costs ~$850k — total ~$3.4M." },
+    268:  { d:3, g:"Sell 1,000 points on the market total. Buy 25-50 points at a time and relist them. Repeat until you hit 1,000 total sold. You'll take a small loss per cycle but it's fast. Costs ~$100-200k net." },
+    678:  { d:3, g:"Use Stink Bombs on a player weaker than you (if you target someone stronger, you get hospitalized). Buy Stink Bombs from Item Market → Specials (~$800k). Use from inventory → Use → enter a weaker player's name." },
+    717:  { d:3, g:"Use Dog Poop on a weaker player. Buy from Item Market → Specials (~$800k). Same process as Stink Bombs — target must be weaker or you get hosp'd." },
+    716:  { d:3, g:"Use Toilet Paper on a weaker player. Buy from Item Market → Specials (~$800k). Same process as the other prank items." },
+    437:  { d:3, g:"Spin the Wheel of Mediocrity in the Casino ($50,000 per spin) and win at least once. Keep spinning until you win. Budget a few million for attempts." },
+    427:  { d:3, g:"Spin the Wheel of Awesome in the Casino ($1,000,000 per spin) and win at least once. Budget several million for attempts — RNG." },
+    431:  { d:3, g:"Spin the Wheel of Lame in the Casino ($1,000 per spin) and win at least once. Cheapest of the three wheels. Just keep spinning." },
+    743:  { d:3, g:"Trash an item with a current market value of at least $1,000,000. Buy any item just over $1M in market value (e.g. a small suitcase), then dump it from your inventory." },
+    233:  { d:3, g:"Own all lightweight gym memberships: Bucks Fitness, Frontline Fitness, City Gym, and Anabolic Supplements. Buy all four from their respective city locations." },
+    239:  { d:3, g:"Have 100 different unique customers buy from your Bazaar. You need to buy a Bazaar (~250 points). Sell cheap popular items like Lollipops at low prices to attract buyers fast." },
+
+    316:  { d:4, g:"Pray at the Church twice daily (with ~8-10hr gap between prayers) for 7-14 days straight without missing. If you skip a full prayer cycle, the timer resets to zero. Set phone reminders. City → Church → Pray." },
+    534:  { d:4, g:"Drink 500 bottles of alcohol total. Limited by booster cooldown (~24 per day max). Budget ~21 days and ~$350k. Buy cheap beer in bulk from the Item Market." },
+    537:  { d:4, g:"Eat 500 bags of candy total. Buy Lollipops cheaply from the City Shop. Eat as many per day as your booster cooldown allows." },
+    29:   { d:4, g:"Use 50 Cannabis total. Each use triggers a ~1.5hr cooldown. Total time: up to 75 hours spread over days. Each Cannabis costs ~$6,000, so about $300k total." },
+    541:  { d:4, g:"Import 100 items while returning from abroad. Use a Large Suitcase to bring back multiple items per trip. Stacks across all trips over time." },
+    542:  { d:4, g:"Import 1,000 items from abroad total. Same as Mule but more. Keep bringing back suitcases full each trip." },
+    549:  { d:4, g:"Spend 7 cumulative days in the air (travel time only — time spent at a destination doesn't count). Longer flights help. Stacks across all journeys." },
+    873:  { d:4, g:"Log in every single day for 100 consecutive days without missing one. Set a daily alarm — missing even one day resets the counter." },
+    1054: { d:4, g:"Go to Crimes → Card Skimming → Bus Station. Install a skimmer there and leave it for ~3 weeks to accumulate 250+ card details. Then recover it to trigger the honor." },
+    163:  { d:4, g:"Stay married to the same person for 250 consecutive days. Get married via the Chapel (City) and don't divorce." },
+    162:  { d:4, g:"Stay married to the same person for 750 consecutive days." },
+    257:  { d:4, g:"Participate in a faction chain of at least 1,000 hits. Join during a major planned chain event — ask your faction leadership when the next big chain is." },
+    475:  { d:4, g:"Participate in a faction chain of at least 10,000 hits. Requires a very active faction with regular large chains." },
+    844:  { d:4, g:"Reach 10,000 in any one working stat (Manual Labor, Intelligence, or Endurance). Ask your company director to train you — directors can boost stats much faster than self-training." },
+    11:   { d:4, g:"Travel abroad 100 times total. Stacks across all trips. Just keep traveling regularly." },
+    165:  { d:4, g:"Travel abroad 1,000 times total. Long-term goal — just keep traveling consistently." },
+    309:  { d:4, g:"Log in on December 25th (Christmas Day). Just be online — even briefly — that day." },
+    731:  { d:4, g:"Log in on February 14th (Valentine's Day). Just be online that day." },
+    443:  { d:4, g:"Log in on October 31st (Halloween). Just be online that day." },
+    459:  { d:4, g:"Log in on November 15th (Torn's anniversary). Just be online that day." },
+    375:  { d:4, g:"Log in on January 1st (New Year's Day). Just be online that day." },
+    271:  { d:4, g:"Trash (dump) 5,000 items total. Buy the cheapest items in bulk from the market (flowers, lollipops, etc.) and dump them in batches." },
+    903:  { d:4, g:"Go to hospital 250 times total (cumulative). Comes naturally over time — don't stress about farming this one." },
+    651:  { d:4, g:"Complete 50 education courses total. Keep taking any courses in Education." },
+    656:  { d:4, g:"Complete 100 education courses total." },
+    552:  { d:4, g:"Participate in 100 organized crimes with your faction. Join your faction's organized crime runs regularly." },
+    251:  { d:4, g:"Commit 10,000 criminal offenses total (Crimes v2 — any crime type counts toward this)." },
+    617:  { d:4, g:"Max out any merit upgrade to its full 10/10. Requires 55 total merits spent — keep collecting merits and focus them into one upgrade to completion." },
+
+    338:  { d:5, g:"Achieve all four Blackjack milestones in any order (separate sessions are fine): 1) Natural — 21 with only your first 2 cards. 2) Double Down — press the Double button on a strong starting hand. 3) Insurance — place the insurance side bet when the dealer shows an Ace. 4) Six Card Charlie — receive 6 cards without going over 21. Bet $10 minimum to minimize losses. Be patient." },
+    326:  { d:5, g:"Get a win streak of 25 consecutive rounds in High-Low (Casino). Bet the minimum each time. Any loss resets the streak. Pure RNG — just keep playing consistently." },
+    220:  { d:5, g:"Irritate ALL job interviewers simultaneously. You must have minimum stats to qualify for all starter jobs. Each interviewer has a specific way to annoy them — check the dedicated guide thread on Torn forums (search 'Affronted guide'). You must fail every interview in the same session." },
+    22:   { d:5, g:"Win 50 defends (people must attack you and lose). Post in the Attacking Forum offering ~$250k per bought loss. Pay each person immediately after they lose to avoid bounties and hate mail. Delete your post when done. Total cost ~$12-15M." },
+    16:   { d:5, g:"Achieve a kill streak of 100 consecutive wins with absolutely zero losses (attacking or defending). Best attempted during new player protection. Avoid ALL forums and chat. Keep bazaar closed. Use stealth. Target 60+ attacks per day. Buy defends if necessary to avoid random attackers." },
+    478:  { d:5, g:"Get a single chain hit worth 1,000+ faction respect. Requires elite stats and an extremely high-ranked enemy faction target during war. Consult your faction's top fighters and leadership." },
+    513:  { d:5, g:"Win $100M from a single Russian Roulette game. You and a trusted friend both bring $50M+, play password-protected games, and take turns winning. Move winnings to a ghost trade instantly — mugging snipers patrol the RR page." },
+  };
+
+  const HON_REFILL_COST = 30;
+  const honRefillSub = (v, tg) => `≈ ${((tg - v) * HON_REFILL_COST).toLocaleString()} points to go (${HON_REFILL_COST} pts per refill)`;
+  const honDays = (v, tg) => `${(v / 86400).toFixed(1)}d / ${(tg / 86400).toFixed(0)}d`;
+  const honHours = (v, tg) => `${Math.floor(v / 3600).toLocaleString()}h / ${Math.floor(tg / 3600).toLocaleString()}h`;
+
+  // Honor ID -> where its progress is in the personal stats (v2 user/personalstats?cat=all)
+  const HON_PROGRESS = {
+    39:   { path:'attacking.attacks.won',            target:5,          label:'Attacks won' },
+    40:   { path:'attacking.attacks.won',            target:20,         label:'Attacks won' },
+    41:   { path:'attacking.attacks.won',            target:50,         label:'Attacks won' },
+    42:   { path:'attacking.attacks.won',            target:100,        label:'Attacks won' },
+    43:   { path:'attacking.attacks.won',            target:250,        label:'Attacks won' },
+    20:   { path:'attacking.hits.critical',          target:25,         label:'Critical hits' },
+    270:  { path:'attacking.attacks.stalemate',      target:100,        label:'Stalemates' },
+    490:  { path:'attacking.attacks.assist',         target:250,        label:'Assists' },
+    639:  { path:'attacking.attacks.assist',         target:1,          label:'Assists' },
+    254:  { path:'attacking.hits.one_hit_kills',     target:1,          label:'One-hit kills' },
+    517:  { path:'attacking.hits.one_hit_kills',     target:100,        label:'One-hit kills' },
+    601:  { path:'attacking.hits.success',           target:10000,      label:'Total hits' },
+    1004: { path:'attacking.damage.total',           target:100000,     label:'Total damage dealt' },
+    1002: { path:'attacking.damage.total',           target:1000000,    label:'Total damage dealt' },
+    1001: { path:'attacking.damage.total',           target:10000000,   label:'Total damage dealt' },
+    1003: { path:'attacking.damage.total',           target:100000000,  label:'Total damage dealt' },
+    740:  { path:'attacking.damage.best',            target:5000,       label:'Best single hit' },
+    741:  { path:'attacking.damage.best',            target:10000,      label:'Best single hit' },
+    786:  { path:'attacking.damage.best',            target:15000,      label:'Best single hit' },
+    15:   { path:'attacking.killstreak.current',     target:10,         label:'Current kill streak' },
+    16:   { path:'attacking.killstreak.current',     target:100,        label:'Current kill streak' },
+    22:   { path:'attacking.defends.won',            target:50,         label:'Defends won' },
+    228:  [
+            { path:'attacking.attacks.won',   target:1000, label:'Attacks won' },
+            { path:'attacking.defends.total', target:1000, label:'Total defends' },
+          ],
+    763:  { path:'attacking.unarmored_wins',         target:250,        label:'Unarmored wins' },
+    232:  { path:'bounties.collected.amount',        target:250,        label:'Bounties collected' },
+    236:  { path:'bounties.collected.value',         target:10000000,   label:'Bounty earnings ($)' },
+    140:  { path:'attacking.ammunition.total',       target:1000,       label:'Rounds fired' },
+    151:  { path:'attacking.ammunition.total',       target:10000,      label:'Rounds fired' },
+    834:  { path:'attacking.ammunition.total',       target:100000,     label:'Rounds fired' },
+    836:  { path:'attacking.ammunition.total',       target:1000000,    label:'Rounds fired' },
+    800:  { path:'attacking.ammunition.special',     target:100,        label:'Special ammo used' },
+    793:  { path:'attacking.ammunition.special',     target:1000,       label:'Special ammo used' },
+    791:  { path:'attacking.ammunition.special',     target:10000,      label:'Special ammo used' },
+    942:  { path:'attacking.ammunition.hollow_point',target:2500,       label:'Hollow Point used' },
+    943:  { path:'attacking.ammunition.piercing',    target:2500,       label:'Piercing ammo used' },
+    944:  { path:'attacking.ammunition.incendiary',  target:2500,       label:'Incendiary ammo used' },
+    945:  { path:'attacking.ammunition.tracer',      target:2500,       label:'Tracer ammo used' },
+    141:  { path:'finishing_hits.heavy_artillery',   target:100,        label:'Heavy artillery kills' },
+    144:  { path:'finishing_hits.machine_guns',      target:100,        label:'Machine gun kills' },
+    146:  { path:'finishing_hits.rifles',            target:100,        label:'Rifle kills' },
+    148:  { path:'finishing_hits.sub_machine_guns',  target:100,        label:'SMG kills' },
+    147:  { path:'finishing_hits.shotguns',          target:100,        label:'Shotgun kills' },
+    145:  { path:'finishing_hits.pistols',           target:100,        label:'Pistol kills' },
+    143:  { path:'finishing_hits.temporary',         target:100,        label:'Temporary weapon kills' },
+    149:  { path:'finishing_hits.piercing',          target:100,        label:'Piercing kills' },
+    150:  { path:'finishing_hits.slashing',          target:100,        label:'Slashing kills' },
+    142:  { path:'finishing_hits.clubbing',          target:100,        label:'Clubbing kills' },
+    515:  { path:'finishing_hits.hand_to_hand',      target:100,        label:'Hand-to-hand kills' },
+    1014: { path:'crimes.skills.search_for_cash',    target:100,        label:'Search for Cash skill' },
+    1025: { path:'crimes.skills.bootlegging',        target:100,        label:'Bootlegging skill' },
+    1029: { path:'crimes.skills.shoplifting',        target:100,        label:'Shoplifting skill' },
+    1053: { path:'crimes.skills.card_skimming',      target:100,        label:'Card Skimming skill' },
+    1064: { path:'crimes.skills.burglary',           target:100,        label:'Burglary skill' },
+    1078: { path:'crimes.skills.pickpocketing',      target:100,        label:'Pickpocketing skill' },
+    1083: { path:'crimes.skills.hustling',           target:100,        label:'Hustling skill' },
+    1104: { path:'crimes.skills.disposal',           target:100,        label:'Disposal skill' },
+    1118: { path:'crimes.skills.cracking',           target:100,        label:'Cracking skill' },
+    1130: { path:'crimes.skills.forgery',            target:100,        label:'Forgery skill' },
+    1277: { path:'crimes.skills.scamming',           target:100,        label:'Scamming skill' },
+    1374: { path:'crimes.skills.arson',              target:100,        label:'Arson skill' },
+    251:  { path:'crimes.offenses.total',            target:10000,      label:'Total crimes committed' },
+    903:  { path:'hospital.times_hospitalized',      target:250,        label:'Times hospitalized' },
+    7:    { path:'hospital.medical_items_used',      target:5000,       label:'Medical items used' },
+    23:   { path:'hospital.reviving.revives',        target:500,        label:'Players revived' },
+    267:  { path:'hospital.reviving.revives',        target:1000,       label:'Players revived' },
+    418:  { path:'hospital.blood_withdrawn',         target:250,        label:'Blood bags filled' },
+    398:  { path:'hospital.blood_withdrawn',         target:1000,       label:'Blood bags filled' },
+    906:  { path:'jail.times_jailed',                target:250,        label:'Times jailed' },
+    248:  { path:'jail.busts.success',               target:1000,       label:'Successful jail busts' },
+    249:  { path:'jail.busts.success',               target:2500,       label:'Successful jail busts' },
+    250:  { path:'jail.busts.success',               target:10000,      label:'Successful jail busts' },
+    252:  { path:'jail.bails.amount',                target:500,        label:'Bail payments made' },
+    29:   { path:'drugs.cannabis',  target:50, label:'Cannabis used' },
+    30:   { path:'drugs.ecstasy',   target:50, label:'Ecstasy used' },
+    31:   { path:'drugs.ketamine',  target:50, label:'Ketamine used' },
+    32:   { path:'drugs.lsd',       target:50, label:'LSD used' },
+    33:   { path:'drugs.opium',     target:50, label:'Opium used' },
+    34:   { path:'drugs.shrooms',   target:50, label:'Shrooms used' },
+    35:   { path:'drugs.speed',     target:50, label:'Speed used' },
+    36:   { path:'drugs.pcp',       target:50, label:'PCP used' },
+    37:   { path:'drugs.xanax',     target:50, label:'Xanax used' },
+    38:   { path:'drugs.vicodin',   target:50, label:'Vicodin used' },
+    11:   { path:'travel.total',    target:100,  label:'Trips abroad' },
+    165:  { path:'travel.total',    target:1000, label:'Trips abroad' },
+    130:  { path:'travel.argentina',          target:50, label:'Argentina trips' },
+    131:  { path:'travel.mexico',             target:50, label:'Mexico trips' },
+    132:  { path:'travel.united_arab_emirates',target:50,label:'UAE trips' },
+    133:  { path:'travel.hawaii',             target:50, label:'Hawaii trips' },
+    134:  { path:'travel.japan',              target:50, label:'Japan trips' },
+    135:  { path:'travel.united_kingdom',     target:50, label:'UK trips' },
+    136:  { path:'travel.south_africa',       target:50, label:'South Africa trips' },
+    137:  { path:'travel.switzerland',        target:50, label:'Switzerland trips' },
+    138:  { path:'travel.china',              target:50, label:'China trips' },
+    139:  { path:'travel.canada',             target:50, label:'Canada trips' },
+    272:  { path:'travel.cayman_islands',     target:50, label:'Cayman Islands trips' },
+    549:  { path:'travel.time_spent', target:604800,    label:'Air time', fmt:honDays },
+    567:  { path:'travel.time_spent', target:2678400,   label:'Air time', fmt:honDays },
+    557:  { path:'travel.time_spent', target:31536000,  label:'Air time', fmt:honDays },
+    541:  { path:'travel.items_bought', target:100,    label:'Items imported' },
+    542:  { path:'travel.items_bought', target:1000,   label:'Items imported' },
+    543:  { path:'travel.items_bought', target:10000,  label:'Items imported' },
+    50:   { path:'travel.hunting.skill', target:50,    label:'Hunting skill' },
+    51:   { path:'travel.hunting.skill', target:75,    label:'Hunting skill' },
+    52:   { path:'travel.hunting.skill', target:100,   label:'Hunting skill' },
+    4:    { path:'jobs.job_points_used', target:100,   label:'Job points used' },
+    164:  { path:'jobs.job_points_used', target:1000,  label:'Job points used' },
+    742:  { path:'jobs.job_points_used', target:10000, label:'Job points used' },
+    571:  { path:'racing.races.won', target:100, label:'Races won' },
+    572:  { path:'racing.skill',     target:10,  label:'Racing skill' },
+    245:  { path:'other.activity.time', target:3600000, label:'Activity time', fmt:honHours },
+    606:  { path:'other.awards', target:100,  label:'Total awards' },
+    229:  { path:'other.awards', target:250,  label:'Total awards' },
+    614:  { path:'other.awards', target:500,  label:'Total awards' },
+    873:  { path:'other.activity.streak.current', target:100, label:'Daily login streak' },
+    1:    { path:'items.found.city',          target:50,   label:'City items found' },
+    238:  { path:'items.found.dump',          target:1000, label:'Dump items found' },
+    271:  { path:'items.trashed',             target:5000, label:'Items trashed' },
+    539:  { path:'items.used.books',          target:10,   label:'Books read' },
+    537:  { path:'items.used.candy',          target:500,  label:'Candy eaten' },
+    534:  { path:'items.used.alcohol',        target:500,  label:'Alcohol drunk' },
+    538:  { path:'items.used.energy_drinks',  target:500,  label:'Energy drinks used' },
+    527:  { path:'items.used.stat_enhancers', target:1,    label:'Stat enhancers used' },
+    268:  { path:'trading.points.sold',       target:1000, label:'Points sold' },
+    239:  { path:'trading.bazaar.customers',  target:100,  label:'Bazaar customers' },
+    266:  { path:'other.refills.energy', target:250, label:'Energy refills', sub:honRefillSub },
+    566:  { path:'other.refills.nerve',  target:250, label:'Nerve refills',  sub:honRefillSub },
+    334:  { path:'other.refills.token',  target:250, label:'Casino token refills', sub:honRefillSub },
+    216:  { path:'items.viruses_coded',               target:100, label:'Viruses coded' },
+    546:  { path:'investments.stocks.payouts',        target:100, label:'Stock payouts' },
+    273:  { path:'trading.items.auctions.won',        target:10,  label:'Auctions won' },
+    222:  { path:'items.found.easter_eggs',           target:10,  label:'Easter eggs found' },
+    552:  { path:'crimes.offenses.organized_crimes',  target:100, label:'Organized crimes' },
+  };
+
+  // Honor categories (type.id from the API); names come from I18N (honCats)
+  const HON_CAT_ICON = {
+    0: '⚙️', 1: '🏳️', 2: '🔫', 3: '🎖️', 4: '🎓', 5: '🔪', 6: '💊', 7: '✈️', 8: '⚔️', 9: '🎲',
+    10: '💪', 11: '❤️', 12: '📈', 13: '🏆', 14: '💰', 15: '🔒', 16: '🎒', 17: '📋', 18: '🏥',
+  };
+  const HON_RARITY_RANK = {
+    'Very Common': 1, 'Common': 2, 'Uncommon': 3, 'Limited': 4, 'Rare': 5, 'Very Rare': 6, 'Extremely Rare': 7,
+  };
+  const HON_RARITY_COLOR = {
+    'Very Common': '#9ca3af', 'Common': '#9ca3af', 'Uncommon': '#60a5fa', 'Limited': '#c084fc',
+    'Rare': '#fb923c', 'Very Rare': '#f87171', 'Extremely Rare': '#fbbf24',
+  };
+
+  // ---- Honor tracker: second tab ------------------------------------------------------------
+  // var on purpose: renderHonors() may be called (and must return early) before this section ran
+  var honReady = false; // eslint-disable-line no-var
+  // Data only from api.torn.com (same key as the watchlist), images from www.torn.com.
+  const HON_REFRESH_MS = 5 * 60 * 1000;  // own honors + personal stats: at most every 5 min, only while the tab is open
+  const HON_ALL_MS = 24 * 3600 * 1000;   // the list of all honors rarely changes
+  let honLoading = false;
+  const hon = { tier: 0, cat: -1, search: '', sort: 'diff', showEarned: false, showHidden: false, open: new Set() };
+  const honMode = () => { const m = GM_getValue('honMode', 'easy'); return m === 'cat' || m === 'all' ? m : 'easy'; };
+  const honTier = (id) => (HON_DB[id] ? HON_DB[id].d : 6);
+  const honStat = (stats, path) => {
+    let cur = stats;
+    for (const p of path.split('.')) {
+      if (cur == null || typeof cur !== 'object') return null;
+      cur = cur[p];
+    }
+    return typeof cur === 'number' ? cur : null;
+  };
+  const honNum = (n) => n.toLocaleString(getLang() === 'en' ? 'en-US' : 'de-DE');
+
+  async function refreshHonors(force) {
+    const key = getKey();
+    if (!key || honLoading) return;
+    if (!force && (isPaused() || Date.now() - GM_getValue('honorsAt', 0) < HON_REFRESH_MS)) return;
+    honLoading = true;
+    renderHonors();
+    const check = (d) => {
+      if (d && d.error) {
+        throw new Error(d.error.code === 16 ? t('honAccess') : `${d.error.error || 'API error'} (Code ${d.error.code})`);
+      }
+      return d || {};
+    };
+    try {
+      if (force || !GM_getValue('honorsAll', []).length || Date.now() - GM_getValue('honorsAllAt', 0) > HON_ALL_MS) {
+        const d = check(await apiGet('v2/torn/honors?limit=1000', key));
+        const all = (d.honors || [])
+          .filter((h) => h && h.id && !(h.type && h.type.id === 1) && h.description !== 'A default honor bar available to everyone')
+          .map((h) => ({ id: h.id, name: h.name || '', desc: h.description || '', cat: h.type ? h.type.id : 0, rarity: h.rarity || '' }));
+        GM_setValue('honorsAll', all);
+        GM_setValue('honorsAllAt', Date.now());
+        await sleep(REQUEST_GAP_MS);
+      }
+      const u = check(await apiGet('v2/user/honors', key));
+      GM_setValue('honorsMine', (u.honors || []).map((h) => h.id));
+      try {
+        await sleep(REQUEST_GAP_MS);
+        const ps = await apiGet('v2/user/personalstats?cat=all', key);
+        if (ps && !ps.error && ps.personalstats) GM_setValue('honorsStats', ps.personalstats);
+      } catch {
+        // no progress bars then – the honors themselves are there
+      }
+      GM_setValue('honorsError', '');
+    } catch (e) {
+      GM_setValue('honorsError', e.message);
+    } finally {
+      GM_setValue('honorsAt', Date.now()); // also after an error, so it isn't retried every few seconds
+      honLoading = false;
+      renderHonors();
+    }
+  }
+
+  function getTab() { return GM_getValue('tab', 'list') === 'honors' ? 'honors' : 'list'; }
+  const honorsVisible = () => honReady && !$('.twl-honors').hidden && !panel.classList.contains('twl-collapsed');
+  // Which page shows: settings over everything, otherwise the chosen tab
+  function applyTab() {
+    const settingsOpen = !$('.twl-spage').hidden;
+    const tab = getTab();
+    $('.twl-main').hidden = settingsOpen || tab !== 'list';
+    $('.twl-honors').hidden = settingsOpen || tab !== 'honors';
+    for (const b of panel.querySelectorAll('[data-act="tab"]')) b.classList.toggle('twl-on', b.dataset.v === tab);
+    $('.twl-title-name').textContent = tab === 'honors' ? 'Honors' : 'Watchlist';
+    $('.twl-count').hidden = tab === 'honors';
+    renderHonors();
+  }
+  function setTab(v) {
+    GM_setValue('tab', v === 'honors' ? 'honors' : 'list');
+    if (!$('.twl-spage').hidden) showSettings(false);
+    else applyTab();
+    if (getTab() === 'honors') refreshHonors(false);
+  }
+  function toggleIn(key, id) {
+    const arr = GM_getValue(key, []);
+    GM_setValue(key, arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
+    renderHonors();
+  }
+
+  function honProgressHtml(id, stats) {
+    const pm = HON_PROGRESS[id];
+    if (!pm || !stats) return '';
+    return (Array.isArray(pm) ? pm : [pm]).map(({ path, target, label, fmt, sub }) => {
+      const raw = honStat(stats, path);
+      if (raw === null) return '';
+      const pct = Math.min(100, Math.round((raw / target) * 100));
+      const done = raw >= target;
+      const color = done ? '#4ade80' : pct >= 75 ? '#f5a623' : pct >= 40 ? '#60a5fa' : '#8b8b95';
+      const val = done ? '✓' : fmt ? fmt(raw, target) : `${honNum(raw)} / ${honNum(target)}`;
+      return `<div class="twl-hp"><div class="twl-hp-l"><span>${esc(label)}</span><span style="color:${color}">${esc(val)}</span></div>`
+        + `<div class="twl-hp-bar"><i style="width:${pct}%;background:${color}"></i></div>`
+        + `${!done && sub ? `<div class="twl-hp-sub">${esc(sub(raw, target))}</div>` : ''}</div>`;
+    }).join('');
+  }
+
+  function honCardHtml(h, s) {
+    const apiEarned = s.mine.has(h.id);
+    const marked = s.done.has(h.id);
+    const earned = apiEarned || marked;
+    const hidden = s.hidden.has(h.id);
+    const tier = honTier(h.id);
+    const entry = HON_DB[h.id];
+    const color = earned ? '#4ade80' : HON_TIER_COLOR[tier];
+    const open = hon.open.has(h.id);
+    let badges = '';
+    if (apiEarned) badges += `<span class="twl-hb" style="color:#4ade80">${esc(t('honEarnedBadge'))}</span>`;
+    if (marked && !apiEarned) badges += `<span class="twl-hb" style="color:#60a5fa">${esc(t('honMarkedBadge'))}</span>`;
+    if (h.rarity) badges += `<span class="twl-hb" style="color:${HON_RARITY_COLOR[h.rarity] || '#9ca3af'}">${esc(h.rarity)}</span>`;
+    const acts = [];
+    if (!earned) {
+      acts.push(`<button type="button" data-act="hon-guide" data-id="${h.id}" class="twl-hc-gbtn">${esc(t(open ? 'honGuideClose' : 'honGuide'))}</button>`);
+    }
+    if (!apiEarned) acts.push(`<button type="button" data-act="hon-done" data-id="${h.id}">${esc(t(marked ? 'honUndo' : 'honDone'))}</button>`);
+    acts.push(`<button type="button" data-act="hon-hide" data-id="${h.id}">${esc(t(hidden ? 'honUnhide' : 'honHide'))}</button>`);
+    const guide = !earned && open
+      ? `<div class="twl-hc-guide"><span class="twl-hb" style="color:${HON_TIER_COLOR[tier]};background:${HON_TIER_BG[tier]}">`
+        + `${esc(t('honTierNames')[tier])} · ${esc(t('honTierDescs')[tier])}</span><div>${esc(entry ? entry.g : t('honNoGuide'))}</div></div>`
+      : '';
+    return `<div class="twl-hc${earned ? ' twl-hc-earned' : ''}${hidden ? ' twl-hc-dim' : ''}" style="--c:${color}">`
+      + `<div class="twl-hc-name">${HON_CAT_ICON[h.cat] || '🎖️'} ${esc(h.name)}</div><div class="twl-hc-desc">${esc(h.desc)}</div>`
+      + `<img class="twl-hc-bar" loading="lazy" alt="" src="https://www.torn.com/images/honors/${h.id}/f.png">`
+      + (badges ? `<div class="twl-hc-badges">${badges}</div>` : '')
+      + (earned ? '' : honProgressHtml(h.id, s.stats))
+      + `<div class="twl-hc-acts">${acts.join('')}</div>${guide}</div>`;
+  }
+
+  function renderHonors() {
+    if (!honReady) return;
+    const all = GM_getValue('honorsAll', []);
+    const s = {
+      mine: new Set(GM_getValue('honorsMine', [])),
+      done: new Set(GM_getValue('honorsDone', [])),
+      hidden: new Set(GM_getValue('honorsHidden', [])),
+      stats: GM_getValue('honorsStats', null),
+    };
+    const isEarned = (id) => s.mine.has(id) || s.done.has(id);
+    const earnedCount = all.filter((h) => isEarned(h.id)).length;
+    const tabLabel = `🎖 ${t('tabHonors')}${all.length ? ` ${earnedCount}/${all.length}` : ''}`;
+    const tabBtn = $('.twl-tab-hon');
+    if (tabBtn.textContent !== tabLabel) tabBtn.textContent = tabLabel;
+    if ($('.twl-honors').hidden) return;
+
+    const mode = honMode();
+    for (const b of panel.querySelectorAll('[data-act="hon-mode"]')) b.classList.toggle('twl-on', b.dataset.v === mode);
+
+    // Pills: difficulty tiers (easy) or categories (chips)
+    const pills = $('.twl-hon-pills');
+    let pillHtml = '';
+    if (mode === 'easy') {
+      const guided = all.filter((h) => HON_DB[h.id]);
+      pillHtml += `<button type="button" class="twl-hpill${hon.tier === 0 ? ' twl-on' : ''}" data-act="hon-tier" data-v="0">`
+        + `${esc(t('honAllTiers', guided.filter((h) => !isEarned(h.id)).length))}</button>`;
+      for (let d = 1; d <= 5; d++) {
+        const inTier = guided.filter((h) => HON_DB[h.id].d === d);
+        if (!inTier.length) continue;
+        const left = inTier.filter((h) => !isEarned(h.id)).length;
+        const c = left ? HON_TIER_COLOR[d] : '#4ade80';
+        pillHtml += `<button type="button" class="twl-hpill${hon.tier === d ? ' twl-on' : ''}" style="--c:${c}" data-act="hon-tier" data-v="${d}">`
+          + `${esc(t('honTierNames')[d])} ${left ? left : '✓'}</button>`;
+      }
+    } else if (mode === 'cat') {
+      const counts = {};
+      for (const h of all) {
+        const c = counts[h.cat] || (counts[h.cat] = { total: 0, earned: 0 });
+        c.total++;
+        if (isEarned(h.id)) c.earned++;
+      }
+      const names = t('honCats');
+      pillHtml += `<button type="button" class="twl-hpill${hon.cat === -1 ? ' twl-on' : ''}" data-act="hon-cat" data-v="-1">${esc(t('honAllCats'))}</button>`;
+      Object.keys(counts).map(Number)
+        .sort((a, b) => String(names[a] || a).localeCompare(String(names[b] || b)))
+        .forEach((id) => {
+          const c = counts[id];
+          pillHtml += `<button type="button" class="twl-hpill${hon.cat === id ? ' twl-on' : ''}" data-act="hon-cat" data-v="${id}">`
+            + `${HON_CAT_ICON[id] || '🎖️'} ${esc(names[id] || `#${id}`)} <span class="twl-hpill-n">${c.earned}/${c.total}</span></button>`;
+        });
+    }
+    pills.classList.toggle('twl-chips', mode === 'cat');
+    pills.hidden = !pillHtml;
+    setHtml(pills, pillHtml);
+
+    // Status line + toggles
+    const err = GM_getValue('honorsError', '');
+    let status;
+    if (!getKey()) status = `<span class="twl-hs-m">${esc(t('honNoKey'))}</span>`;
+    else if (honLoading) status = esc(t('honLoading'));
+    else if (err) status = `<span class="twl-hs-m">${esc(err)}</span>`;
+    else if (all.length) {
+      const at = GM_getValue('honorsAt', 0);
+      status = `<span class="twl-hs-e">${honNum(earnedCount)}</span> / ${honNum(all.length)} · `
+        + `${Math.round((earnedCount / all.length) * 100)} %${at ? ` · ${esc(t('honAgo', formatAge(Math.max(0, Math.floor((Date.now() - at) / 1000)))))}` : ''}`;
+    } else status = esc(t('honNoData'));
+    setHtml($('.twl-hon-status'), status);
+    $('[data-act="hon-earned"]').textContent = t(hon.showEarned ? 'honHideEarned' : 'honShowEarned');
+    $('[data-act="hon-earned"]').classList.toggle('twl-on', hon.showEarned);
+    $('[data-act="hon-hidden"]').textContent = t(hon.showHidden ? 'honHideHidden' : 'honShowHidden');
+    $('[data-act="hon-hidden"]').classList.toggle('twl-on', hon.showHidden);
+
+    // The list
+    const listEl = $('.twl-hon-list');
+    if (!all.length) {
+      setHtml(listEl, `<div class="twl-hon-msg">${esc(!getKey() ? t('honNoKey') : honLoading ? t('honLoading') : err || t('honNoData'))}</div>`);
+      return;
+    }
+    let list = mode === 'easy' ? all.filter((h) => HON_DB[h.id]) : all.slice();
+    if (mode === 'easy' && hon.tier) list = list.filter((h) => honTier(h.id) === hon.tier);
+    if (mode === 'cat' && hon.cat >= 0) list = list.filter((h) => h.cat === hon.cat);
+    if (!hon.showEarned) list = list.filter((h) => !isEarned(h.id));
+    if (!hon.showHidden) list = list.filter((h) => !s.hidden.has(h.id));
+    const q = hon.search.trim().toLowerCase();
+    if (q) {
+      list = list.filter((h) => h.name.toLowerCase().includes(q) || h.desc.toLowerCase().includes(q)
+        || (HON_DB[h.id] ? HON_DB[h.id].g.toLowerCase().includes(q) : false));
+    }
+    const rank = (h) => HON_RARITY_RANK[h.rarity] || 0;
+    list.sort((a, b) => {
+      if (hon.showEarned && isEarned(a.id) !== isEarned(b.id)) return isEarned(a.id) ? 1 : -1;
+      if (hon.sort === 'name') return a.name.localeCompare(b.name);
+      if (hon.sort === 'rarity') return rank(b) - rank(a);
+      return honTier(a.id) - honTier(b.id) || rank(a) - rank(b);
+    });
+
+    let html = '';
+    if (mode === 'easy' && hon.sort === 'diff') {
+      // Grouped by difficulty, with a header per tier
+      for (let d = 1; d <= 5; d++) {
+        if (hon.tier && hon.tier !== d) continue;
+        const inTier = all.filter((h) => HON_DB[h.id] && HON_DB[h.id].d === d);
+        if (!inTier.length) continue;
+        const left = inTier.filter((h) => !isEarned(h.id)).length;
+        const cards = list.filter((h) => honTier(h.id) === d);
+        if (!cards.length && left) continue;
+        html += `<div class="twl-hon-tier" style="color:${HON_TIER_COLOR[d]};background:${HON_TIER_BG[d]}">`
+          + `<b>${esc(t('honTierNames')[d])}</b><small>${esc(t('honTierDescs')[d])}</small>`
+          + `<span>${esc(left ? t('honTierLeft', left) : t('honTierDone', inTier.length))}</span></div>`;
+        html += cards.map((h) => honCardHtml(h, s)).join('');
+      }
+    } else {
+      html = list.map((h) => honCardHtml(h, s)).join('');
+    }
+    setHtml(listEl, html || `<div class="twl-hon-msg">${esc(t('honEmpty'))}</div>`);
+  }
+
+  // Search, sort, missing honor bar images
+  $('.twl-hon-search').addEventListener('input', (ev) => { hon.search = ev.target.value; renderHonors(); });
+  $('.twl-hon-sort').addEventListener('change', (ev) => { hon.sort = ev.target.value; renderHonors(); });
+  $('.twl-hon-list').addEventListener('error', (ev) => {
+    const img = ev.target;
+    if (img instanceof HTMLImageElement && img.classList.contains('twl-hc-bar')) img.remove(); // no bar image for this honor
+  }, true);
+  for (const k of ['honorsDone', 'honorsHidden', 'honorsMine', 'honorsAll', 'honMode']) {
+    GM_addValueChangeListener(k, (_k, _o, _n, remote) => { if (remote) renderHonors(); });
+  }
+  honReady = true;
+  applyTab();
+
   applyLayout();
   syncHeaderMode();
   render();
   refreshAll(false);
+  if (getTab() === 'honors') refreshHonors(false);
   scheduleNyan();
   updateChain();
   setInterval(updateChain, 250); // more often than 1×/s so the display doesn't lag behind Torn's timer
@@ -3063,5 +4058,9 @@
     decorateWarRows(); // keeps ➕/✓ in sync when the list changes in another tab
     syncHeaderMode();
     if (++tick % 5 === 0) refreshAll(false);
+    if (tick % 15 === 0 && honorsVisible()) { // honors: refetch when due, keep "x min ago" current
+      refreshHonors(false);
+      renderHonors();
+    }
   }, 1000);
 })();
