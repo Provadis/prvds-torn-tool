@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.21.1
+// @version      2.21.2
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -116,6 +116,8 @@
       honHideEarned: 'Erhaltene ausblenden',
       honShowHidden: 'Ausgeblendete zeigen',
       honHideHidden: 'Ausgeblendete verstecken',
+      honSync: '🔄 Sync',
+      honSyncTitle: 'Honors und Fortschritt jetzt von Torn laden',
       honAgo: (a) => `vor ${a}`,
       honLoading: 'Lade Honors…',
       honNoKey: 'Bitte zuerst einen Torn API-Key setzen (⚙ → Torn API-Key).',
@@ -310,6 +312,8 @@
       honHideEarned: 'Hide earned',
       honShowHidden: 'Show hidden',
       honHideHidden: 'Hide hidden',
+      honSync: '🔄 Sync',
+      honSyncTitle: 'Load honors and progress from Torn now',
       honAgo: (a) => `${a} ago`,
       honLoading: 'Loading honors…',
       honNoKey: 'Set a Torn API key first (⚙ → Torn API key).',
@@ -1279,9 +1283,14 @@
     .twl-hs-m { color: #ff8080; }
     #twl-panel .twl-hon-sub button { padding: 1px 6px; font-size: 10px; white-space: nowrap; }
     #twl-panel .twl-hon-sub button.twl-on { border-color: #ff9a3c; color: #ffcf9e; }
+    #twl-panel .twl-hon-sub button.twl-hon-sync { background: #ff7518; border-color: #ff9a3c; color: #fff; font-weight: bold; }
     #twl-panel.twl-touch .twl-hon-sub button { padding: 5px 8px; font-size: 11px; }
     .twl-hon-msg { padding: 16px 6px; text-align: center; color: #999; }
-    .twl-hon-tier { display: flex; align-items: baseline; gap: 6px; margin: 8px 0 5px; padding: 4px 7px; border-radius: 5px; font-size: 11px; }
+    #twl-panel button.twl-hon-tier { display: flex; align-items: baseline; gap: 6px; width: 100%; margin: 8px 0 5px; padding: 4px 7px;
+      border: 0; border-radius: 5px; font-size: 11px; text-align: left; cursor: pointer; touch-action: manipulation; }
+    #twl-panel button.twl-hon-tier:hover { filter: brightness(1.25); }
+    #twl-panel.twl-touch button.twl-hon-tier { padding: 8px 9px; }
+    .twl-hon-tier .twl-caret { width: 9px; }
     .twl-hon-tier b { text-transform: uppercase; letter-spacing: .6px; }
     .twl-hon-tier small { flex: 1; min-width: 0; opacity: .7; font-size: 10px; }
     .twl-hon-tier span { white-space: nowrap; opacity: .8; font-size: 10px; }
@@ -1381,6 +1390,7 @@
         </div>
         <div class="twl-hon-sub">
           <span class="twl-hon-status"></span>
+          <button type="button" data-act="hon-sync" class="twl-hon-sync" data-i18n="honSync" data-i18n-tip="honSyncTitle"></button>
           <button type="button" data-act="hon-earned"></button>
           <button type="button" data-act="hon-hidden"></button>
         </div>
@@ -2129,6 +2139,13 @@
         renderHonors();
         $('.twl-hon-list').scrollTop = 0;
         break;
+      case 'hon-fold': {
+        const d = parseInt(btn.dataset.v, 10);
+        const closed = GM_getValue('honClosedTiers', []);
+        GM_setValue('honClosedTiers', closed.includes(d) ? closed.filter((x) => x !== d) : [...closed, d]);
+        renderHonors();
+        break;
+      }
       case 'hon-tier': {
         const d = parseInt(btn.dataset.v, 10);
         hon.tier = hon.tier === d ? 0 : d;
@@ -2143,6 +2160,7 @@
         break;
       case 'hon-done': toggleIn('honorsDone', id); break;
       case 'hon-hide': toggleIn('honorsHidden', id); break;
+      case 'hon-sync': refreshHonors(true); break;
       case 'hon-earned': hon.showEarned = !hon.showEarned; renderHonors(); break;
       case 'hon-hidden': hon.showHidden = !hon.showHidden; renderHonors(); break;
       // Action menu of a tile (long press)
@@ -3979,6 +3997,7 @@
         + `${Math.round((earnedCount / all.length) * 100)} %${at ? ` · ${esc(t('honAgo', formatAge(Math.max(0, Math.floor((Date.now() - at) / 1000)))))}` : ''}`;
     } else status = esc(t('honNoData'));
     setHtml($('.twl-hon-status'), status);
+    $('.twl-hon-sync').disabled = honLoading || !getKey();
     $('[data-act="hon-earned"]').textContent = t(hon.showEarned ? 'honHideEarned' : 'honShowEarned');
     $('[data-act="hon-earned"]').classList.toggle('twl-on', hon.showEarned);
     $('[data-act="hon-hidden"]').textContent = t(hon.showHidden ? 'honHideHidden' : 'honShowHidden');
@@ -4009,6 +4028,7 @@
     });
 
     let html = '';
+    const closedTiers = GM_getValue('honClosedTiers', []);
     if (mode === 'easy' && hon.sort === 'diff') {
       // Grouped by difficulty, with a header per tier
       for (let d = 1; d <= 5; d++) {
@@ -4018,10 +4038,12 @@
         const left = inTier.filter((h) => !isEarned(h.id)).length;
         const cards = list.filter((h) => honTier(h.id) === d);
         if (!cards.length && left) continue;
-        html += `<div class="twl-hon-tier" style="color:${HON_TIER_COLOR[d]};background:${HON_TIER_BG[d]}">`
-          + `<b>${esc(t('honTierNames')[d])}</b><small>${esc(t('honTierDescs')[d])}</small>`
-          + `<span>${esc(left ? t('honTierLeft', left) : t('honTierDone', inTier.length))}</span></div>`;
-        html += cards.map((h) => honCardHtml(h, s)).join('');
+        // Click on the header folds the tier (remembered)
+        const closed = closedTiers.includes(d);
+        html += `<button type="button" class="twl-hon-tier" data-act="hon-fold" data-v="${d}" style="color:${HON_TIER_COLOR[d]};background:${HON_TIER_BG[d]}">`
+          + `<span class="twl-caret">${closed ? '▸' : '▾'}</span><b>${esc(t('honTierNames')[d])}</b><small>${esc(t('honTierDescs')[d])}</small>`
+          + `<span>${esc(left ? t('honTierLeft', left) : t('honTierDone', inTier.length))}</span></button>`;
+        if (!closed) html += cards.map((h) => honCardHtml(h, s)).join('');
       }
     } else {
       html = list.map((h) => honCardHtml(h, s)).join('');
