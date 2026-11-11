@@ -28,6 +28,7 @@
 - [Setup](#-setup)
 - [API usage](#-api-usage)
 - [Legend](#-legend)
+- [API Terms of Service](#-api-terms-of-service)
 - [Privacy](#-privacy)
 - [FAQ & troubleshooting](#-faq--troubleshooting)
 - [Changelog](#-changelog)
@@ -209,10 +210,37 @@ The same legend is built into the script under **⚙ → 📖 Legend**, with a m
 
 ---
 
+## 📜 API Terms of Service
+
+How this script uses your Torn API key, following [Torn's API ToS guidelines](https://www.torn.com/api.html):
+
+| Data Storage | Data Sharing | Purpose of Use | Key Storage & Sharing | Key Access Level |
+|---|---|---|---|---|
+| `Only locally` | `Nobody` | `Not eligible – only the end user has access` | `Stored locally / Not shared` | `Public` (`Limited` for Today's hits and the Honors tab) |
+
+**In plain words:** everything stays in your browser. The key, your lists, settings and cached data (player status, faction members, FF values, honors) are kept in the Tampermonkey storage, with a backup in torn.com's `localStorage`. Nothing is sent to a server of the script author. There is none. The key is only used to read your own game data for your own panel.
+
+**Requests made with your key** go to `api.torn.com` only, each tagged with `comment=watchlist`. You can see them in your [API key log](https://www.torn.com/preferences.php#tab=api) (*key → log*):
+
+| Selection | Used for | Access |
+|---|---|---|
+| `user/{id}?selections=profile` | Name, status, last action and faction of watched players / the profile you're viewing | Public |
+| `user/?selections=basic` | Your own player ID (once per key) | Public |
+| v2 `faction/{id}/basic`, `faction/{id}/members` | Watched factions and their members | Public |
+| v2 `faction/chain` | Chain timer on iPhone/iPad (every 6 s while a chain runs, otherwise only on page load) | Public |
+| v2 `user/attacks` | Today's hits | Limited |
+| v2 `torn/honors`, `user/honors`, `user/personalstats` | Honors tab, only while it's open | Limited |
+
+**Integrations:**
+- **FF Scouter: opt-in, off by default.** When you switch it on, your FF Scouter key goes to `ffscouter.com` together with the IDs of the players shown in the panel, to fetch fair-fight estimates. If you didn't set a separate FF key, that's your watchlist key. FF Scouter's own terms apply, see [ffscouter.com](https://ffscouter.com).
+- **Update check: GitHub, no key.** Only when you press *Check for updates* does the script ask `api.github.com` / `raw.githubusercontent.com` for the newest version. No key and no game data are sent.
+
+---
+
 ## 🔒 Privacy
 
 - **Your API keys and lists stay local:** in the Tampermonkey storage, plus a backup in torn.com's `localStorage`. They are not in the code and are never uploaded.
-- **Network:** the script only talks to `api.torn.com` and (if enabled) `ffscouter.com`.
+- **Network:** the script only talks to `api.torn.com`, `ffscouter.com` (if FF Scouter is on) and GitHub (only when you check for updates, without key). Details: [API Terms of Service](#-api-terms-of-service).
 - ⚠️ **The export file contains your API key in plain text.** Don't share it.
 - ⚠️ Other userscripts running on torn.com could read the `localStorage` backup.
 
