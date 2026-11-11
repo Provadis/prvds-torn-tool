@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.21.2
+// @version      2.21.3
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -117,7 +117,7 @@
       honShowHidden: 'Ausgeblendete zeigen',
       honHideHidden: 'Ausgeblendete verstecken',
       honSync: '🔄 Sync',
-      honSyncTitle: 'Honors und Fortschritt jetzt von Torn laden',
+      honSyncTitle: 'Echten Stand von Torn laden – eigene ✓-Markierungen werden dabei zurückgesetzt',
       honAgo: (a) => `vor ${a}`,
       honLoading: 'Lade Honors…',
       honNoKey: 'Bitte zuerst einen Torn API-Key setzen (⚙ → Torn API-Key).',
@@ -313,7 +313,7 @@
       honShowHidden: 'Show hidden',
       honHideHidden: 'Hide hidden',
       honSync: '🔄 Sync',
-      honSyncTitle: 'Load honors and progress from Torn now',
+      honSyncTitle: 'Load your real state from Torn – your own ✓ marks are reset',
       honAgo: (a) => `${a} ago`,
       honLoading: 'Loading honors…',
       honNoKey: 'Set a Torn API key first (⚙ → Torn API key).',
@@ -3840,7 +3840,14 @@
         await sleep(REQUEST_GAP_MS);
       }
       const u = check(await apiGet('v2/user/honors', key));
-      GM_setValue('honorsMine', (u.honors || []).map((h) => h.id));
+      const mine = (u.honors || []).map((h) => h.id);
+      GM_setValue('honorsMine', mine);
+      // Own ✓ marks: a manual sync (Sync / ⟳) resets them to Torn's real state; the automatic
+      // refresh only drops marks that Torn now confirms anyway
+      const mineSet = new Set(mine);
+      const marks = GM_getValue('honorsDone', []);
+      const keep = force ? [] : marks.filter((id) => !mineSet.has(id));
+      if (keep.length !== marks.length) GM_setValue('honorsDone', keep);
       try {
         await sleep(REQUEST_GAP_MS);
         const ps = await apiGet('v2/user/personalstats?cat=all', key);

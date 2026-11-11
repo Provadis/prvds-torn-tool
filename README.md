@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.21.2-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.21.3-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -110,7 +110,7 @@ A second tab next to the watchlist (PC and iPhone) shows which **honors** you're
 - **Easy wins:** missing honors grouped by difficulty – *Instant, Easy, Costs money, Grind, Complex* – with a short **how-to guide** for each.
 - **Categories** (as tappable chips) and **All**, plus search and sorting (easiest, rarest, A–Z).
 - **Progress bars** from your personal stats, e.g. „Attacks won 184 / 250“.
-- Mark honors as **done** or **hide** them; both are part of export/import.
+- Mark honors as **done** or **hide** them; both are part of export/import. **🔄 Sync** loads your real state from Torn and resets the ✓ marks (hidden ones stay hidden).
 
 It uses the same Torn API key (at least *Limited* access) and makes 3 requests every 5 minutes, **only while the tab is open**. Honor bar images load from torn.com itself; there are no other servers involved. The guides are in English.
 
@@ -270,6 +270,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.21.3** | Honors: Sync (and ⟳) now resets your own ✓ marks to Torn's real state, so a wrongly ticked honor comes back |
 | **2.21.2** | Honors: tap a difficulty header in „Easy wins“ to fold that section (remembered); orange **🔄 Sync** button right in the tab |
 | **2.21.1** | Fix: the honors list no longer shows below the watchlist in a resized panel |
 | **2.21.0** | New **Honors** tab: missing honors by difficulty with how-to guides, categories, search, progress bars, done/hide marks (based on the MIT-licensed Merit Tracker by Solenya) |
