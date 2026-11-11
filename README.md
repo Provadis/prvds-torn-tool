@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
 
-[![Version](https://img.shields.io/badge/version-2.22.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.23.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -160,9 +160,9 @@ The tile-based ⚙ settings page is made for fingers too. Under **View** you can
 
 | What | Where | Note |
 |---|---|---|
-| **Torn API key** | ⚙ → 🔑 Torn API key | *Public* is enough for the watchlist. **Today's hits** needs *Limited*. |
-| **FF Scouter** | ⚙ → tick 📊 FF Scouter → **Key** | A Torn API key registered at [ffscouter.com](https://ffscouter.com). Leave empty to use the watchlist key. |
-| **Update interval** | ⚙ → Update every … s | 15–600 seconds, default 60. |
+| **Torn API key** | ⚙ → ✨ Create key, then 🔑 Torn API key | **✨ Create key** opens Torn's API key page with a pre-filled key that has exactly the access this script needs. You click *Create* there and paste the key into 🔑 Torn API key. A *Public* key also works for the watchlist; **Today's hits** and the **Honors** tab need more (*Limited* or the custom key). |
+| **FF Scouter** | ⚙ → 📊 FF Scouter tile → 🔑 FF key | A Torn API key registered at [ffscouter.com](https://ffscouter.com). Leave empty to use the watchlist key. |
+| **Update interval** | ⚙ → Update interval | 15 s – 5 min, default 1 min. |
 | **Language** | ⚙ → Language | English / Deutsch |
 
 ---
@@ -219,6 +219,10 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 | `Only locally` | `Nobody` | `Not eligible – only the end user has access` | `Stored locally / Not shared` | `Public` (`Limited` for Today's hits and the Honors tab) |
 
 **In plain words:** everything stays in your browser. The key, your lists, settings and cached data (player status, faction members, FF values, honors) are kept in the Tampermonkey storage, with a backup in torn.com's `localStorage`. Nothing is sent to a server of the script author. There is none. The key is only used to read your own game data for your own panel.
+
+**Custom key:** ⚙ → **✨ Create key** opens Torn's own key form, pre-filled with only these selections:
+`user: basic, profile, attacks, honors, personalstats` · `faction: basic, members, chain` · `torn: honors`.
+The script never creates a key by itself. You check the access and click *Create* on Torn's page. Where you enter a key, the panel shows a short note on how it's used.
 
 **Requests made with your key** go to `api.torn.com` only, each tagged with `comment=watchlist`. You can see them in your [API key log](https://www.torn.com/preferences.php#tab=api) (*key → log*):
 
@@ -298,6 +302,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.23.0** | **✨ Create key** in the settings opens Torn's pre-filled key form with only the needed access; key prompts and settings show how the key is used (API ToS) |
 | **2.22.1** | Smoother on iPhone: panel no longer resizes while Safari's address bar slides, honor images keep their space before loading, lists don't pull the page along at their ends, far less background work |
 | **2.22.0** | Soft fold/unfold animation for faction groups, honor difficulty sections and the how-to guides (off with „reduce motion“) |
 | **2.21.4** | Honors: cards get a soft color glow from the left in their tier color (green when earned) |
