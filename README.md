@@ -4,13 +4,13 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.23.2-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.23.3-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
 [![Built with AI](https://img.shields.io/badge/built%20with-AI-8A2BE2?style=for-the-badge)](#%EF%B8%8F-disclaimer)
 
-<a href="https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js"><img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Install%20now-Tampermonkey-ff7518?style=for-the-badge&labelColor=2a1a0e" height="38" alt="Install now"></a>
+<a href="https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js"><img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Install%20now-Tampermonkey-ff7518?style=for-the-badge&labelColor=2a1a0e" height="38" alt="Install now"></a>
 
 <br><br>
 
@@ -146,14 +146,14 @@ Runs around the panel every now and then. Just because.
 ## 📥 Installation & updates
 
 1. Install **[Tampermonkey](https://www.tampermonkey.net/)** in your browser (Chrome, Edge, Firefox, Opera …).
-2. **[Open this link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)** → Tampermonkey shows its install page → **Install**.
+2. **[Open this link](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)** → Tampermonkey shows its install page → **Install**.
 3. Reload [torn.com](https://www.torn.com) – the 🎃 panel appears on the right.
 
 ### 📱 iPhone / iPad
 Works with [Tampermonkey for Safari](https://apps.apple.com/app/tampermonkey/id6738342400) (iOS 15+):
 1. Install Tampermonkey from the App Store.
 2. *Settings → Safari → Extensions → Tampermonkey*: turn it on and allow it for torn.com (or all websites).
-3. Open the [install link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js) in **Safari** and install.
+3. Open the [install link](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js) in **Safari** and install.
 4. Move your list and keys over with ⬇ Export on the PC and ⬆ Import on the phone.
 
 **What's different on the iPhone:**
@@ -450,6 +450,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.23.3** | The GitHub repo is now called **prvds-torn-tool**: install, update and help links point to the new address (old links keep forwarding) |
 | **2.23.2** | iPhone/iPad: the panel starts closed on every page (reload, opening a target …) – the P opens it. PC keeps remembering it |
 | **2.23.1** | ToS: key access level is *Custom* with the exact selections; the tile is now called **✨ Create custom key** |
 | **2.23.0** | **✨ Create custom key** in the settings opens Torn's pre-filled key form with only the needed access; key prompts and settings show how the key is used (API ToS) |
@@ -509,7 +510,7 @@ The script restores its browser backup automatically. If something is still miss
 
 Ganze Factions kosten nur einen API-Call pro Update. Die Oberfläche gibt es auf **Englisch und Deutsch**: ⚙ → Sprache.
 
-**Installation:** [Tampermonkey](https://www.tampermonkey.net/) installieren und den [Installations-Link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js) öffnen. Updates kommen danach automatisch. Deine API-Keys bleiben in deinem Browser und gehen nur an `api.torn.com` und `ffscouter.com`.
+**Installation:** [Tampermonkey](https://www.tampermonkey.net/) installieren und den [Installations-Link](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js) öffnen. Updates kommen danach automatisch. Deine API-Keys bleiben in deinem Browser und gehen nur an `api.torn.com` und `ffscouter.com`.
 
 ---
 
