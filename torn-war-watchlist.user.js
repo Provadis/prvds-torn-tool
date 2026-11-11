@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.23.2
+// @version      2.23.3
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
-// @homepageURL  https://github.com/Provadis/torn-war-watchlist
-// @supportURL   https://github.com/Provadis/torn-war-watchlist/issues
-// @updateURL    https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js
-// @downloadURL  https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js
+// @homepageURL  https://github.com/Provadis/prvds-torn-tool
+// @supportURL   https://github.com/Provadis/prvds-torn-tool/issues
+// @updateURL    https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js
+// @downloadURL  https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js
 // @match        https://www.torn.com/*
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -33,7 +33,7 @@
   const GMI = typeof GM_info !== 'undefined' ? GM_info : null;
   const SCRIPT_VERSION = (GMI && GMI.script.version) || '';
   const UPDATE_URL = (GMI && (GMI.script.downloadURL || GMI.script.updateURL))
-    || 'https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js';
+    || 'https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js';
   const GREEN_AFTER_S = 15 * 60;  // > 15 min inactive  -> green
   const ORANGE_AFTER_S = 10 * 60; // 10–15 min inactive -> orange, below that red
 
@@ -1448,7 +1448,7 @@
             <button type="button" class="twl-tile twl-act twl-g-ffreload" data-act="ff-reload" data-i18n-tip="ffReloadTitle"><span class="twl-ic">🔄</span><span class="twl-lb" data-i18n="tileFfReload"></span></button>
           </div>
           <div class="twl-keys-tos"><span data-i18n="keysTos"></span>
-            <a href="https://github.com/Provadis/torn-war-watchlist#-api-terms-of-service" target="_blank" rel="noopener" data-i18n="keysTosLink"></a></div>
+            <a href="https://github.com/Provadis/prvds-torn-tool#-api-terms-of-service" target="_blank" rel="noopener" data-i18n="keysTosLink"></a></div>
           <div class="twl-sec" data-i18n="language"></div>
           <div class="twl-seg">
             <button type="button" data-act="seg-lang" data-v="de">Deutsch</button>
