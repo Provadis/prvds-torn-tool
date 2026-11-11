@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.21.4
+// @version      2.22.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -1298,6 +1298,8 @@
       border-left: 3px solid var(--c); }
     /* Soft glow from the left in the card's own color (older browsers without color-mix keep the plain one) */
     .twl-hc { background: linear-gradient(to right, color-mix(in srgb, var(--c) 22%, transparent), transparent 150px), #24242a; }
+    /* Contain inner margins so the fold animation ends exactly at the real height */
+    .twl-grows, .twl-hon-group, .twl-hc-guide { display: flow-root; }
     .twl-hc.twl-hc-earned { border-color: rgba(74, 222, 128, .25); border-left-color: #4ade80; }
     .twl-hc.twl-hc-dim { opacity: .45; }
     .twl-hc-bar { display: block; width: 200px; max-width: 100%; height: auto; margin-top: 5px; border-radius: 2px; }
@@ -1798,6 +1800,43 @@
     });
   }
 
+  // Soft fold/unfold: closing slides the open part shut first and then switches the state;
+  // opening switches the state first and then slides the new part open. Skipped for
+  // "reduce motion" and while the same part is still moving.
+  const FOLD_MS = 220;
+  const folding = new Set();
+  // Full size of a part, as border-box keyframe (height incl. padding, so boxes with padding don't jump)
+  const foldFrame = (el) => {
+    const cs = getComputedStyle(el);
+    return { height: `${el.offsetHeight}px`, paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, opacity: 1 };
+  };
+  const FOLD_SHUT = { height: '0px', paddingTop: '0px', paddingBottom: '0px', opacity: 0 };
+  function animateFold(key, getEl, opening, apply) {
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches || !Element.prototype.animate;
+    if (folding.has(key)) return;
+    if (calm) { apply(); return; }
+    if (!opening) {
+      const el = getEl();
+      if (!el || !el.offsetHeight) { apply(); return; }
+      folding.add(key);
+      el.style.overflow = 'hidden';
+      el.style.boxSizing = 'border-box';
+      el.animate([foldFrame(el), FOLD_SHUT],
+        { duration: FOLD_MS, easing: 'cubic-bezier(.4, 0, .2, 1)', fill: 'forwards' })
+        .finished.catch(() => {}).then(() => { folding.delete(key); apply(); });
+      return;
+    }
+    apply();
+    const el = getEl();
+    if (!el || !el.offsetHeight) return;
+    folding.add(key);
+    const full = foldFrame(el);
+    el.style.overflow = 'hidden';
+    el.style.boxSizing = 'border-box';
+    el.animate([FOLD_SHUT, full], { duration: FOLD_MS, easing: 'cubic-bezier(.4, 0, .2, 1)' })
+      .finished.catch(() => {}).then(() => { folding.delete(key); el.style.overflow = ''; el.style.boxSizing = ''; });
+  }
+
   function setHtml(el, html) {
     if (el.dataset.html === html) return;
     el.dataset.html = html;
@@ -2076,11 +2115,17 @@
         break;
       }
       case 'group': {
-        const groups = GM_getValue('collapsedGroups', {});
-        if (groups[btn.dataset.gid]) delete groups[btn.dataset.gid];
-        else groups[btn.dataset.gid] = true;
-        GM_setValue('collapsedGroups', groups);
-        render();
+        const gid = btn.dataset.gid;
+        const opening = !!GM_getValue('collapsedGroups', {})[gid];
+        const caret = btn.querySelector('.twl-caret');
+        if (caret) caret.textContent = opening ? '▾' : '▸';
+        animateFold(`g${gid}`, () => panel.querySelector(`.twl-group[data-gid="${CSS.escape(gid)}"] .twl-grows`), opening, () => {
+          const groups = GM_getValue('collapsedGroups', {});
+          if (opening) delete groups[gid];
+          else groups[gid] = true;
+          GM_setValue('collapsedGroups', groups);
+          render();
+        });
         break;
       }
       case 'pause':
@@ -2143,9 +2188,14 @@
         break;
       case 'hon-fold': {
         const d = parseInt(btn.dataset.v, 10);
-        const closed = GM_getValue('honClosedTiers', []);
-        GM_setValue('honClosedTiers', closed.includes(d) ? closed.filter((x) => x !== d) : [...closed, d]);
-        renderHonors();
+        const opening = GM_getValue('honClosedTiers', []).includes(d);
+        const caret = btn.querySelector('.twl-caret');
+        if (caret) caret.textContent = opening ? '▾' : '▸';
+        animateFold(`t${d}`, () => $(`.twl-hon-group[data-tier="${d}"]`), opening, () => {
+          const closed = GM_getValue('honClosedTiers', []);
+          GM_setValue('honClosedTiers', opening ? closed.filter((x) => x !== d) : [...closed, d]);
+          renderHonors();
+        });
         break;
       }
       case 'hon-tier': {
@@ -2155,11 +2205,16 @@
         break;
       }
       case 'hon-cat': hon.cat = parseInt(btn.dataset.v, 10); renderHonors(); $('.twl-hon-list').scrollTop = 0; break;
-      case 'hon-guide':
-        if (hon.open.has(id)) hon.open.delete(id);
-        else hon.open.add(id);
-        renderHonors();
+      case 'hon-guide': {
+        const opening = !hon.open.has(id);
+        btn.textContent = t(opening ? 'honGuideClose' : 'honGuide');
+        animateFold(`h${id}`, () => $(`.twl-hc-guide[data-id="${id}"]`), opening, () => {
+          if (opening) hon.open.add(id);
+          else hon.open.delete(id);
+          renderHonors();
+        });
         break;
+      }
       case 'hon-done': toggleIn('honorsDone', id); break;
       case 'hon-hide': toggleIn('honorsHidden', id); break;
       case 'hon-sync': refreshHonors(true); break;
@@ -3928,7 +3983,7 @@
     if (!apiEarned) acts.push(`<button type="button" data-act="hon-done" data-id="${h.id}">${esc(t(marked ? 'honUndo' : 'honDone'))}</button>`);
     acts.push(`<button type="button" data-act="hon-hide" data-id="${h.id}">${esc(t(hidden ? 'honUnhide' : 'honHide'))}</button>`);
     const guide = !earned && open
-      ? `<div class="twl-hc-guide"><span class="twl-hb" style="color:${HON_TIER_COLOR[tier]};background:${HON_TIER_BG[tier]}">`
+      ? `<div class="twl-hc-guide" data-id="${h.id}"><span class="twl-hb" style="color:${HON_TIER_COLOR[tier]};background:${HON_TIER_BG[tier]}">`
         + `${esc(t('honTierNames')[tier])} · ${esc(t('honTierDescs')[tier])}</span><div>${esc(entry ? entry.g : t('honNoGuide'))}</div></div>`
       : '';
     return `<div class="twl-hc${earned ? ' twl-hc-earned' : ''}${hidden ? ' twl-hc-dim' : ''}" style="--c:${color}">`
@@ -4052,7 +4107,7 @@
         html += `<button type="button" class="twl-hon-tier" data-act="hon-fold" data-v="${d}" style="color:${HON_TIER_COLOR[d]};background:${HON_TIER_BG[d]}">`
           + `<span class="twl-caret">${closed ? '▸' : '▾'}</span><b>${esc(t('honTierNames')[d])}</b><small>${esc(t('honTierDescs')[d])}</small>`
           + `<span>${esc(left ? t('honTierLeft', left) : t('honTierDone', inTier.length))}</span></button>`;
-        if (!closed) html += cards.map((h) => honCardHtml(h, s)).join('');
+        if (!closed) html += `<div class="twl-hon-group" data-tier="${d}">${cards.map((h) => honCardHtml(h, s)).join('')}</div>`;
       }
     } else {
       html = list.map((h) => honCardHtml(h, s)).join('');
