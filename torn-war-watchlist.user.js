@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.22.0
+// @version      2.22.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/torn-war-watchlist
@@ -1000,6 +1000,7 @@
     #twl-panel.twl-sized .twl-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     #twl-panel.twl-sized .twl-spage { flex: 1; min-height: 0; max-height: none; }
     .twl-spage { max-height: 70vh; overflow-y: auto; }
+    .twl-spage, .twl-list, .twl-hon-list { overscroll-behavior: contain; }
     #twl-panel .twl-main[hidden], #twl-panel .twl-spage[hidden] { display: none; }
     /* Resize handles in all four corners; bigger on touch screens */
     .twl-resize { position: absolute; z-index: 2; width: 12px; height: 12px; touch-action: none; opacity: .55; }
@@ -1065,7 +1066,10 @@
       /* Fills the screen below Torn's header (--twl-top = where the panel starts), so it ends above
          Safari's bottom address bar instead of running under it */
       height: max(260px, calc(100vh - var(--twl-top, 0px) - 6px)) !important;
-      height: max(260px, calc(100dvh - var(--twl-top, 0px) - 6px)) !important; }
+      height: max(260px, calc(100dvh - var(--twl-top, 0px) - 6px)) !important;
+      /* svh = viewport with Safari's bars shown; unlike dvh it doesn't change while scrolling,
+         so the panel doesn't resize (and the page doesn't jump) when the address bar slides */
+      height: max(260px, calc(100svh - var(--twl-top, 0px) - 6px)) !important; }
     #twl-panel.twl-inline.twl-collapsed, #twl-panel.twl-wait { display: none !important; }
     #twl-panel.twl-inline .twl-resize, #twl-panel.twl-inline button.twl-mini { display: none !important; }
     #twl-panel.twl-inline .twl-head { cursor: default; }
@@ -1302,7 +1306,9 @@
     .twl-grows, .twl-hon-group, .twl-hc-guide { display: flow-root; }
     .twl-hc.twl-hc-earned { border-color: rgba(74, 222, 128, .25); border-left-color: #4ade80; }
     .twl-hc.twl-hc-dim { opacity: .45; }
-    .twl-hc-bar { display: block; width: 200px; max-width: 100%; height: auto; margin-top: 5px; border-radius: 2px; }
+    .twl-hc-bar { display: block; width: 200px; max-width: 100%; height: auto; aspect-ratio: 200 / 19; margin-top: 5px; border-radius: 2px; }
+    /* Each card lays out on its own: cheaper scrolling and folding with long lists */
+    .twl-hc { contain: layout paint; }
     .twl-hc-name { color: #eee; font-weight: bold; }
     .twl-hc-earned .twl-hc-name { color: #4ade80; }
     .twl-hc-desc { margin-top: 1px; color: #aaa; font-size: 11px; line-height: 1.35; }
@@ -3294,7 +3300,12 @@
   }, true);
 
   let warTimer = null;
-  new MutationObserver(() => {
+  // Only changes from Torn's page matter here – the panel and the header badge change every
+  // second (timer, rows); reacting to them would re-measure the header constantly (iOS jank).
+  const ownNode = (n) => panel.contains(n) || headerBtn.contains(n) || headerTimer.contains(n)
+    || (n.id && n.id.startsWith('twl-'));
+  new MutationObserver((muts) => {
+    if (muts.every((m) => ownNode(m.target))) return;
     if (warTimer) return;
     warTimer = setTimeout(() => { warTimer = null; decorateWarRows(); syncHeaderMode(); }, 200);
   }).observe(document.body, { childList: true, subtree: true });
@@ -3988,7 +3999,7 @@
       : '';
     return `<div class="twl-hc${earned ? ' twl-hc-earned' : ''}${hidden ? ' twl-hc-dim' : ''}" style="--c:${color}">`
       + `<div class="twl-hc-name">${HON_CAT_ICON[h.cat] || '🎖️'} ${esc(h.name)}</div><div class="twl-hc-desc">${esc(h.desc)}</div>`
-      + `<img class="twl-hc-bar" loading="lazy" alt="" src="https://www.torn.com/images/honors/${h.id}/f.png">`
+      + `<img class="twl-hc-bar" loading="lazy" alt="" width="200" height="19" src="https://www.torn.com/images/honors/${h.id}/f.png">`
       + (badges ? `<div class="twl-hc-badges">${badges}</div>` : '')
       + (earned ? '' : honProgressHtml(h.id, s.stats))
       + `<div class="twl-hc-acts">${acts.join('')}</div>${guide}</div>`;
@@ -4140,9 +4151,9 @@
   // Every second: recalculate times/colors; every few seconds check whether an API refresh is due.
   let tick = 0;
   setInterval(() => {
+    syncHeaderMode(); // measures the header first, then render() writes – no forced layout in between
     render();
     decorateWarRows(); // keeps ➕/✓ in sync when the list changes in another tab
-    syncHeaderMode();
     if (++tick % 5 === 0) refreshAll(false);
     if (tick % 15 === 0 && honorsVisible()) { // honors: refetch when due, keep "x min ago" current
       refreshHonors(false);
