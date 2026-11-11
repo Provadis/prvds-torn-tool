@@ -2,17 +2,19 @@
 
 # 🎃 Torn War Watchlist
 
-**Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn.**
+**Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
 [![Version](https://img.shields.io/badge/version-2.23.2-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
-[![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-settings--language)
+[![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
 [![Built with AI](https://img.shields.io/badge/built%20with-AI-8A2BE2?style=for-the-badge)](#%EF%B8%8F-disclaimer)
 
-### [⬇️ Install now](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js)
+<a href="https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js"><img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Install%20now-Tampermonkey-ff7518?style=for-the-badge&labelColor=2a1a0e" height="38" alt="Install now"></a>
 
-<img src="docs/images/main.png" width="320" alt="Watchlist with factions, colors, status and FF scores">
+<br><br>
+
+<img src="docs/images/demo.gif" width="320" alt="Animated demo: watchlist, chain alarm, tile view, honors tab, settings and Nyan Cat">
 
 </div>
 
@@ -23,110 +25,121 @@
 
 ## 📑 Contents
 
-- [Features](#-features)
-- [Installation & updates](#-installation--updates)
-- [Setup](#-setup)
-- [API usage](#-api-usage)
-- [Legend](#-legend)
-- [API Terms of Service](#-api-terms-of-service)
-- [Privacy](#-privacy)
-- [FAQ & troubleshooting](#-faq--troubleshooting)
-- [Changelog](#-changelog)
-- [Kurzfassung auf Deutsch](#-kurzfassung-auf-deutsch)
-- [Disclaimer](#%EF%B8%8F-disclaimer)
+[Features](#-features) · [Screenshots](#-screenshots) · [Installation & updates](#-installation--updates) · [Setup](#-setup) · [Feature details](#-feature-details) · [API usage](#-api-usage) · [Legend](#-legend) · [API Terms of Service](#-api-terms-of-service) · [Privacy](#-privacy) · [FAQ](#-faq--troubleshooting) · [Changelog](#-changelog) · [Deutsch](#-kurzfassung-auf-deutsch) · [Disclaimer](#%EF%B8%8F-disclaimer)
 
 ---
 
 ## ✨ Features
 
-### 👥 Watchlist for players and whole factions
-- **Single players:** add them by ID or right on their profile („+ Add player“).
-- **Whole factions:** same thing, on the faction page or on a member's profile („+ Add faction“).
-- **Cheap on calls:** a faction costs **one single API call** (`/v2/faction/{id}/members`), no matter how many members it has.
-- **Hiding:** hide single faction members with ✕, bring them all back with ↺.
-- **Groups:** players are grouped by faction, and each group can be collapsed. The colored counters in the group header show who has been away how long, even when the group is collapsed.
+<table>
+<tr>
+<td width="33%" valign="top">
 
-### ⚔ Buttons in the ranked war list
-On the ranked war page, hovering an enemy's row pops up two small buttons over the right end of their name (on touch screens they are always visible):
-- **+** puts the player on your watchlist. Once they are on it, it turns into a green **✓** – click it again to remove them.
-- **📋 Copy** puts `Name [ID]` into the clipboard as a link to their profile, plus a plain-text version (`Name [ID] – profile link`) for chats that only take text.
+**👥 Players & factions**<br>
+Watch single players or whole factions – a faction costs just **one API call**, however big it is.
 
-Both read name and ID straight from the row – no API calls. They also survive Torn redrawing the list and work alongside other scripts' columns (e.g. FF Scouter).
+</td>
+<td width="33%" valign="top">
 
-### 🟢🟠🔴 Colors by last action
-| Color | Meaning |
-|---|---|
-| 🟩 Green | inactive for more than 15 min – probably offline |
-| 🟧 Orange | inactive for 10–15 min |
-| 🟥 Red | less than 10 min – active right now |
+**🟢🟠🔴 Last action colors**<br>
+Green = away > 15 min, orange = 10–15 min, red = active right now.
 
-### 🏥 Hospital countdown & status
-Instead of „offline for …“ every row shows the **status**:
-- **Okay** = can be attacked
-- **🏥 12m 30s** = hospital time left
-- **⛓** = jail time left
-- **✈** = traveling or abroad
+</td>
+<td width="33%" valign="top">
 
-The list is sorted so that attackable players come first (longest inactive on top). Players in hospital follow, whoever gets out next first.
+**🏥 Status & countdowns**<br>
+Hospital and jail time left, traveling, abroad – attackable players on top.
 
-### 📊 FF Scouter
-Shows every player's **fair fight score** from [ffscouter.com](https://ffscouter.com):
-- **Color:** blue = easy, green/yellow = moderate, red = difficult.
-- **Tooltip:** estimated stats and how old the estimate is.
-- **Requests:** up to 100 players per call, cached for 30 minutes.
-- **🔄 Reload FF** (⚙ → FF Scouter) clears that cache and fetches all scores right away – handy after the gym, since FF depends on your own stats too.
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-### ⛓ Chain timer with alarm
-- The script reads the chain straight from the page (sidebar or attack page) and shows it big. This costs no API calls.
-- **Below 1:30** the box blinks red and the whole panel glows.
-- Optional **💣 bomb sound**: beeps from 1:30, faster and faster from 0:30, and explodes with a flash at 0. A landed hit defuses the bomb.
+**📊 FF Scouter**<br>
+Fair fight score next to every player, colored from blue (easy) to red (hard).
 
-<p align="center">
-  <img src="docs/images/chain-alert.png" width="300" alt="Chain alarm below 1:30">
-  &nbsp;&nbsp;
-  <img src="docs/images/nyan.png" width="300" alt="Nyan Cat running around the panel">
-</p>
+</td>
+<td valign="top">
 
-### 🎯 Today's hits
-Counts your **successful attacks since 00:00 TCT**. This needs a key with Limited access.
+**⛓ Chain timer & alarm**<br>
+Big timer, red alarm below 1:30 and an optional 💣 bomb sound.
 
-### 🪟 Movable & resizable
-- **Move:** drag the header. Double-click docks the panel back to the edge.
-- **Resize** from any of the four corners (bigger handles on touch screens). A saved size that doesn't fit the screen – e.g. imported from a PC onto a phone – is shrunk to fit automatically.
-- **Collapse** with –.
+</td>
+<td valign="top">
 
-Everything is saved and shared across all Torn tabs.
+**🎖 Honor tracker**<br>
+Second tab: missing honors by difficulty, with how-to guides and progress bars.
 
-### ⚙ Settings & language
-All options live on their own settings page behind **⚙**, laid out as a grid: on/off options are tiles you click or tap (orange = on, grey = off), keys and data are dashed tiles, and language, view and update interval are switch bars. Hover a tile on the PC for a short explanation. The UI is available in **English and German** and switches instantly, without a reload. At the bottom of the settings page there is a **legend** explaining every marker.
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-<p align="center">
-  <img src="docs/images/settings.png" width="300" alt="Settings page">
-  &nbsp;&nbsp;
-  <img src="docs/images/german.png" width="300" alt="German UI">
-</p>
+**📱 Made for iPhone**<br>
+P button in Torn's header, chain and FF badge, panel opens right below the header.
 
-### 🎖 Honor tracker
-A second tab next to the watchlist (PC and iPhone) shows which **honors** you're still missing and how to get them:
-- **Easy wins:** missing honors grouped by difficulty – *Instant, Easy, Costs money, Grind, Complex* – with a short **how-to guide** for each.
-- **Categories** (as tappable chips) and **All**, plus search and sorting (easiest, rarest, A–Z).
-- **Progress bars** from your personal stats, e.g. „Attacks won 184 / 250“.
-- Mark honors as **done** or **hide** them; both are part of export/import. **🔄 Sync** loads your real state from Torn and resets the ✓ marks (hidden ones stay hidden).
+</td>
+<td valign="top">
 
-It uses the same Torn API key (at least *Limited* access) and makes 3 requests every 5 minutes, **only while the tab is open**. Honor bar images load from torn.com itself; there are no other servers involved. The guides are in English.
+**🧱 List or tiles**<br>
+Big 2-column tiles: tap = profile, long press = attack, copy, remove.
 
-<p align="center">
-  <img src="docs/images/honors.png" width="300" alt="Honor tracker tab">
-</p>
+</td>
+<td valign="top">
 
-> Guide data, difficulty tiers and progress mapping are adapted from [Torn City – Merit Tracker](https://greasyfork.org/scripts/579300) by Solenya (MIT License).
+**⚔ Ranked war buttons**<br>
+**+** (add to watchlist) and **📋 copy** right on the enemy list of a ranked war.
 
-### 💾 Export, import & backup
-- **⬇ Export / ⬆ Import:** save settings, API keys, players and factions to a file and restore them.
-- **Automatic backup:** everything is also backed up in the browser's storage and restored automatically on load if the Tampermonkey storage ever ends up empty.
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-### 🌈 Nyan Cat
-Runs around the panel border every now and then, rainbow included – but not while the panel is collapsed. Can be switched off. Just because.
+**⚙ Settings as tiles**<br>
+Everything in one tap, English and German, ✨ custom API key in one click.
+
+</td>
+<td valign="top">
+
+**💾 Export & backup**<br>
+Move list and settings between devices; automatic browser backup.
+
+</td>
+<td valign="top">
+
+**🌈 Nyan Cat**<br>
+Runs around the panel every now and then. Just because.
+
+</td>
+</tr>
+</table>
+
+---
+
+## 📸 Screenshots
+
+<table>
+<tr>
+<td align="center"><img src="docs/images/main.png" width="250" alt="Watchlist with factions, colors, status and FF scores"><br><sub>Watchlist</sub></td>
+<td align="center"><img src="docs/images/tiles.png" width="250" alt="Tile view"><br><sub>Tile view</sub></td>
+<td align="center"><img src="docs/images/chain-alert.png" width="250" alt="Chain alarm below 1:30"><br><sub>Chain alarm below 1:30</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/images/honors.png" width="250" alt="Honor tracker tab"><br><sub>Honor tracker</sub></td>
+<td align="center"><img src="docs/images/settings.png" width="250" alt="Settings page"><br><sub>Settings</sub></td>
+<td align="center"><img src="docs/images/german.png" width="250" alt="German UI"><br><sub>Deutsch</sub></td>
+</tr>
+</table>
+
+### 📱 On the iPhone
+
+<table>
+<tr>
+<td align="center"><img src="docs/images/ios-closed.png" width="230" alt="iPhone: P button and red chain badge in Torn's header"><br><sub>Closed: P + chain badge</sub></td>
+<td align="center"><img src="docs/images/ios-open.png" width="230" alt="iPhone: watchlist open below the header, tile view"><br><sub>Open below the header</sub></td>
+<td align="center"><img src="docs/images/ios-profile.png" width="230" alt="iPhone: FF score badge on a profile"><br><sub>FF badge on a profile</sub></td>
+</tr>
+</table>
 
 ---
 
@@ -143,11 +156,12 @@ Works with [Tampermonkey for Safari](https://apps.apple.com/app/tampermonkey/id6
 3. Open the [install link](https://raw.githubusercontent.com/Provadis/torn-war-watchlist/main/torn-war-watchlist.user.js) in **Safari** and install.
 4. Move your list and keys over with ⬇ Export on the PC and ⬆ Import on the phone.
 
-On touch screens the resize corners are bigger and the war list buttons are always visible. In Torn's mobile header a small orange **P** button sits right after the ☰ menu. While a chain runs, a timer badge appears next to it (e.g. **⛓ 03:45**, just **03:45** if space is tight) and blinks red below 1:30. Torn's mobile chain bar has no timer, so on touch screens the timer comes from the Torn API – every 6 seconds while a chain runs, and not at all otherwise (plus one request on page load and whenever the chain count changes). Tapping it opens the watchlist right below Torn's header in full screen height – the rest of Torn moves down underneath; tap again (or –) to close it. Every new page (reload, opening a target from the list …) starts with the panel closed. If the header layout isn't recognized, the panel falls back to a floating **P** square you can tap and drag.
-
-On a **profile page** the badge next to the P shows that player's **FF score** in its color (needs FF Scouter switched on). While a chain runs, FF score and chain timer take turns every 2 seconds.
-
-The tile-based ⚙ settings page is made for fingers too. Under **View** you can switch the list to big **tiles** (2 columns, with the last action on each tile): tap a tile to open the profile, long-press it for attack, profile, copy and remove.
+**What's different on the iPhone:**
+- An orange **P** sits right after Torn's ☰ menu. Tap it to open the watchlist right below the header, in full screen height. Tap again to close it. Every new page starts with it closed.
+- While a chain runs, a **timer badge** sits next to the P (e.g. **⛓ 03:45**) and blinks red below 1:30. Torn's mobile chain bar has no timer, so it comes from the Torn API, every 6 s and only while a chain runs.
+- On a **profile page** the badge shows that player's **FF score** in its color. During a chain it takes turns with the timer every 2 s.
+- **Tile view** (⚙ → View): tap a tile = profile, long press = attack, profile, copy, remove.
+- Bigger touch targets everywhere; the war list buttons are always visible. If the header layout isn't recognized, a floating **P** square takes over.
 
 ### Updates
 - **Automatic:** Tampermonkey checks for new versions on its own, once a day by default. You can change the interval under *Tampermonkey → Settings → Script update check interval*.
@@ -164,6 +178,134 @@ The tile-based ⚙ settings page is made for fingers too. Under **View** you can
 | **FF Scouter** | ⚙ → 📊 FF Scouter tile → 🔑 FF key | A Torn API key registered at [ffscouter.com](https://ffscouter.com). Leave empty to use the watchlist key. |
 | **Update interval** | ⚙ → Update interval | 15 s – 5 min, default 1 min. |
 | **Language** | ⚙ → Language | English / Deutsch |
+
+---
+
+## 📚 Feature details
+
+The overview is [above](#-features); here is how each part works.
+
+<details>
+<summary><b>👥 Watchlist for players and whole factions</b></summary>
+
+- **Single players:** add them by ID or right on their profile („+ Add player“).
+- **Whole factions:** same thing, on the faction page or on a member's profile („+ Add faction“).
+- **Cheap on calls:** a faction costs **one single API call** (`/v2/faction/{id}/members`), no matter how many members it has.
+- **Hiding:** hide single faction members with ✕, bring them all back with ↺.
+- **Groups:** players are grouped by faction, and each group can be collapsed. The colored counters in the group header show who has been away how long, even when the group is collapsed.
+
+</details>
+
+<details>
+<summary><b>⚔ Buttons in the ranked war list</b></summary>
+
+On the ranked war page, hovering an enemy's row pops up two small buttons over the right end of their name (on touch screens they are always visible):
+- **+** puts the player on your watchlist. Once they are on it, it turns into a green **✓** – click it again to remove them.
+- **📋 Copy** puts `Name [ID]` into the clipboard as a link to their profile, plus a plain-text version (`Name [ID] – profile link`) for chats that only take text.
+
+Both read name and ID straight from the row – no API calls. They also survive Torn redrawing the list and work alongside other scripts' columns (e.g. FF Scouter).
+
+</details>
+
+<details>
+<summary><b>🟢🟠🔴 Colors by last action</b></summary>
+
+| Color | Meaning |
+|---|---|
+| 🟩 Green | inactive for more than 15 min – probably offline |
+| 🟧 Orange | inactive for 10–15 min |
+| 🟥 Red | less than 10 min – active right now |
+
+</details>
+
+<details>
+<summary><b>🏥 Hospital countdown & status</b></summary>
+
+Instead of „offline for …“ every row shows the **status**:
+- **Okay** = can be attacked
+- **🏥 12m 30s** = hospital time left
+- **⛓** = jail time left
+- **✈** = traveling or abroad
+
+The list is sorted so that attackable players come first (longest inactive on top). Players in hospital follow, whoever gets out next first.
+
+</details>
+
+<details>
+<summary><b>📊 FF Scouter</b></summary>
+
+Shows every player's **fair fight score** from [ffscouter.com](https://ffscouter.com):
+- **Color:** blue = easy, green/yellow = moderate, red = difficult.
+- **Tooltip:** estimated stats and how old the estimate is.
+- **Requests:** up to 100 players per call, cached for 30 minutes.
+- **🔄 Reload FF** (⚙ → FF Scouter) clears that cache and fetches all scores right away – handy after the gym, since FF depends on your own stats too.
+
+</details>
+
+<details>
+<summary><b>⛓ Chain timer with alarm</b></summary>
+
+- The script reads the chain straight from the page (sidebar or attack page) and shows it big. This costs no API calls.
+- **Below 1:30** the box blinks red and the whole panel glows.
+- Optional **💣 bomb sound**: beeps from 1:30, faster and faster from 0:30, and explodes with a flash at 0. A landed hit defuses the bomb.
+
+</details>
+
+<details>
+<summary><b>🎯 Today's hits</b></summary>
+
+Counts your **successful attacks since 00:00 TCT**. This needs a key with Limited access.
+
+</details>
+
+<details>
+<summary><b>🪟 Movable & resizable</b></summary>
+
+- **Move:** drag the header. Double-click docks the panel back to the edge.
+- **Resize** from any of the four corners (bigger handles on touch screens). A saved size that doesn't fit the screen – e.g. imported from a PC onto a phone – is shrunk to fit automatically.
+- **Collapse** with –.
+
+Everything is saved and shared across all Torn tabs.
+
+</details>
+
+<details>
+<summary><b>⚙ Settings & language</b></summary>
+
+All options live on their own settings page behind **⚙**, laid out as a grid: on/off options are tiles you click or tap (orange = on, grey = off), keys and data are dashed tiles, and language, view and update interval are switch bars. Hover a tile on the PC for a short explanation. The UI is available in **English and German** and switches instantly, without a reload. At the bottom of the settings page there is a **legend** explaining every marker.
+
+</details>
+
+<details>
+<summary><b>🎖 Honor tracker</b></summary>
+
+A second tab next to the watchlist (PC and iPhone) shows which **honors** you're still missing and how to get them:
+- **Easy wins:** missing honors grouped by difficulty – *Instant, Easy, Costs money, Grind, Complex* – with a short **how-to guide** for each.
+- **Categories** (as tappable chips) and **All**, plus search and sorting (easiest, rarest, A–Z).
+- **Progress bars** from your personal stats, e.g. „Attacks won 184 / 250“.
+- Mark honors as **done** or **hide** them; both are part of export/import. **🔄 Sync** loads your real state from Torn and resets the ✓ marks (hidden ones stay hidden).
+
+It uses the same Torn API key (at least *Limited* access) and makes 3 requests every 5 minutes, **only while the tab is open**. Honor bar images load from torn.com itself; there are no other servers involved. The guides are in English.
+
+
+> Guide data, difficulty tiers and progress mapping are adapted from [Torn City – Merit Tracker](https://greasyfork.org/scripts/579300) by Solenya (MIT License).
+
+</details>
+
+<details>
+<summary><b>💾 Export, import & backup</b></summary>
+
+- **⬇ Export / ⬆ Import:** save settings, API keys, players and factions to a file and restore them.
+- **Automatic backup:** everything is also backed up in the browser's storage and restored automatically on load if the Tampermonkey storage ever ends up empty.
+
+</details>
+
+<details>
+<summary><b>🌈 Nyan Cat</b></summary>
+
+Runs around the panel border every now and then, rainbow included – but not while the panel is collapsed. Can be switched off. Just because.
+
+</details>
 
 ---
 
@@ -227,6 +369,9 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 
 **Requests made with your key** go to `api.torn.com` only, each tagged with `comment=watchlist`. You can see them in your [API key log](https://www.torn.com/preferences.php#tab=api) (*key → log*):
 
+<details>
+<summary>Which requests, for what, with which access</summary>
+
 | Selection | Used for | In the custom key / without it |
 |---|---|---|
 | `user/{id}?selections=profile` | Name, status, last action and faction of watched players / the profile you're viewing | ✓ / Public |
@@ -235,6 +380,8 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 | v2 `faction/chain` | Chain timer on iPhone/iPad (every 6 s while a chain runs, otherwise only on page load) | ✓ / Public |
 | v2 `user/attacks` | Today's hits | ✓ / Limited |
 | v2 `torn/honors`, `user/honors`, `user/personalstats` | Honors tab, only while it's open | ✓ / Limited |
+
+</details>
 
 **Integrations:**
 - **FF Scouter: opt-in, off by default.** When you switch it on, your FF Scouter key goes to `ffscouter.com` together with the IDs of the players shown in the panel, to fetch fair-fight estimates. If you didn't set a separate FF key, that's your watchlist key. FF Scouter's own terms apply, see [ffscouter.com](https://ffscouter.com).
@@ -308,6 +455,12 @@ The script restores its browser backup automatically. If something is still miss
 | **2.23.0** | **✨ Create custom key** in the settings opens Torn's pre-filled key form with only the needed access; key prompts and settings show how the key is used (API ToS) |
 | **2.22.1** | Smoother on iPhone: panel no longer resizes while Safari's address bar slides, honor images keep their space before loading, lists don't pull the page along at their ends, far less background work |
 | **2.22.0** | Soft fold/unfold animation for faction groups, honor difficulty sections and the how-to guides (off with „reduce motion“) |
+
+<details>
+<summary>Older versions</summary>
+
+| Version | What's new |
+|---|---|
 | **2.21.4** | Honors: cards get a soft color glow from the left in their tier color (green when earned) |
 | **2.21.3** | Honors: Sync (and ⟳) now resets your own ✓ marks to Torn's real state, so a wrongly ticked honor comes back |
 | **2.21.2** | Honors: tap a difficulty header in „Easy wins“ to fold that section (remembered); orange **🔄 Sync** button right in the tab |
@@ -339,6 +492,8 @@ The script restores its browser backup automatically. If something is still miss
 | **2.6.0** | Bomb sound for the chain timer |
 | **2.5.0** | Freely movable panel |
 | **≤ 2.4** | Watchlist, factions with one call, groups, hospital countdown, today's hits, chain timer, Nyan Cat |
+
+</details>
 
 ---
 
