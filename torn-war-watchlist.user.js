@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.24.1
+// @version      2.25.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -28,6 +28,8 @@
   const MIN_REFRESH_S = 15;
   const MAX_REFRESH_S = 600;
   const REFRESH_PRESETS = [15, 30, 60, 120, 300]; // choices in the touch settings grid
+  const SCALE_MIN = 80;            // UI scale in %, per device (PC / touch); 100 = the original sizes
+  const SCALE_MAX = 150;
   const REQUEST_GAP_MS = 700;     // gap between API calls (Torn limit: 100/min)
   // Version and update URL come from the header (@version / @downloadURL)
   const GMI = typeof GM_info !== 'undefined' ? GM_info : null;
@@ -82,6 +84,8 @@
     view: (v) => v === 'list' || v === 'tiles',
     tab: (v) => v === 'menu' || v === 'list' || v === 'honors',
     startPage: (v) => v === 'last' || v === 'menu',
+    uiScalePc: isNum,
+    uiScaleTouch: isNum,
     honMode: (v) => v === 'easy' || v === 'cat' || v === 'all',
     honorsDone: Array.isArray,
     honorsHidden: Array.isArray,
@@ -115,6 +119,9 @@
       menuHonorsLoad: 'öffnen zum Laden',
       menuSoon: 'bald',
       menuNoKey: 'API-Key fehlt',
+      secScale: 'UI-Skalierung',
+      scaleReset: 'Standard',
+      scaleHint: 'Schrift, Buttons und Kacheln. Gilt nur für dieses Gerät.',
       secStart: 'Start-Seite',
       startLast: 'Zuletzt offen',
       startMenu: 'Menü',
@@ -325,6 +332,9 @@
       menuHonorsLoad: 'open to load',
       menuSoon: 'soon',
       menuNoKey: 'API key missing',
+      secScale: 'UI scale',
+      scaleReset: 'Default',
+      scaleHint: 'Text, buttons and tiles. Only for this device.',
       secStart: 'Start page',
       startLast: 'Last opened',
       startMenu: 'Menu',
@@ -1019,8 +1029,16 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // ---- UI --------------------------------------------------------------------
+  // UI scale: every px size in the CSS below is multiplied by --twl-s (set on the panel, 1 = 100 %).
+  // 1px lines stay 1px. Elements outside the panel (header P, Nyan trail) get the fallback 1.
+  // Not CSS zoom / transform: those break the pointer math of dragging and resizing.
+  const scaleCss = (css) => css.split('\n').map((line) => {
+    const at = line.trimStart().startsWith('@') ? line.indexOf('{') + 1 : 0; // keep @media/@container conditions
+    return line.slice(0, at) + line.slice(at).replace(/(\d*\.?\d+)px\b/g,
+      (m, n) => (parseFloat(n) <= 1 ? m : `calc(${n}px * var(--twl-s, 1))`));
+  }).join('\n');
   const style = document.createElement('style');
-  style.textContent = `
+  style.textContent = scaleCss(`
     #twl-panel { position: fixed; top: 110px; width: 240px; z-index: 999999; font: 12px/1.35 Arial, sans-serif;
       display: flex; flex-direction: column; box-sizing: border-box;
       background: #1b1b1f; color: #eee; border: 1px solid #ff7518; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,.5); }
@@ -1204,8 +1222,12 @@
     /* Settings: grid of tiles. The old checkbox rows stay hidden in the page – the tiles drive them */
     #twl-panel .twl-s-old { display: none; }
     .twl-sec { margin: 12px 0 6px; color: #999; font-size: 10px; text-transform: uppercase; letter-spacing: .8px; font-weight: bold; }
-    .twl-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .twl-tiles.twl-tiles-2 { grid-template-columns: repeat(2, 1fr); }
+    /* Settings tiles keep a fixed size too: a wider panel fits more per row */
+    #twl-panel { --twl-stile-w: 68px; --twl-stile2-w: 104px; }
+    #twl-panel.twl-touch { --twl-stile-w: 108px; --twl-stile2-w: 140px; }
+    .twl-tiles { display: grid; grid-template-columns: repeat(auto-fill, var(--twl-stile-w)); justify-content: center; gap: 6px; }
+    .twl-tiles.twl-tiles-2 { grid-template-columns: repeat(auto-fill, var(--twl-stile2-w)); }
+    .twl-scale-val { min-width: 42px; text-align: right; font-weight: bold; color: #ffcf9e; }
     #twl-panel button.twl-tile { position: relative; min-height: 68px; margin: 0; padding: 6px 4px; border-radius: 8px;
       background: #26262c; border: 1px solid #3a3a42; color: #bbb; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 4px; text-align: center; font: inherit;
@@ -1294,9 +1316,9 @@
     /* Start menu: tiles of a fixed size – a wider panel fits more of them per row, it never stretches them */
     #twl-panel .twl-menu[hidden] { display: none !important; }
     #twl-panel { --twl-mtile-w: 104px; --twl-mtile-h: 92px; }
-    #twl-panel.twl-touch { --twl-mtile-w: 150px; --twl-mtile-h: 116px; }
-    .twl-menu { overflow-y: auto; overscroll-behavior: contain; }
-    #twl-panel.twl-sized .twl-menu { flex: 1; min-height: 0; }
+    #twl-panel.twl-touch { --twl-mtile-w: 136px; --twl-mtile-h: 112px; }
+    .twl-menu { max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; }
+    #twl-panel.twl-sized .twl-menu { flex: 1; min-height: 0; max-height: none; }
     .twl-mgrid { display: grid; grid-template-columns: repeat(auto-fill, var(--twl-mtile-w)); justify-content: center; gap: 8px; padding: 4px 0; }
     #twl-panel button.twl-mtile { width: var(--twl-mtile-w); min-height: var(--twl-mtile-h); margin: 0; padding: 8px 6px; border-radius: 10px;
       background: #26262c; border: 1px solid #3a3a42; color: #eee; display: flex; flex-direction: column; align-items: center;
@@ -1321,7 +1343,7 @@
     .twl-back-txt { margin-left: 4px; }
     /* Narrow panel: only "‹", so the page title keeps its room */
     .twl-head { container-type: inline-size; }
-    @container (max-width: 300px) { .twl-back-txt { display: none; } }
+    @container (max-width: 25em) { .twl-back-txt { display: none; } } /* em: follows the UI scale */
     #twl-panel.twl-touch .twl-head button.twl-back { min-height: 32px; padding: 0 10px; font-size: 14px; }
     .twl-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .twl-title-ic[hidden] { display: none; }
@@ -1412,7 +1434,7 @@
     .twl-war-btn.twl-on { background: #1f7a35; border-color: #2ea44f; color: #fff; }
     .twl-war-btn.twl-on:hover { background: #a3191c; border-color: #ff5a5a; }
     .twl-war-btn svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2; }
-  `;
+  `);
   document.head.appendChild(style);
 
   const panel = document.createElement('div');
@@ -1511,6 +1533,9 @@
             <button type="button" data-act="seg-start" data-v="last" data-i18n="startLast"></button>
             <button type="button" data-act="seg-start" data-v="menu" data-i18n="startMenu"></button>
           </div>
+          <div class="twl-sec" data-i18n="secScale"></div>
+          <div class="twl-vol"><input type="range" class="twl-g-scale" min="${SCALE_MIN}" max="${SCALE_MAX}" step="10" /><span class="twl-scale-val"></span><button type="button" data-act="scale-reset" data-i18n="scaleReset"></button></div>
+          <div class="twl-hint" data-i18n="scaleHint"></div>
           <div class="twl-sec" data-i18n="secInterval"></div>
           <div class="twl-seg">
             ${REFRESH_PRESETS.map((v) => `<button type="button" data-act="seg-interval" data-v="${v}">${v < 60 ? `${v} s` : `${v / 60} min`}</button>`).join('')}
@@ -1586,6 +1611,14 @@
   // Touch screen (iPhone, iPad, Android): bigger handles, "P" square instead of a collapsed panel
   const IS_TOUCH = window.matchMedia('(pointer: coarse)').matches;
   panel.classList.toggle('twl-touch', IS_TOUCH); // touch layout of the header buttons
+  // UI scale, separate for PC and touch so an export from the PC doesn't blow up the phone
+  const SCALE_KEY = IS_TOUCH ? 'uiScaleTouch' : 'uiScalePc';
+  const getScale = () => {
+    const v = Math.round(GM_getValue(SCALE_KEY, 100) / 10) * 10;
+    return Number.isFinite(v) ? Math.min(SCALE_MAX, Math.max(SCALE_MIN, v)) : 100;
+  };
+  const applyScale = () => panel.style.setProperty('--twl-s', String(getScale() / 100));
+  applyScale();
   // Open/closed: on PC remembered across pages; on touch screens every page starts closed
   // (reload, tapping a target in the list …) – open it with the P when you need it.
   let touchCollapsed = true;
@@ -2248,6 +2281,9 @@
         break;
       case 'menu':
         setTab('menu');
+        break;
+      case 'scale-reset':
+        setScale(100);
         break;
       case 'seg-start':
         GM_setValue('startPage', btn.dataset.v === 'menu' ? 'menu' : 'last');
@@ -3162,6 +3198,18 @@
   });
 
   // ---- Touch settings grid: mirror the current state onto tiles and segments -----------------
+  // Scale slider: the value shows while dragging, the UI changes on release (otherwise the
+  // slider would grow under the finger). Double-click / double-tap: back to 100 %.
+  const gridScale = $('.twl-g-scale');
+  function setScale(v) {
+    GM_setValue(SCALE_KEY, v);
+    applyScale();
+    applyLayout();
+    syncGrid();
+  }
+  gridScale.addEventListener('input', () => { $('.twl-scale-val').textContent = `${gridScale.value} %`; });
+  gridScale.addEventListener('change', () => setScale(Number(gridScale.value)));
+  gridScale.addEventListener('dblclick', () => setScale(100));
   const gridVol = $('.twl-g-vol');
   gridVol.addEventListener('input', () => {
     volInput.value = gridVol.value;
@@ -3192,6 +3240,8 @@
     for (const b of panel.querySelectorAll('[data-act="seg-lang"]')) b.classList.toggle('twl-on', b.dataset.v === getLang());
     for (const b of panel.querySelectorAll('[data-act="seg-view"]')) b.classList.toggle('twl-on', b.dataset.v === getView());
     for (const b of panel.querySelectorAll('[data-act="seg-start"]')) b.classList.toggle('twl-on', b.dataset.v === getStartPage());
+    if (document.activeElement !== gridScale) gridScale.value = String(getScale());
+    setText($('.twl-scale-val'), `${getScale()} %`);
     const secs = getRefreshS();
     for (const b of panel.querySelectorAll('[data-act="seg-interval"]')) b.classList.toggle('twl-on', Number(b.dataset.v) === secs);
     const rate = $('.twl-rate');

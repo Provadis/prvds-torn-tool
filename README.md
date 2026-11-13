@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.24.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.25.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -274,6 +274,8 @@ Everything is saved and shared across all Torn tabs.
 
 The panel has a **start menu** with big tiles: 🎃 Watchlist, 🎖 Honors and ⚙ Settings (🏅 Medals is coming). Each tile shows its key number, e.g. players and how many are okay, or honors earned. **‹ Menu** in the header leads back from every page. Chain timer and today's hits stay on top of every page. Under *Start page* you choose whether the panel opens on the **last opened page** (default) or on the **menu**. The tiles keep their size: a wider panel fits more per row.
 
+**UI scale** (settings): a slider from 80 % to 150 % makes text, buttons and tiles bigger or smaller together. 100 % is the original size, **Default** (or a double-click on the slider) goes back to it. PC and iPhone keep separate values, so an export from the PC doesn't change the size on your phone. A size you dragged the panel to stays as it is; only tiles and text scale.
+
 All options live on their own settings page behind the **⚙ Settings** tile, laid out as a grid: on/off options are tiles you click or tap (orange = on, grey = off), keys and data are dashed tiles, and language, view and update interval are switch bars. Hover a tile on the PC for a short explanation. The UI is available in **English and German** and switches instantly, without a reload. At the bottom of the settings page there is a **legend** explaining every marker.
 
 </details>
@@ -452,11 +454,11 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.25.0** | **UI scale** slider in the settings (80–150 %, separate for PC and iPhone): text, buttons and tiles scale together. Settings tiles now keep a fixed size like the menu tiles |
 | **2.24.1** | Honors page: the status line, the „show earned/hidden“ buttons and the list render right away again (they stayed empty until the first click) |
 | **2.24.0** | **Start menu** with big tiles instead of the tabs: Watchlist, Honors, Settings (Medals coming soon), each with its key number. **‹ Menu** leads back; new setting *Start page* (last opened page or menu) |
 | **2.23.3** | The GitHub repo is now called **prvds-torn-tool**: install, update and help links point to the new address (old links keep forwarding) |
 | **2.23.2** | iPhone/iPad: the panel starts closed on every page (reload, opening a target …) – the P opens it. PC keeps remembering it |
-| **2.23.1** | ToS: key access level is *Custom* with the exact selections; the tile is now called **✨ Create custom key** |
 | **2.22.1** | Smoother on iPhone: panel no longer resizes while Safari's address bar slides, honor images keep their space before loading, lists don't pull the page along at their ends, far less background work |
 
 <details>
@@ -464,6 +466,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.23.1** | ToS: key access level is *Custom* with the exact selections; the tile is now called **✨ Create custom key** |
 | **2.23.0** | **✨ Create custom key** in the settings opens Torn's pre-filled key form with only the needed access; key prompts and settings show how the key is used (API ToS) |
 | **2.22.0** | Soft fold/unfold animation for faction groups, honor difficulty sections and the how-to guides (off with „reduce motion“) |
 | **2.21.4** | Honors: cards get a soft color glow from the left in their tier color (green when earned) |
@@ -510,7 +513,7 @@ The script restores its browser backup automatically. If something is still miss
 - **FF-Scouter-Werte.**
 - **Chain-Timer:** große Anzeige mit rotem Alarm (optional mit Bomben-Sound) unter 1:30.
 - **Zähler für die heutigen Hits.**
-- **Startmenü mit Kacheln:** Watchlist, Honors und Einstellungen auf einen Blick, „‹ Menü“ führt zurück.
+- **Startmenü mit Kacheln:** Watchlist, Honors und Einstellungen auf einen Blick, „‹ Menü“ führt zurück. Die Größe der ganzen Oberfläche stellst du in den Einstellungen ein (80–150 %).
 - **Honor-Tracker:** fehlende Honors nach Schwierigkeit, mit Anleitung (englisch), Kategorien und Fortschritt.
 
 Ganze Factions kosten nur einen API-Call pro Update. Die Oberfläche gibt es auf **Englisch und Deutsch**: ⚙ → Sprache.
