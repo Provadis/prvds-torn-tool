@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.23.3
+// @version      2.24.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -43,6 +43,12 @@
   const getKey = () => GM_getValue('apiKey', '');
   const getRefreshS = () => GM_getValue('refreshS', DEFAULT_REFRESH_S);
   const isPaused = () => GM_getValue('paused', false);
+  // Current page: menu, list or honors. Saved in GM "tab"; "Start page: menu" ignores it on load.
+  const getStartPage = () => (GM_getValue('startPage', 'last') === 'menu' ? 'menu' : 'last');
+  const savedTab = () => { const v = GM_getValue('tab', 'list'); return v === 'honors' || v === 'menu' ? v : 'list'; };
+  let curTab = getStartPage() === 'menu' ? 'menu' : savedTab();
+  const getTab = () => curTab;
+  let menuPlayers = { n: 0, ok: 0 }; // watchlist numbers for the menu tile, counted in render()
 
   // Watched factions: { id, name, tag, hidden: [player IDs], members: [{ id, name, ts }], error }
   // Their members come with ONE call per faction; "hidden" only hides single players.
@@ -74,7 +80,8 @@
     ffKey: (v) => typeof v === 'string',
     lang: (v) => v === 'de' || v === 'en',
     view: (v) => v === 'list' || v === 'tiles',
-    tab: (v) => v === 'list' || v === 'honors',
+    tab: (v) => v === 'menu' || v === 'list' || v === 'honors',
+    startPage: (v) => v === 'last' || v === 'menu',
     honMode: (v) => v === 'easy' || v === 'cat' || v === 'all',
     honorsDone: Array.isArray,
     honorsHidden: Array.isArray,
@@ -94,15 +101,23 @@
       addFaction: '+ Faction',
       addFactionTitle: 'Faction mit dieser ID hinzufügen',
       resize: 'Größe ändern (Doppelklick: zurücksetzen)',
-      back: '← Zurück',
       language: 'Sprache',
       secFeatures: 'Funktionen',
       secKeys: 'Keys',
       secInterval: 'Update-Intervall',
       secData: 'Daten',
       secHelp: 'Hilfe',
-      tabHonors: 'Honors',
-      tabWatchlist: '🎃 Watchlist',
+      menuBack: 'Menü',
+      menuBackTip: 'Zurück zum Menü',
+      menuTitle: 'Torn Tool',
+      menuPlayers: (n, ok) => `${n} Spieler · ${ok} okay`,
+      menuNoPlayers: 'noch leer',
+      menuHonorsLoad: 'öffnen zum Laden',
+      menuSoon: 'bald',
+      menuNoKey: 'API-Key fehlt',
+      secStart: 'Start-Seite',
+      startLast: 'Zuletzt offen',
+      startMenu: 'Menü',
       honModeEasy: 'Einfach',
       honModeCat: 'Kategorien',
       honModeAll: 'Alle',
@@ -296,15 +311,23 @@
       addFaction: '+ Faction',
       addFactionTitle: 'Add the faction with this ID',
       resize: 'Resize (double-click: reset)',
-      back: '← Back',
       language: 'Language',
       secFeatures: 'Features',
       secKeys: 'Keys',
       secInterval: 'Update interval',
       secData: 'Data',
       secHelp: 'Help',
-      tabHonors: 'Honors',
-      tabWatchlist: '🎃 Watchlist',
+      menuBack: 'Menu',
+      menuBackTip: 'Back to the menu',
+      menuTitle: 'Torn Tool',
+      menuPlayers: (n, ok) => `${n} players · ${ok} okay`,
+      menuNoPlayers: 'empty so far',
+      menuHonorsLoad: 'open to load',
+      menuSoon: 'soon',
+      menuNoKey: 'API key missing',
+      secStart: 'Start page',
+      startLast: 'Last opened',
+      startMenu: 'Menu',
       honModeEasy: 'Easy wins',
       honModeCat: 'Categories',
       honModeAll: 'All',
@@ -1148,7 +1171,6 @@
     .twl-settings input[type="checkbox"] { width: auto; margin: 0; }
     .twl-settings label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
     .twl-spage .twl-settings { margin-top: 0; padding: 6px 2px; border-bottom: 1px solid #333; }
-    .twl-sp-head { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid #5a3a1e; color: #ff9a3c; }
     .twl-settings select { background: #111; color: #eee; border: 1px solid #555; border-radius: 3px; padding: 1px 3px; font: inherit; }
     .twl-key-status { color: #999; }
     .twl-upd-status { color: #999; }
@@ -1166,7 +1188,6 @@
     .twl-legend .twl-row { margin-bottom: 1px; }
     .twl-lg-text { margin-top: 6px; font-size: 10px; color: #bbb; }
     .twl-key-status.twl-ff-err { color: #ff8080; }
-    #twl-panel button.twl-settings-btn.twl-on { background: #5a3a1e; border-color: #ff9a3c; }
     .twl-settings input[type="range"] { width: 70px; padding: 0; background: none; border: 0; accent-color: #ff7518; }
     #twl-panel.twl-boom { animation: twl-shake .1s linear 10; }
     @keyframes twl-shake { 25% { translate: -4px 2px; } 50% { translate: 3px -3px; } 75% { translate: -2px -2px; } }
@@ -1239,7 +1260,7 @@
     /* Pause lives in the settings grid on touch screens */
     #twl-panel.twl-touch .twl-head [data-act="side"], #twl-panel.twl-touch .twl-head .twl-pause,
     #twl-panel.twl-touch.twl-inline .twl-head [data-act="collapse"] { display: none; }
-    #twl-panel.twl-touch .twl-head button.twl-refresh, #twl-panel.twl-touch .twl-head button.twl-settings-btn {
+    #twl-panel.twl-touch .twl-head button.twl-refresh {
       display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 28px; font-size: 15px; }
     #twl-panel.twl-touch .twl-head .twl-refresh svg { width: 16px; height: 16px; vertical-align: 0; }
     /* Tile view of the list: 2 columns, tap = profile, long press / right click = action menu */
@@ -1270,14 +1291,40 @@
     #twl-panel .twl-pmenu button { display: block; width: 100%; margin-top: 3px; padding: 8px 10px; border-radius: 6px;
       text-align: left; font-weight: bold; background: #26262c; border-color: #3a3a42; }
     #twl-panel .twl-pmenu button[data-act="menu-remove"] { color: #ff9a9a; }
-    /* Tabs: watchlist | honors */
-    .twl-tabs { display: flex; border-bottom: 1px solid #5a3a1e; background: #1b1b1f; }
-    #twl-panel.twl-collapsed .twl-tabs { display: none; }
-    #twl-panel .twl-tabs button { flex: 1; margin: 0; padding: 5px 0; border: 0; border-radius: 0; background: transparent;
-      color: #999; font-weight: bold; white-space: nowrap; }
-    #twl-panel .twl-tabs button:hover { color: #ddd; }
-    #twl-panel .twl-tabs button.twl-on { color: #ffcf9e; background: #22160c; box-shadow: inset 0 -2px 0 #ff7518; }
-    #twl-panel.twl-touch .twl-tabs button { padding: 9px 0; font-size: 13px; }
+    /* Start menu: tiles of a fixed size – a wider panel fits more of them per row, it never stretches them */
+    #twl-panel .twl-menu[hidden] { display: none !important; }
+    #twl-panel { --twl-mtile-w: 104px; --twl-mtile-h: 92px; }
+    #twl-panel.twl-touch { --twl-mtile-w: 150px; --twl-mtile-h: 116px; }
+    .twl-menu { overflow-y: auto; overscroll-behavior: contain; }
+    #twl-panel.twl-sized .twl-menu { flex: 1; min-height: 0; }
+    .twl-mgrid { display: grid; grid-template-columns: repeat(auto-fill, var(--twl-mtile-w)); justify-content: center; gap: 8px; padding: 4px 0; }
+    #twl-panel button.twl-mtile { width: var(--twl-mtile-w); min-height: var(--twl-mtile-h); margin: 0; padding: 8px 6px; border-radius: 10px;
+      background: #26262c; border: 1px solid #3a3a42; color: #eee; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 4px; text-align: center; font: inherit; -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none; touch-action: manipulation; }
+    #twl-panel button.twl-mtile:active:not(:disabled) { transform: scale(.96); }
+    @media (hover: hover) { #twl-panel button.twl-mtile:hover:not(:disabled) { border-color: #ff9a3c; filter: brightness(1.12); } }
+    #twl-panel button.twl-mtile:disabled { opacity: .45; border-style: dashed; cursor: default; }
+    .twl-mtile .twl-ic { font-size: 24px; line-height: 1; }
+    .twl-mtile .twl-lb { font-size: 13px; font-weight: bold; line-height: 1.15; }
+    .twl-mtile .twl-sub { font-size: 10.5px; color: #9ca3af; line-height: 1.2; }
+    .twl-mtile .twl-sub.twl-ff-err { color: #ff8080; }
+    .twl-mbar { display: block; width: 80%; height: 4px; border-radius: 3px; background: #111; overflow: hidden; }
+    .twl-mbar[hidden] { display: none; }
+    .twl-mbar i { display: block; height: 100%; background: var(--c, #60a5fa); }
+    #twl-panel.twl-touch .twl-mtile .twl-ic { font-size: 30px; }
+    #twl-panel.twl-touch .twl-mtile .twl-lb { font-size: 15px; }
+    #twl-panel.twl-touch .twl-mtile .twl-sub { font-size: 12px; }
+    /* Header: "‹ Menu" instead of the pumpkin on every page but the menu */
+    #twl-panel button.twl-back { flex: none; padding: 1px 6px; background: #22160c; border-color: #ff7518; color: #ffcf9e; font-weight: bold; }
+    #twl-panel button.twl-back[hidden] { display: none; }
+    .twl-back-txt { margin-left: 4px; }
+    /* Narrow panel: only "‹", so the page title keeps its room */
+    .twl-head { container-type: inline-size; }
+    @container (max-width: 300px) { .twl-back-txt { display: none; } }
+    #twl-panel.twl-touch .twl-head button.twl-back { min-height: 32px; padding: 0 10px; font-size: 14px; }
+    .twl-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .twl-title-ic[hidden] { display: none; }
     /* Honor tracker */
     #twl-panel .twl-honors[hidden] { display: none !important; } /* else the sized flex rule below wins */
     #twl-panel.twl-sized .twl-honors { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -1373,16 +1420,12 @@
   panel.innerHTML = `
     <button type="button" class="twl-mini" data-i18n-title="miniTitle">P</button>
     <div class="twl-head">
-      <span class="twl-title" data-i18n-title="dragHint">🎃 <span class="twl-title-name">Watchlist</span> <span class="twl-count"></span></span>
+      <button type="button" data-act="menu" class="twl-back" data-i18n-tip="menuBackTip" hidden>‹<span class="twl-back-txt" data-i18n="menuBack"></span></button>
+      <span class="twl-title" data-i18n-title="dragHint"><span class="twl-title-ic">🎃 </span><span class="twl-title-name">Watchlist</span> <span class="twl-count"></span></span>
       <button data-act="pause" class="twl-pause"></button>
       <button data-act="refresh" class="twl-refresh" data-i18n-title="refreshNow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
-      <button data-act="settings" class="twl-settings-btn" data-i18n-title="settings">⚙</button>
       <button data-act="side" data-i18n-title="dock">⇄</button>
       <button data-act="collapse" data-i18n-title="collapse">–</button>
-    </div>
-    <div class="twl-tabs">
-      <button type="button" data-act="tab" data-v="list" data-i18n="tabWatchlist"></button>
-      <button type="button" data-act="tab" data-v="honors" class="twl-tab-hon"></button>
     </div>
     <button class="twl-hits" data-act="hits"></button>
     <div class="twl-chain" style="display:none">
@@ -1393,6 +1436,14 @@
       <span class="twl-chain-time"></span>
     </div>
     <div class="twl-body">
+      <div class="twl-menu" hidden>
+        <div class="twl-mgrid">
+          <button type="button" class="twl-mtile" data-act="tab" data-v="list"><span class="twl-ic">🎃</span><span class="twl-lb">Watchlist</span><span class="twl-sub twl-m-list"></span></button>
+          <button type="button" class="twl-mtile" data-act="tab" data-v="honors"><span class="twl-ic">🎖</span><span class="twl-lb">Honors</span><span class="twl-sub twl-m-hon"></span><span class="twl-mbar twl-m-honbar"><i></i></span></button>
+          <button type="button" class="twl-mtile" disabled><span class="twl-ic">🏅</span><span class="twl-lb">Medals</span><span class="twl-sub" data-i18n="menuSoon"></span></button>
+          <button type="button" class="twl-mtile" data-act="settings"><span class="twl-ic">⚙</span><span class="twl-lb" data-i18n="settings"></span><span class="twl-sub twl-m-set"></span></button>
+        </div>
+      </div>
       <div class="twl-main">
         <div class="twl-profile"></div>
         <div class="twl-add">
@@ -1426,10 +1477,6 @@
         <div class="twl-hon-list"></div>
       </div>
       <div class="twl-spage" hidden>
-        <div class="twl-sp-head">
-          <button data-act="settings" data-i18n="back"></button>
-          <b data-i18n="settings"></b>
-        </div>
         <div class="twl-sgrid">
           <div class="twl-sec" data-i18n="secFeatures"></div>
           <div class="twl-tiles">
@@ -1458,6 +1505,11 @@
           <div class="twl-seg">
             <button type="button" data-act="seg-view" data-v="list">☰ <span data-i18n="viewList"></span></button>
             <button type="button" data-act="seg-view" data-v="tiles">▦ <span data-i18n="viewTiles"></span></button>
+          </div>
+          <div class="twl-sec" data-i18n="secStart"></div>
+          <div class="twl-seg">
+            <button type="button" data-act="seg-start" data-v="last" data-i18n="startLast"></button>
+            <button type="button" data-act="seg-start" data-v="menu" data-i18n="startMenu"></button>
           </div>
           <div class="twl-sec" data-i18n="secInterval"></div>
           <div class="twl-seg">
@@ -1909,6 +1961,8 @@
     }
     for (const e of list) if (!shown.has(e.id)) shown.set(e.id, e);
     $('.twl-count').textContent = `(${shown.size})`;
+    menuPlayers = { n: shown.size, ok: [...shown.values()].filter((e) => e.status && statusLabel(e.status, now) === 'Okay').length };
+    renderMenu();
 
     // Buttons for the currently open player or faction profile
     const profileParts = [];
@@ -2192,6 +2246,13 @@
       case 'settings':
         showSettings($('.twl-spage').hidden);
         break;
+      case 'menu':
+        setTab('menu');
+        break;
+      case 'seg-start':
+        GM_setValue('startPage', btn.dataset.v === 'menu' ? 'menu' : 'last');
+        syncGrid();
+        break;
       case 'update-check':
         checkForUpdate();
         break;
@@ -2332,12 +2393,11 @@
     }
   }
 
-  // Show the settings page instead of the list (per tab, not saved).
-  // If the panel is collapsed, ⚙ expands it.
+  // Show the settings page over the current page (not saved: "‹ Menu" closes it).
+  // If the panel is collapsed, opening it expands the panel.
   function showSettings(open) {
     $('.twl-spage').hidden = !open;
     applyTab();
-    $('.twl-settings-btn').classList.toggle('twl-on', open);
     if (open && isCollapsed()) {
       setCollapsed(false);
       applyLayout();
@@ -3131,6 +3191,7 @@
 
     for (const b of panel.querySelectorAll('[data-act="seg-lang"]')) b.classList.toggle('twl-on', b.dataset.v === getLang());
     for (const b of panel.querySelectorAll('[data-act="seg-view"]')) b.classList.toggle('twl-on', b.dataset.v === getView());
+    for (const b of panel.querySelectorAll('[data-act="seg-start"]')) b.classList.toggle('twl-on', b.dataset.v === getStartPage());
     const secs = getRefreshS();
     for (const b of panel.querySelectorAll('[data-act="seg-interval"]')) b.classList.toggle('twl-on', Number(b.dataset.v) === secs);
     const rate = $('.twl-rate');
@@ -3963,24 +4024,46 @@
     }
   }
 
-  function getTab() { return GM_getValue('tab', 'list') === 'honors' ? 'honors' : 'list'; }
   const honorsVisible = () => honReady && !$('.twl-honors').hidden && !panel.classList.contains('twl-collapsed');
-  // Which page shows: settings over everything, otherwise the chosen tab
+  // Which page shows: settings over everything, otherwise the current page (menu, list, honors)
   function applyTab() {
     const settingsOpen = !$('.twl-spage').hidden;
     const tab = getTab();
+    $('.twl-menu').hidden = settingsOpen || tab !== 'menu';
     $('.twl-main').hidden = settingsOpen || tab !== 'list';
     $('.twl-honors').hidden = settingsOpen || tab !== 'honors';
-    for (const b of panel.querySelectorAll('[data-act="tab"]')) b.classList.toggle('twl-on', b.dataset.v === tab);
-    $('.twl-title-name').textContent = tab === 'honors' ? 'Honors' : 'Watchlist';
-    $('.twl-count').hidden = tab === 'honors';
+    const onMenu = tab === 'menu' && !settingsOpen;
+    $('.twl-back').hidden = onMenu;
+    $('.twl-title-ic').hidden = !onMenu;
+    $('.twl-title-name').textContent = settingsOpen ? t('settings')
+      : tab === 'honors' ? 'Honors' : tab === 'list' ? 'Watchlist' : t('menuTitle');
+    $('.twl-count').hidden = settingsOpen || tab !== 'list';
     renderHonors();
+    renderMenu();
   }
   function setTab(v) {
-    GM_setValue('tab', v === 'honors' ? 'honors' : 'list');
+    curTab = v === 'honors' || v === 'menu' ? v : 'list';
+    GM_setValue('tab', curTab);
     if (!$('.twl-spage').hidden) showSettings(false);
     else applyTab();
     if (getTab() === 'honors') refreshHonors(false);
+  }
+  // Menu tiles: values from data that is already cached – the menu itself never calls the API
+  function renderMenu() {
+    if ($('.twl-menu').hidden) return;
+    const setText = (el, txt) => { if (el.textContent !== txt) el.textContent = txt; };
+    setText($('.twl-m-list'), menuPlayers.n ? t('menuPlayers', menuPlayers.n, menuPlayers.ok) : t('menuNoPlayers'));
+    const all = GM_getValue('honorsAll', []);
+    const earned = new Set([...GM_getValue('honorsMine', []), ...GM_getValue('honorsDone', [])]);
+    const got = all.filter((h) => earned.has(h.id)).length;
+    setText($('.twl-m-hon'), all.length ? `${got} / ${all.length}` : t('menuHonorsLoad'));
+    const bar = $('.twl-m-honbar');
+    bar.hidden = !all.length;
+    const w = `${all.length ? Math.round((got / all.length) * 100) : 0}%`;
+    if (bar.firstElementChild.style.width !== w) bar.firstElementChild.style.width = w;
+    const set = $('.twl-m-set');
+    setText(set, getKey() ? (SCRIPT_VERSION ? `v${SCRIPT_VERSION}` : '') : t('menuNoKey'));
+    set.classList.toggle('twl-ff-err', !getKey());
   }
   function toggleIn(key, id) {
     const arr = GM_getValue(key, []);
@@ -4045,10 +4128,6 @@
       stats: GM_getValue('honorsStats', null),
     };
     const isEarned = (id) => s.mine.has(id) || s.done.has(id);
-    const earnedCount = all.filter((h) => isEarned(h.id)).length;
-    const tabLabel = `🎖 ${t('tabHonors')}${all.length ? ` ${earnedCount}/${all.length}` : ''}`;
-    const tabBtn = $('.twl-tab-hon');
-    if (tabBtn.textContent !== tabLabel) tabBtn.textContent = tabLabel;
     if ($('.twl-honors').hidden) return;
 
     const mode = honMode();
