@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.25.1
+// @version      2.25.2
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -1034,8 +1034,9 @@
   // Not CSS zoom / transform: those break the pointer math of dragging and resizing.
   const scaleCss = (css) => css.split('\n').map((line) => {
     const at = line.trimStart().startsWith('@') ? line.indexOf('{') + 1 : 0; // keep @media/@container conditions
-    return line.slice(0, at) + line.slice(at).replace(/(\d*\.?\d+)px\b/g,
-      (m, n) => (parseFloat(n) <= 1 ? m : `calc(${n}px * var(--twl-s, 1))`));
+    // the sign goes inside calc(): "-calc(…)" is invalid CSS and would drop the whole declaration
+    return line.slice(0, at) + line.slice(at).replace(/(-?)(\d*\.?\d+)px\b/g,
+      (m, sign, n) => (parseFloat(n) <= 1 ? m : `calc(${sign}${n}px * var(--twl-s, 1))`));
   }).join('\n');
   const style = document.createElement('style');
   style.textContent = scaleCss(`
@@ -1261,13 +1262,11 @@
     #twl-panel .twl-vol input { flex: 1; min-width: 0; accent-color: #ff7518; }
     #twl-panel .twl-vol button { padding: 6px 10px; font-weight: bold; }
     #twl-panel .twl-s-ver { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; border: 0; }
-    #twl-panel .twl-s-ver .twl-version, #twl-panel .twl-s-ver .twl-upd-status {
-      display: flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 8px 0 0 8px;
-      background: #26262c; border: 1px solid #3a3a42; border-right: 0; color: #ddd; font-size: 13px; font-weight: bold; }
-    #twl-panel .twl-s-ver .twl-version { flex: 1; }
-    #twl-panel .twl-s-ver .twl-upd-status { order: 1; margin-left: -6px; border-radius: 0 8px 8px 0;
-      border-left: 0; border-right: 1px solid #3a3a42; font-size: 11px; font-weight: normal; color: #8f8; }
-    #twl-panel .twl-s-ver .twl-upd-status:empty { padding: 0 6px; }
+    /* Version and update status share one box (two boxes with a negative margin left a seam or wrapped apart) */
+    #twl-panel .twl-s-ver .twl-ver-row { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px;
+      box-sizing: border-box; min-height: 40px; padding: 6px 12px; border-radius: 8px; background: #26262c; border: 1px solid #3a3a42; }
+    #twl-panel .twl-s-ver .twl-version { flex: 1; color: #ddd; font-size: 13px; font-weight: bold; white-space: nowrap; }
+    #twl-panel .twl-s-ver .twl-upd-status { font-size: 11px; color: #8f8; }
     #twl-panel .twl-s-ver .twl-upd-status.twl-upd-new { color: #ff9a3c; font-weight: bold; }
     #twl-panel .twl-s-ver .twl-upd-status.twl-ff-err { color: #ff8080; }
     #twl-panel .twl-s-ver [data-act="update-check"] { order: 2; flex-basis: 100%; min-height: 40px;
@@ -1563,9 +1562,8 @@
           <select class="twl-view"><option value="list" data-i18n="viewList"></option><option value="tiles" data-i18n="viewTiles"></option></select>
         </div>
         <div class="twl-settings twl-s-ver">
-          <span class="twl-version"></span>
+          <div class="twl-ver-row"><span class="twl-version"></span><span class="twl-upd-status"></span></div>
           <button data-act="update-check" data-i18n="checkUpdates" data-i18n-title="checkUpdatesTitle"></button>
-          <span class="twl-upd-status"></span>
         </div>
         <div class="twl-settings twl-s-old">
           <button data-act="key" data-i18n="apiKey" data-i18n-title="apiKeyTitle"></button>
