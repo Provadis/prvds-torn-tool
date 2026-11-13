@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.23.3-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.24.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -14,7 +14,7 @@
 
 <br><br>
 
-<img src="docs/images/demo.gif" width="320" alt="Animated demo: watchlist, chain alarm, tile view, honors tab, settings and Nyan Cat">
+<img src="docs/images/demo.gif" width="320" alt="Animated demo: watchlist, chain alarm, tile view, honors, settings and Nyan Cat">
 
 </div>
 
@@ -68,7 +68,7 @@ Big timer, red alarm below 1:30 and an optional 💣 bomb sound.
 <td valign="top">
 
 **🎖 Honor tracker**<br>
-Second tab: missing honors by difficulty, with how-to guides and progress bars.
+Own page in the menu: missing honors by difficulty, with how-to guides and progress bars.
 
 </td>
 </tr>
@@ -95,8 +95,8 @@ Big 2-column tiles: tap = profile, long press = attack, copy, remove.
 <tr>
 <td valign="top">
 
-**⚙ Settings as tiles**<br>
-Everything in one tap, English and German, ✨ custom API key in one click.
+**🧭 Start menu & settings as tiles**<br>
+Big tiles for watchlist, honors and settings; English and German, ✨ custom API key in one click.
 
 </td>
 <td valign="top">
@@ -125,7 +125,7 @@ Runs around the panel every now and then. Just because.
 <td align="center"><img src="docs/images/chain-alert.png" width="250" alt="Chain alarm below 1:30"><br><sub>Chain alarm below 1:30</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="docs/images/honors.png" width="250" alt="Honor tracker tab"><br><sub>Honor tracker</sub></td>
+<td align="center"><img src="docs/images/honors.png" width="250" alt="Honor tracker"><br><sub>Honor tracker</sub></td>
 <td align="center"><img src="docs/images/settings.png" width="250" alt="Settings page"><br><sub>Settings</sub></td>
 <td align="center"><img src="docs/images/german.png" width="250" alt="German UI"><br><sub>Deutsch</sub></td>
 </tr>
@@ -174,7 +174,7 @@ Works with [Tampermonkey for Safari](https://apps.apple.com/app/tampermonkey/id6
 
 | What | Where | Note |
 |---|---|---|
-| **Torn API key** | ⚙ → ✨ Create custom key, then 🔑 Torn API key | **✨ Create custom key** opens Torn's API key page with a pre-filled key that has exactly the access this script needs. You click *Create* there and paste the key into 🔑 Torn API key. A *Public* key also works for the watchlist; **Today's hits** and the **Honors** tab need more (*Limited* or the custom key). |
+| **Torn API key** | ⚙ → ✨ Create custom key, then 🔑 Torn API key | **✨ Create custom key** opens Torn's API key page with a pre-filled key that has exactly the access this script needs. You click *Create* there and paste the key into 🔑 Torn API key. A *Public* key also works for the watchlist; **Today's hits** and the **Honors** page need more (*Limited* or the custom key). |
 | **FF Scouter** | ⚙ → 📊 FF Scouter tile → 🔑 FF key | A Torn API key registered at [ffscouter.com](https://ffscouter.com). Leave empty to use the watchlist key. |
 | **Update interval** | ⚙ → Update interval | 15 s – 5 min, default 1 min. |
 | **Language** | ⚙ → Language | English / Deutsch |
@@ -272,20 +272,22 @@ Everything is saved and shared across all Torn tabs.
 <details>
 <summary><b>⚙ Settings & language</b></summary>
 
-All options live on their own settings page behind **⚙**, laid out as a grid: on/off options are tiles you click or tap (orange = on, grey = off), keys and data are dashed tiles, and language, view and update interval are switch bars. Hover a tile on the PC for a short explanation. The UI is available in **English and German** and switches instantly, without a reload. At the bottom of the settings page there is a **legend** explaining every marker.
+The panel has a **start menu** with big tiles: 🎃 Watchlist, 🎖 Honors and ⚙ Settings (🏅 Medals is coming). Each tile shows its key number, e.g. players and how many are okay, or honors earned. **‹ Menu** in the header leads back from every page. Chain timer and today's hits stay on top of every page. Under *Start page* you choose whether the panel opens on the **last opened page** (default) or on the **menu**. The tiles keep their size: a wider panel fits more per row.
+
+All options live on their own settings page behind the **⚙ Settings** tile, laid out as a grid: on/off options are tiles you click or tap (orange = on, grey = off), keys and data are dashed tiles, and language, view and update interval are switch bars. Hover a tile on the PC for a short explanation. The UI is available in **English and German** and switches instantly, without a reload. At the bottom of the settings page there is a **legend** explaining every marker.
 
 </details>
 
 <details>
 <summary><b>🎖 Honor tracker</b></summary>
 
-A second tab next to the watchlist (PC and iPhone) shows which **honors** you're still missing and how to get them:
+Its own page in the start menu (PC and iPhone) shows which **honors** you're still missing and how to get them:
 - **Easy wins:** missing honors grouped by difficulty – *Instant, Easy, Costs money, Grind, Complex* – with a short **how-to guide** for each.
 - **Categories** (as tappable chips) and **All**, plus search and sorting (easiest, rarest, A–Z).
 - **Progress bars** from your personal stats, e.g. „Attacks won 184 / 250“.
 - Mark honors as **done** or **hide** them; both are part of export/import. **🔄 Sync** loads your real state from Torn and resets the ✓ marks (hidden ones stay hidden).
 
-It uses the same Torn API key (at least *Limited* access) and makes 3 requests every 5 minutes, **only while the tab is open**. Honor bar images load from torn.com itself; there are no other servers involved. The guides are in English.
+It uses the same Torn API key (at least *Limited* access) and makes 3 requests every 5 minutes, **only while the page is open**. Honor bar images load from torn.com itself; there are no other servers involved. The guides are in English.
 
 
 > Guide data, difficulty tiers and progress mapping are adapted from [Torn City – Merit Tracker](https://greasyfork.org/scripts/579300) by Solenya (MIT License).
@@ -316,7 +318,7 @@ Torn allows **100 requests per minute per account**, for all keys combined. Per 
 - **1 call per watched faction**, no matter how many members
 - **1 call per single player** not already covered by a faction
 - **1 call** for today's hits (if enabled)
-- Honor tracker: **3 calls every 5 minutes**, only while its tab is open
+- Honor tracker: **3 calls every 5 minutes**, only while its page is open
 
 The current rate is shown **bottom right in the panel** (e.g. „≈ 4 requests/min“) and turns orange above 60/min.
 
@@ -365,7 +367,7 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 
 **Custom key (recommended):** ⚙ → **✨ Create custom key** opens Torn's own key form, pre-filled with exactly the selections listed above, nothing more. The script never creates a key by itself. You check the access and click *Create* on Torn's page. Where you enter a key, the panel shows a short note on how it's used.
 
-**Other keys work too:** a *Public* key is enough for the watchlist, factions and the chain timer. *Today's hits* and the *Honors* tab need *Limited* (or the custom key). The table below shows which level covers each selection.
+**Other keys work too:** a *Public* key is enough for the watchlist, factions and the chain timer. *Today's hits* and the *Honors* page need *Limited* (or the custom key). The table below shows which level covers each selection.
 
 **Requests made with your key** go to `api.torn.com` only, each tagged with `comment=watchlist`. You can see them in your [API key log](https://www.torn.com/preferences.php#tab=api) (*key → log*):
 
@@ -379,7 +381,7 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 | v2 `faction/{id}/basic`, `faction/{id}/members` | Watched factions and their members | ✓ / Public |
 | v2 `faction/chain` | Chain timer on iPhone/iPad (every 6 s while a chain runs, otherwise only on page load) | ✓ / Public |
 | v2 `user/attacks` | Today's hits | ✓ / Limited |
-| v2 `torn/honors`, `user/honors`, `user/personalstats` | Honors tab, only while it's open | ✓ / Limited |
+| v2 `torn/honors`, `user/honors`, `user/personalstats` | Honors page, only while it's open | ✓ / Limited |
 
 </details>
 
@@ -450,18 +452,19 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.24.0** | **Start menu** with big tiles instead of the tabs: Watchlist, Honors, Settings (Medals coming soon), each with its key number. **‹ Menu** leads back; new setting *Start page* (last opened page or menu) |
 | **2.23.3** | The GitHub repo is now called **prvds-torn-tool**: install, update and help links point to the new address (old links keep forwarding) |
 | **2.23.2** | iPhone/iPad: the panel starts closed on every page (reload, opening a target …) – the P opens it. PC keeps remembering it |
 | **2.23.1** | ToS: key access level is *Custom* with the exact selections; the tile is now called **✨ Create custom key** |
 | **2.23.0** | **✨ Create custom key** in the settings opens Torn's pre-filled key form with only the needed access; key prompts and settings show how the key is used (API ToS) |
 | **2.22.1** | Smoother on iPhone: panel no longer resizes while Safari's address bar slides, honor images keep their space before loading, lists don't pull the page along at their ends, far less background work |
-| **2.22.0** | Soft fold/unfold animation for faction groups, honor difficulty sections and the how-to guides (off with „reduce motion“) |
 
 <details>
 <summary>Older versions</summary>
 
 | Version | What's new |
 |---|---|
+| **2.22.0** | Soft fold/unfold animation for faction groups, honor difficulty sections and the how-to guides (off with „reduce motion“) |
 | **2.21.4** | Honors: cards get a soft color glow from the left in their tier color (green when earned) |
 | **2.21.3** | Honors: Sync (and ⟳) now resets your own ✓ marks to Torn's real state, so a wrongly ticked honor comes back |
 | **2.21.2** | Honors: tap a difficulty header in „Easy wins“ to fold that section (remembered); orange **🔄 Sync** button right in the tab |
@@ -506,7 +509,8 @@ The script restores its browser backup automatically. If something is still miss
 - **FF-Scouter-Werte.**
 - **Chain-Timer:** große Anzeige mit rotem Alarm (optional mit Bomben-Sound) unter 1:30.
 - **Zähler für die heutigen Hits.**
-- **Honor-Tracker als zweiter Tab:** fehlende Honors nach Schwierigkeit, mit Anleitung (englisch), Kategorien und Fortschritt.
+- **Startmenü mit Kacheln:** Watchlist, Honors und Einstellungen auf einen Blick, „‹ Menü“ führt zurück.
+- **Honor-Tracker:** fehlende Honors nach Schwierigkeit, mit Anleitung (englisch), Kategorien und Fortschritt.
 
 Ganze Factions kosten nur einen API-Call pro Update. Die Oberfläche gibt es auf **Englisch und Deutsch**: ⚙ → Sprache.
 
