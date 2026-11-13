@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.27.3
+// @version      2.27.4
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -93,7 +93,6 @@
     honorsDone: Array.isArray,
     honorsHidden: Array.isArray,
     medalsDone: Array.isArray,
-    medalsNwSince: isObj,
     medalsHidden: Array.isArray, // no longer used (2.27.1), kept so old exports still import cleanly
     trainHistory: (v) => Array.isArray(v) && v.every(isTrainSnap),
     trainEvery: isNum,
@@ -134,7 +133,7 @@
       medSortNext: 'Als Nächstes',
       medNoBar: 'Kein Messwert aus der API – per ✓ selbst abhaken.',
       medNwDays: (m) => `Tage mit ≥ ${m}`,
-      medNwSub: 'Gezählt ab der ersten Messung durch das Script (die API liefert keinen Tage-Zähler).',
+      medNwSub: 'Aus Torns täglich gespeichertem Networth, heute zählt mit (ungefähr).',
       trainAccess: 'Dem API-Key fehlt der Zugriff auf Battle Stats (neu seit 2.27). Erstelle unter ⚙ → „✨ Custom-Key erstellen“ einen neuen Key und trag ihn ein. Alles andere läuft solange normal.',
       trainRange: (d) => `${d} T`,
       trainAll: 'Alles',
@@ -380,7 +379,7 @@
       medSortNext: 'Up next',
       medNoBar: 'No value from the API – tick it yourself with ✓.',
       medNwDays: (m) => `Days at ≥ ${m}`,
-      medNwSub: 'Counted from the script\'s first check (the API has no day counter).',
+      medNwSub: 'From the networth Torn records each day, today included (approximate).',
       trainAccess: 'Your API key has no access to battle stats (new in 2.27). Create a new key under ⚙ → „✨ Create custom key“ and enter it. Everything else keeps working meanwhile.',
       trainRange: (d) => `${d} d`,
       trainAll: 'All',
@@ -4604,20 +4603,55 @@
     }, label: 'Offenses' },
   ];
   // Networth medals: "a recorded networth value of $X for at least N days". Below $X the bar shows the
-  // networth; from $X on it shows the days. The API has no day counter, so the script remembers when it
-  // first saw the networth at or above each threshold (medalsNwSince, reset when it drops below).
+  // networth; from $X on the days in a row at or above $X. The days come from Torn's daily recorded
+  // networth (v2 user/personalstats?stat=networth&timestamp=<UTC midnight>), cached per day in
+  // medalsNwHist: past days never change, so after the first catch-up it's at most 1 call a day.
+  const NW_DAY = 86400;
   const medNwDaysOf = (desc) => parseInt((String(desc).match(/at least (\d+) days?/i) || [])[1], 10) || 0;
-  function trackNetworthDays() {
+  const nwToday = () => Math.floor(Date.now() / 1000 / NW_DAY) * NW_DAY;
+  // Networth medals still to earn whose amount the current networth already reaches
+  function nwOpenMedals(nw) {
+    const mine = new Set(GM_getValue('medalsMine', []));
+    return GM_getValue('medalsAll', [])
+      .filter((m) => !mine.has(m.id) && /networth/i.test(m.desc) && medNwDaysOf(m.desc))
+      .map((m) => ({ target: medNumber(m.desc), days: medNwDaysOf(m.desc) }))
+      .filter((x) => x.target && nw >= x.target);
+  }
+  async function syncNetworthHistory(key) {
     const nw = honStat(GM_getValue('honorsStats', null), 'networth.total');
     if (typeof nw !== 'number') return;
-    const old = GM_getValue('medalsNwSince', {}) || {};
-    const next = {};
-    for (const m of GM_getValue('medalsAll', [])) {
-      if (!/networth/i.test(m.desc) || !medNwDaysOf(m.desc)) continue;
-      const target = medNumber(m.desc);
-      if (target && nw >= target) next[target] = old[target] || Date.now();
+    const open = nwOpenMedals(nw);
+    if (!open.length) return;
+    const low = Math.min(...open.map((x) => x.target));
+    const maxDays = Math.max(...open.map((x) => x.days));
+    const hist = { ...(GM_getValue('medalsNwHist', {}) || {}) };
+    const today = nwToday();
+    let calls = 0;
+    // Walk back from yesterday until a day is below the lowest amount (the streak ends there)
+    for (let i = 1; i < maxDays; i++) {
+      const d = today - i * NW_DAY;
+      let v = hist[d];
+      if (typeof v !== 'number') {
+        if (calls) await sleep(REQUEST_GAP_MS);
+        calls++;
+        const r = await apiGet(`v2/user/personalstats?stat=networth&timestamp=${d}`, key);
+        const e = r && Array.isArray(r.personalstats) ? r.personalstats.find((x) => x && x.name === 'networth') : null;
+        if (!e || typeof e.value !== 'number') break;
+        v = e.value;
+        hist[d] = v;
+      }
+      if (v < low) break;
     }
-    if (JSON.stringify(next) !== JSON.stringify(old)) GM_setValue('medalsNwSince', next);
+    for (const d of Object.keys(hist)) if (+d < today - 60 * NW_DAY) delete hist[d];
+    GM_setValue('medalsNwHist', hist);
+  }
+  // Days in a row at or above the amount: today (live networth) plus the recorded days before
+  function nwStreak(target) {
+    const hist = GM_getValue('medalsNwHist', {}) || {};
+    const today = nwToday();
+    let n = 1;
+    while (typeof hist[today - n * NW_DAY] === 'number' && hist[today - n * NW_DAY] >= target) n++;
+    return n;
   }
   function medProgress(m, stats, profile) {
     if (/networth/i.test(m.desc) && medNwDaysOf(m.desc)) {
@@ -4625,9 +4659,7 @@
       const nw = honStat(stats, 'networth.total');
       if (!target || typeof nw !== 'number') return null;
       if (nw < target) return { raw: nw, target, label: 'Networth', money: true };
-      const since = (GM_getValue('medalsNwSince', {}) || {})[target];
-      const held = since ? Math.floor((Date.now() - since) / 86400000) : 0;
-      return { raw: held, target: medNwDaysOf(m.desc), label: t('medNwDays', medMoney(target)), sub: t('medNwSub') };
+      return { raw: nwStreak(target), target: medNwDaysOf(m.desc), label: t('medNwDays', medMoney(target)), sub: t('medNwSub') };
     }
     if (m.type === 'rank') {
       const want = medRankIndex(m.desc.replace(/^.*?rank of\s*/i, ''));
@@ -4696,7 +4728,11 @@
       } catch {
         // no progress bars then – the medals themselves are there
       }
-      trackNetworthDays();
+      try {
+        await syncNetworthHistory(key); // days for the networth medals
+      } catch {
+        // the days bar then counts what is cached
+      }
       GM_setValue('medalsError', '');
     } catch (e) {
       GM_setValue('medalsError', e.message);
