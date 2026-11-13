@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.25.2-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.25.3-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -454,12 +454,12 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.25.3** | iPhone/iPad: the UI scale slider can be dragged again (it jumped back to the saved value while the finger was on it) |
 | **2.25.2** | Settings: version and update status sit in one box again (no gap, no wrapping apart); the shake animation works again (negative sizes were lost since the UI scale) |
 | **2.25.1** | PC: header buttons keep the same size and position at every UI scale (the icons no longer jump); the % value next to the scale slider no longer flickers while dragging |
 | **2.25.0** | **UI scale** slider in the settings (80–150 %, separate for PC and iPhone): text, buttons and tiles scale together. Settings tiles now keep a fixed size like the menu tiles |
 | **2.24.1** | Honors page: the status line, the „show earned/hidden“ buttons and the list render right away again (they stayed empty until the first click) |
 | **2.24.0** | **Start menu** with big tiles instead of the tabs: Watchlist, Honors, Settings (Medals coming soon), each with its key number. **‹ Menu** leads back; new setting *Start page* (last opened page or menu) |
-| **2.22.1** | Smoother on iPhone: panel no longer resizes while Safari's address bar slides, honor images keep their space before loading, lists don't pull the page along at their ends, far less background work |
 
 <details>
 <summary>Older versions</summary>
@@ -470,6 +470,7 @@ The script restores its browser backup automatically. If something is still miss
 | **2.23.2** | iPhone/iPad: the panel starts closed on every page (reload, opening a target …) – the P opens it. PC keeps remembering it |
 | **2.23.1** | ToS: key access level is *Custom* with the exact selections; the tile is now called **✨ Create custom key** |
 | **2.23.0** | **✨ Create custom key** in the settings opens Torn's pre-filled key form with only the needed access; key prompts and settings show how the key is used (API ToS) |
+| **2.22.1** | Smoother on iPhone: panel no longer resizes while Safari's address bar slides, honor images keep their space before loading, lists don't pull the page along at their ends, far less background work |
 | **2.22.0** | Soft fold/unfold animation for faction groups, honor difficulty sections and the how-to guides (off with „reduce motion“) |
 | **2.21.4** | Honors: cards get a soft color glow from the left in their tier color (green when earned) |
 | **2.21.3** | Honors: Sync (and ⟳) now resets your own ✓ marks to Torn's real state, so a wrongly ticked honor comes back |
