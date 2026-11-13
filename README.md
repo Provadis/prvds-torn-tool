@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.27.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.27.2-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -315,7 +315,7 @@ Its own page in the start menu (PC and iPhone) tracks your **battle stats** over
 - **Cards** for strength, defense, speed and dexterity: current base value, gain in the chosen range (7 d, 30 d, 90 d, all) and the current modifier (merits, drugs, …). Below them the total.
 - **Graph** of all four stats, as gains since the start of the range or as absolute values.
 - **Auto sync** every 30 min, 1 h (default), 3 h or 6 h, or off – while any Torn tab is open, on whatever page. Open tabs share it, so it runs once. **🔄 Sync** fetches the stats right away.
-- **History** by day with the gain per stat; tap a day to see the single syncs.
+- **History** by day with the gain per stat and the total (short numbers like +1.4k); tap a day to see the single syncs.
 
 A snapshot is only stored when a stat changed, and snapshots older than 90 days are thinned to one per day, so the history stays small. It's part of export/import and the backup; importing merges the snapshots of both devices instead of replacing them. Your stats stay in your browser and are not sent anywhere else (also not to FF Scouter).
 
@@ -483,6 +483,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.27.2** | Training history: a **TOTAL** column per day and per sync; gains are shortened with k / m / b (e.g. +1.4k) |
 | **2.27.1** | Medals: rank progress counts from 1 like Torn (e.g. *Competent* is 9 / 10, not 8 / 9); the *Done* and *Hide* buttons on single medals are gone |
 | **2.27.0** | New **💪 Training** page in the start menu: battle stats with gains, a graph of all four stats over time, auto sync (30 min to 6 h or off), 🔄 Sync and a daily history. The ✨ custom key now also includes `battlestats` – create it once again to use the page |
 | **2.26.0** | New **🏅 Medals** page in the start menu: missing medals by type with progress bars, search, sorting (up next, rarest, A–Z) and done/hide marks. The ✨ custom key now also includes `medals` – create it once again to use the page |
