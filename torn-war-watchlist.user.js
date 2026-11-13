@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.27.1
+// @version      2.27.2
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -1454,9 +1454,10 @@
     .twl-tr-under { display: flex; justify-content: flex-end; margin-top: 5px; }
     .twl-tr-under .twl-seg { width: 50%; }
     .twl-tr-sub { margin-top: 2px; }
-    .twl-tr-hhead { display: flex; align-items: baseline; }
+    .twl-tr-hhead { display: flex; flex-wrap: wrap; align-items: baseline; row-gap: 3px; } /* columns wrap below the title when narrow */
     .twl-tr-cols, .twl-tr-row-g { display: flex; margin-left: auto; }
-    .twl-tr-cols span, .twl-tr-row-g span { width: 44px; text-align: right; white-space: nowrap; }
+    .twl-tr-cols span, .twl-tr-row-g span { width: 34px; text-align: right; white-space: nowrap; }
+    .twl-tr-cols span:last-child, .twl-tr-row-g span:last-child { width: 42px; font-weight: bold; }
     .twl-tr-cols { padding-right: 8px; }
     .twl-tr-cols span { letter-spacing: 0; }
     .twl-tr-day .twl-tr-row-g { justify-content: flex-end; }
@@ -1466,16 +1467,16 @@
     @media (hover: hover) { #twl-panel button.twl-tr-day:hover:not(:disabled) { border-color: #4a4a52; } }
     .twl-tr-dhead { display: flex; gap: 5px; color: #999; }
     .twl-tr-dhead b { color: #eee; }
-    .twl-tr-dsum { margin-left: auto; font-weight: bold; }
     .twl-tr-none { color: #666; font-style: italic; font-size: 10.5px; }
-    .twl-tr-syncs { margin: -2px 0 5px 10px; padding-left: 6px; border-left: 2px solid #34343c; }
+    .twl-tr-syncs { margin: -2px 0 5px 3px; padding-left: 4px; border-left: 2px solid #34343c; }
     .twl-tr-sync-row { display: flex; align-items: baseline; padding: 1px 8px 1px 0; color: #999; font-size: 10.5px; white-space: nowrap; }
     #twl-panel button.twl-tr-more { width: 100%; margin: 2px 0 4px; padding: 4px; font-size: 11px; }
     #twl-panel.twl-touch .twl-tr-val { font-size: 17px; }
     #twl-panel.twl-touch .twl-tr-name, #twl-panel.twl-touch .twl-tr-gain, #twl-panel.twl-touch .twl-tr-total,
     #twl-panel.twl-touch button.twl-tr-day, #twl-panel.twl-touch .twl-tr-sync-row { font-size: 13px; }
     #twl-panel.twl-touch .twl-tr-svg { height: 140px; }
-    #twl-panel.twl-touch .twl-tr-cols span, #twl-panel.twl-touch .twl-tr-row-g span { width: 54px; }
+    #twl-panel.twl-touch .twl-tr-cols span, #twl-panel.twl-touch .twl-tr-row-g span { width: 50px; }
+    #twl-panel.twl-touch .twl-tr-cols span:last-child, #twl-panel.twl-touch .twl-tr-row-g span:last-child { width: 60px; }
     #twl-panel.twl-touch button.twl-tr-day { padding: 7px 9px; }
     #twl-panel.twl-touch .twl-tr-cols, #twl-panel.twl-touch .twl-tr-sync-row { padding-right: 10px; }
     .twl-m-trspark { display: block; width: 80%; }
@@ -4804,11 +4805,11 @@
   const nextDay = (start) => { const d = new Date(start * 1000); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() / 1000; };
   const prevDay = (start) => { const d = new Date(start * 1000); return new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1).getTime() / 1000; };
   const trLocale = () => (getLang() === 'en' ? 'en-US' : 'de-DE');
-  // Short numbers: 9.876 · 12,3k · 1,24M (full numbers on the cards)
+  // Short numbers: 987 · 1,2k · 123k · 1,24m (full numbers on the cards)
   const trShort = (n) => {
     const a = Math.abs(n);
     const f = (v, d) => v.toLocaleString(trLocale(), { maximumFractionDigits: d });
-    return a >= 1e9 ? `${f(n / 1e9, 2)}B` : a >= 1e6 ? `${f(n / 1e6, 2)}M` : a >= 1e4 ? `${f(n / 1e3, 1)}k` : f(Math.round(n), 0);
+    return a >= 1e9 ? `${f(n / 1e9, 2)}b` : a >= 1e6 ? `${f(n / 1e6, 2)}m` : a >= 1e3 ? `${f(n / 1e3, a >= 1e5 ? 0 : 1)}k` : f(Math.round(n), 0);
   };
   const trSigned = (n) => (n > 0 ? `+${trShort(n)}` : n < 0 ? `−${trShort(-n)}` : '±0');
   const trCls = (n) => (n > 0 ? 'twl-tr-up' : n < 0 ? 'twl-tr-down' : 'twl-tr-zero');
@@ -4899,7 +4900,12 @@
     return r;
   }
   const trainGains = (a, b) => [0, 1, 2, 3].map((i) => b[i + 1] - a[i + 1]);
-  const trainCols = (g) => `<span class="twl-tr-row-g">${g.map((x, i) => `<span style="color:${x ? TRAIN_COLOR[i] : '#555'}">${x ? trSigned(x) : '–'}</span>`).join('')}</span>`;
+  // Four stat columns plus the total of the row
+  const trainCols = (g) => {
+    const sum = g.reduce((a, b) => a + b, 0);
+    return `<span class="twl-tr-row-g">${g.map((x, i) => `<span style="color:${x ? TRAIN_COLOR[i] : '#555'}">${x ? trSigned(x) : '–'}</span>`).join('')}`
+      + `<span class="${trCls(sum)}">${sum ? trSigned(sum) : '–'}</span></span>`;
+  };
 
   function trainHistoryHtml(h) {
     if (!h.length) return '';
@@ -4925,7 +4931,7 @@
       const key = String(d);
       const open = train.open.has(key) && iEnd > iStart;
       const head = `<span class="twl-tr-dhead"><b>${esc(fmtDay(d))}</b> ${esc(fmtDate(d))}`
-        + (sum ? `<span class="twl-tr-dsum ${trCls(sum)}">${esc(trSigned(sum))}</span>` : '') + '</span>';
+        + '</span>';
       const body = iStart < 0 && iEnd === 0 ? `<span class="twl-tr-none">${esc(t('trainStart'))}</span>`
         : sum || g.some((x) => x) ? trainCols(g) : `<span class="twl-tr-none">${esc(t('trainNoGain'))}</span>`;
       html += `<button type="button" class="twl-tr-day" data-act="tr-day" data-v="${key}"${iEnd > iStart ? '' : ' disabled'}>${head}${body}</button>`;
@@ -5010,7 +5016,7 @@
     $('.twl-tr-sync').disabled = trainLoading || !getKey();
 
     // History by day, newest first
-    setHtml($('.twl-tr-cols'), h.length ? TRAIN_SHORT.map((n, i) => `<span style="color:${TRAIN_COLOR[i]}">${n}</span>`).join('') : '');
+    setHtml($('.twl-tr-cols'), h.length ? TRAIN_SHORT.map((n, i) => `<span style="color:${TRAIN_COLOR[i]}">${n}</span>`).join('') + '<span style="color:#ddd">TOTAL</span>' : '');
     $('.twl-tr-hhead').hidden = !h.length;
     setHtml($('.twl-tr-hist'), trainHistoryHtml(h));
   }
