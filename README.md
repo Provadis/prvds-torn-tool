@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.27.3-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.27.4-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -346,7 +346,7 @@ Torn allows **100 requests per minute per account**, for all keys combined. Per 
 - **1 call per single player** not already covered by a faction
 - **1 call** for today's hits (if enabled)
 - Honor tracker: **3 calls every 5 minutes**, only while its page is open
-- Medal tracker: **up to 4 calls every 5 minutes**, only while its page is open
+- Medal tracker: **up to 4 calls every 5 minutes**, only while its page is open; for networth medals once up to 27 more (one per past day), then at most 1 a day
 - Training tracker: **1 call per auto sync** (default once an hour), plus 1 per 🔄 Sync
 
 The current rate is shown **bottom right in the panel** (e.g. „≈ 4 requests/min“) and turns orange above 60/min.
@@ -412,6 +412,7 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 | v2 `user/attacks` | Today's hits | ✓ / Limited |
 | v2 `torn/honors`, `user/honors`, `user/personalstats` | Honors page, only while it's open | ✓ / Limited |
 | v2 `torn/medals`, `user/medals`, `user/personalstats`, `user/?selections=profile` | Medals page, only while it's open | ✓ / Limited |
+| v2 `user/personalstats?stat=networth&timestamp=…` | Medals page: days at a networth amount (once per past day, cached) | ✓ / Limited |
 | v2 `user/battlestats` | Training page: auto sync (default 1×/hour, can be switched off) and 🔄 Sync | ✓ / Limited |
 
 </details>
@@ -483,6 +484,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.27.4** | Medals: the days for networth medals now come from Torn's daily recorded networth, so days before the update count too (one-time catch-up of up to 27 calls, then at most 1 a day) |
 | **2.27.3** | Medals: networth medals with a „for at least N days“ rule show the days once your networth reaches the amount (counted from the script's first check, the API has no day counter) |
 | **2.27.2** | Training history: a **TOTAL** column per day and per sync; gains are shortened with k / m / b (e.g. +1.4k) |
 | **2.27.1** | Medals: rank progress counts from 1 like Torn (e.g. *Competent* is 9 / 10, not 8 / 9); the *Done* and *Hide* buttons on single medals are gone |
