@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.26.0
+// @version      2.27.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -47,7 +47,8 @@
   const isPaused = () => GM_getValue('paused', false);
   // Current page: menu, list or honors. Saved in GM "tab"; "Start page: menu" ignores it on load.
   const getStartPage = () => (GM_getValue('startPage', 'last') === 'menu' ? 'menu' : 'last');
-  const savedTab = () => { const v = GM_getValue('tab', 'list'); return v === 'honors' || v === 'medals' || v === 'menu' ? v : 'list'; };
+  const PAGES = ['menu', 'list', 'honors', 'medals', 'training'];
+  const savedTab = () => { const v = GM_getValue('tab', 'list'); return PAGES.includes(v) ? v : 'list'; };
   let curTab = getStartPage() === 'menu' ? 'menu' : savedTab();
   const getTab = () => curTab;
   let menuPlayers = { n: 0, ok: 0 }; // watchlist numbers for the menu tile, counted in render()
@@ -62,6 +63,8 @@
   const isBool = (v) => typeof v === 'boolean';
   const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
   const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+  // Training snapshot: [unix time in s, strength, defense, speed, dexterity]
+  const isTrainSnap = (e) => Array.isArray(e) && e.length === 5 && e.every(isNum);
   const SETTINGS = {
     apiKey: (v) => typeof v === 'string',
     list: Array.isArray,
@@ -82,7 +85,7 @@
     ffKey: (v) => typeof v === 'string',
     lang: (v) => v === 'de' || v === 'en',
     view: (v) => v === 'list' || v === 'tiles',
-    tab: (v) => v === 'menu' || v === 'list' || v === 'honors' || v === 'medals',
+    tab: (v) => PAGES.includes(v),
     startPage: (v) => v === 'last' || v === 'menu',
     uiScalePc: isNum,
     uiScaleTouch: isNum,
@@ -91,6 +94,10 @@
     honorsHidden: Array.isArray,
     medalsDone: Array.isArray,
     medalsHidden: Array.isArray,
+    trainHistory: (v) => Array.isArray(v) && v.every(isTrainSnap),
+    trainEvery: isNum,
+    trainRange: (v) => v === '7' || v === '30' || v === '90' || v === 'all',
+    trainMode: (v) => v === 'gain' || v === 'value',
   };
 
   // ---- Language (English / German) ----------------------------------------
@@ -125,6 +132,31 @@
       medAll: 'Alle',
       medSortNext: 'Als Nächstes',
       medNoBar: 'Kein Messwert aus der API – per ✓ selbst abhaken.',
+      trainAccess: 'Dem API-Key fehlt der Zugriff auf Battle Stats (neu seit 2.27). Erstelle unter ⚙ → „✨ Custom-Key erstellen“ einen neuen Key und trag ihn ein. Alles andere läuft solange normal.',
+      trainRange: (d) => `${d} T`,
+      trainAll: 'Alles',
+      trainGain: 'Zuwachs',
+      trainValue: 'Werte',
+      trainTotal: 'Gesamt',
+      trainInRange: (d) => (d ? `in ${d} Tagen` : 'insgesamt'),
+      trainLoading: 'Sync läuft…',
+      trainLast: (a) => `Sync vor ${a}`,
+      trainNext: (a) => `nächster in ${a}`,
+      trainNextSoon: 'nächster gleich',
+      trainAutoOff: 'Auto-Sync aus',
+      trainPaused: 'pausiert',
+      trainNoData: 'Noch keine Daten – tipp auf 🔄 Sync.',
+      trainOneSnap: 'Der Graph erscheint ab dem zweiten Sync mit neuen Stats.',
+      trainAuto: 'Auto-Sync',
+      trainOff: 'Aus',
+      trainHistory: 'Verlauf',
+      trainToday: 'Heute',
+      trainYesterday: 'Gestern',
+      trainNoGain: 'kein Training',
+      trainStart: 'Start der Aufzeichnung',
+      trainMore: 'Mehr anzeigen',
+      trainSyncTitle: 'Battle Stats jetzt abrufen (1 Abfrage)',
+      trainModTip: 'Aktueller Modifikator (Merits, Drogen, …). Die Werte oben sind die Basis-Stats.',
       medSearch: 'Medals suchen…',
       secScale: 'UI-Skalierung',
       scaleReset: 'Standard',
@@ -344,6 +376,31 @@
       medAll: 'All',
       medSortNext: 'Up next',
       medNoBar: 'No value from the API – tick it yourself with ✓.',
+      trainAccess: 'Your API key has no access to battle stats (new in 2.27). Create a new key under ⚙ → „✨ Create custom key“ and enter it. Everything else keeps working meanwhile.',
+      trainRange: (d) => `${d} d`,
+      trainAll: 'All',
+      trainGain: 'Gains',
+      trainValue: 'Values',
+      trainTotal: 'Total',
+      trainInRange: (d) => (d ? `in ${d} days` : 'overall'),
+      trainLoading: 'Syncing…',
+      trainLast: (a) => `Synced ${a} ago`,
+      trainNext: (a) => `next in ${a}`,
+      trainNextSoon: 'next one soon',
+      trainAutoOff: 'Auto sync off',
+      trainPaused: 'paused',
+      trainNoData: 'No data yet – tap 🔄 Sync.',
+      trainOneSnap: 'The graph shows up after the second sync with new stats.',
+      trainAuto: 'Auto sync',
+      trainOff: 'Off',
+      trainHistory: 'History',
+      trainToday: 'Today',
+      trainYesterday: 'Yesterday',
+      trainNoGain: 'no training',
+      trainStart: 'Tracking started',
+      trainMore: 'Show more',
+      trainSyncTitle: 'Fetch battle stats now (1 request)',
+      trainModTip: 'Current modifier (merits, drugs, …). The values above are the base stats.',
       medSearch: 'Search medals…',
       secScale: 'UI scale',
       scaleReset: 'Default',
@@ -675,7 +732,7 @@
   // Torn's pre-filled "new API key" form with exactly the selections this script uses
   // (see README → API Terms of Service). The key is only created when you click "Create" there.
   const KEY_CREATE_URL = 'https://www.torn.com/preferences.php#tab=api?step=addNewKey&title=Torn%20War%20Watchlist'
-    + '&user=basic,profile,attacks,honors,medals,personalstats&faction=basic,members,chain&torn=honors,medals';
+    + '&user=basic,profile,attacks,battlestats,honors,medals,personalstats&faction=basic,members,chain&torn=honors,medals';
 
   function apiGet(path, key) {
     const sep = path.includes('?') ? '&' : '?';
@@ -1367,6 +1424,64 @@
     /* Honor tracker */
     #twl-panel .twl-honors[hidden], #twl-panel .twl-medals[hidden] { display: none !important; } /* else the sized flex rule below wins */
     #twl-panel.twl-sized .twl-honors, #twl-panel.twl-sized .twl-medals { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    /* Training tracker */
+    #twl-panel .twl-train[hidden] { display: none !important; }
+    .twl-train { max-height: 70vh; overflow-y: auto; overscroll-behavior: contain; }
+    #twl-panel.twl-sized .twl-train { flex: 1; min-height: 0; max-height: none; }
+    #twl-panel .twl-tr-seg { margin-bottom: 6px; }
+    #twl-panel .twl-tr-seg button { padding: 4px 0; font-size: 11px; }
+    #twl-panel.twl-touch .twl-tr-seg button { padding: 8px 0; font-size: 13px; }
+    .twl-tr-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .twl-tr-card { min-width: 0; padding: 4px 7px; border-radius: 6px; background: #24242a; border: 1px solid #34343c; border-left: 3px solid var(--c); }
+    .twl-tr-name { display: flex; align-items: center; gap: 4px; color: #aaa; font-size: 10.5px; }
+    .twl-tr-name i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); flex: none; }
+    .twl-tr-mod { margin-left: auto; font-size: 10px; font-weight: bold; }
+    .twl-tr-val { margin-top: 1px; color: #fff; font-size: 14px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .twl-tr-gain { font-size: 11px; font-weight: bold; }
+    .twl-tr-up { color: #4ade80; }
+    .twl-tr-down { color: #ff8080; }
+    .twl-tr-zero { color: #777; }
+    .twl-tr-total { margin: 6px 0; color: #bbb; font-size: 11.5px; }
+    .twl-tr-total b { color: #fff; }
+    .twl-tr-chart { position: relative; padding: 4px; border-radius: 6px; background: #17171b; border: 1px solid #2e2e34; }
+    .twl-tr-chart[hidden] { display: none; }
+    .twl-tr-svg { display: block; width: 100%; height: 110px; }
+    .twl-tr-svg path { fill: none; stroke-width: 2px; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    .twl-tr-svg line { stroke: #2a2a31; stroke-width: 1; vector-effect: non-scaling-stroke; }
+    .twl-tr-y { position: absolute; left: 7px; color: #777; font-size: 9.5px; pointer-events: none; }
+    .twl-tr-ax { display: flex; justify-content: space-between; padding: 2px 2px 0; color: #777; font-size: 9.5px; }
+    .twl-tr-msg { padding: 10px 4px; color: #999; font-size: 11px; text-align: center; }
+    .twl-tr-under { display: flex; justify-content: flex-end; margin-top: 5px; }
+    .twl-tr-under .twl-seg { width: 50%; }
+    .twl-tr-sub { margin-top: 2px; }
+    .twl-tr-hhead { display: flex; align-items: baseline; }
+    .twl-tr-cols, .twl-tr-row-g { display: flex; margin-left: auto; }
+    .twl-tr-cols span, .twl-tr-row-g span { width: 44px; text-align: right; white-space: nowrap; }
+    .twl-tr-cols { padding-right: 8px; }
+    .twl-tr-cols span { letter-spacing: 0; }
+    .twl-tr-day .twl-tr-row-g { justify-content: flex-end; }
+    #twl-panel button.twl-tr-day { display: block; width: 100%; margin: 0 0 4px; padding: 4px 7px; border-radius: 5px; text-align: left;
+      background: #222227; border: 1px solid #2e2e34; color: #ddd; font-size: 11px; touch-action: manipulation; cursor: pointer; }
+    #twl-panel button.twl-tr-day:disabled { cursor: default; opacity: 1; }
+    @media (hover: hover) { #twl-panel button.twl-tr-day:hover:not(:disabled) { border-color: #4a4a52; } }
+    .twl-tr-dhead { display: flex; gap: 5px; color: #999; }
+    .twl-tr-dhead b { color: #eee; }
+    .twl-tr-dsum { margin-left: auto; font-weight: bold; }
+    .twl-tr-none { color: #666; font-style: italic; font-size: 10.5px; }
+    .twl-tr-syncs { margin: -2px 0 5px 10px; padding-left: 6px; border-left: 2px solid #34343c; }
+    .twl-tr-sync-row { display: flex; align-items: baseline; padding: 1px 8px 1px 0; color: #999; font-size: 10.5px; white-space: nowrap; }
+    #twl-panel button.twl-tr-more { width: 100%; margin: 2px 0 4px; padding: 4px; font-size: 11px; }
+    #twl-panel.twl-touch .twl-tr-val { font-size: 17px; }
+    #twl-panel.twl-touch .twl-tr-name, #twl-panel.twl-touch .twl-tr-gain, #twl-panel.twl-touch .twl-tr-total,
+    #twl-panel.twl-touch button.twl-tr-day, #twl-panel.twl-touch .twl-tr-sync-row { font-size: 13px; }
+    #twl-panel.twl-touch .twl-tr-svg { height: 140px; }
+    #twl-panel.twl-touch .twl-tr-cols span, #twl-panel.twl-touch .twl-tr-row-g span { width: 54px; }
+    #twl-panel.twl-touch button.twl-tr-day { padding: 7px 9px; }
+    #twl-panel.twl-touch .twl-tr-cols, #twl-panel.twl-touch .twl-tr-sync-row { padding-right: 10px; }
+    .twl-m-trspark { display: block; width: 80%; }
+    .twl-m-trspark:empty { display: none; }
+    .twl-m-trspark svg { display: block; width: 100%; height: 16px; }
+    .twl-m-trspark path { fill: none; stroke-width: 1.5px; vector-effect: non-scaling-stroke; }
     .twl-hc-note { margin-top: 4px; font-size: 10.5px; color: #8b8b95; }
     .twl-honors > .twl-seg { margin: 2px 0 6px; }
     .twl-hon-list { max-height: 60vh; overflow-y: auto; }
@@ -1481,6 +1596,7 @@
           <button type="button" class="twl-mtile" data-act="tab" data-v="list"><span class="twl-ic">🎃</span><span class="twl-lb">Watchlist</span><span class="twl-sub twl-m-list"></span></button>
           <button type="button" class="twl-mtile" data-act="tab" data-v="honors"><span class="twl-ic">🎖</span><span class="twl-lb">Honors</span><span class="twl-sub twl-m-hon"></span><span class="twl-mbar twl-m-honbar"><i></i></span></button>
           <button type="button" class="twl-mtile" data-act="tab" data-v="medals"><span class="twl-ic">🏅</span><span class="twl-lb">Medals</span><span class="twl-sub twl-m-med"></span><span class="twl-mbar twl-m-medbar" style="--c:#facc15"><i></i></span></button>
+          <button type="button" class="twl-mtile" data-act="tab" data-v="training"><span class="twl-ic">💪</span><span class="twl-lb">Training</span><span class="twl-sub twl-m-tr"></span><span class="twl-m-trspark"></span></button>
           <button type="button" class="twl-mtile" data-act="settings"><span class="twl-ic">⚙</span><span class="twl-lb" data-i18n="settings"></span><span class="twl-sub twl-m-set"></span></button>
         </div>
       </div>
@@ -1533,6 +1649,37 @@
           <button type="button" data-act="med-hidden"></button>
         </div>
         <div class="twl-hon-list twl-med-list"></div>
+      </div>
+      <div class="twl-train" hidden>
+        <div class="twl-seg twl-tr-seg twl-tr-range">
+          <button type="button" data-act="tr-range" data-v="7"></button>
+          <button type="button" data-act="tr-range" data-v="30"></button>
+          <button type="button" data-act="tr-range" data-v="90"></button>
+          <button type="button" data-act="tr-range" data-v="all" data-i18n="trainAll"></button>
+        </div>
+        <div class="twl-tr-cards"></div>
+        <div class="twl-tr-total"></div>
+        <div class="twl-tr-chart"></div>
+        <div class="twl-tr-under">
+          <div class="twl-seg twl-tr-seg twl-tr-mode">
+            <button type="button" data-act="tr-mode" data-v="gain" data-i18n="trainGain"></button>
+            <button type="button" data-act="tr-mode" data-v="value" data-i18n="trainValue"></button>
+          </div>
+        </div>
+        <div class="twl-hon-sub twl-tr-sub">
+          <span class="twl-hon-status twl-tr-status"></span>
+          <button type="button" data-act="tr-sync" class="twl-hon-sync twl-tr-sync" data-i18n="honSync" data-i18n-tip="trainSyncTitle"></button>
+        </div>
+        <div class="twl-sec" data-i18n="trainAuto"></div>
+        <div class="twl-seg twl-tr-seg twl-tr-every">
+          <button type="button" data-act="tr-every" data-v="0" data-i18n="trainOff"></button>
+          <button type="button" data-act="tr-every" data-v="30">30 min</button>
+          <button type="button" data-act="tr-every" data-v="60">1 h</button>
+          <button type="button" data-act="tr-every" data-v="180">3 h</button>
+          <button type="button" data-act="tr-every" data-v="360">6 h</button>
+        </div>
+        <div class="twl-sec twl-tr-hhead"><span data-i18n="trainHistory"></span><span class="twl-tr-cols"></span></div>
+        <div class="twl-tr-hist"></div>
       </div>
       <div class="twl-spage" hidden>
         <div class="twl-sgrid">
@@ -2166,7 +2313,8 @@
     const chainPerMin = useApiChain() && apiChainRunning() ? Math.round(60000 / CHAIN_POLL_RUNNING_MS) : 0;
     const honPerMin = honorsVisible() && getKey() && !isPaused() ? 3 * 60000 / HON_REFRESH_MS : 0;
     const medPerMin = medalsVisible() && getKey() && !isPaused() ? 3 * 60000 / HON_REFRESH_MS : 0; // user/medals + stats + profile
-    const perMin = Math.round(calls * 60 / getRefreshS() + honPerMin + medPerMin) + chainPerMin;
+    const trainPerMin = trainReady && getKey() && !isPaused() && getTrainEvery() ? 1 / getTrainEvery() : 0; // battlestats
+    const perMin = Math.round(calls * 60 / getRefreshS() + honPerMin + medPerMin + trainPerMin) + chainPerMin;
     const rate = $('.twl-rate');
     rate.textContent = t('perMin', perMin);
     rate.title = t('callsPerUpdate', calls);
@@ -2237,6 +2385,7 @@
       case 'refresh':
         if (getTab() === 'honors' && $('.twl-spage').hidden) refreshHonors(true);
         else if (getTab() === 'medals' && $('.twl-spage').hidden) refreshMedals(true);
+        else if (getTab() === 'training' && $('.twl-spage').hidden) refreshTraining(true);
         else refreshAll(true);
         break;
       case 'sound-test': testBomb(); break;
@@ -2393,6 +2542,17 @@
       case 'med-done': toggleMed('medalsDone', id); break;
       case 'med-hide': toggleMed('medalsHidden', id); break;
       case 'med-sync': refreshMedals(true); break;
+      case 'tr-sync': refreshTraining(true); break;
+      case 'tr-range': GM_setValue('trainRange', btn.dataset.v); renderTraining(); break;
+      case 'tr-mode': GM_setValue('trainMode', btn.dataset.v); renderTraining(); break;
+      case 'tr-every': GM_setValue('trainEvery', parseInt(btn.dataset.v, 10)); renderTraining(); render(); break;
+      case 'tr-more': train.days += 30; renderTraining(); break;
+      case 'tr-day': {
+        const d = btn.dataset.v;
+        if (train.open.has(d)) train.open.delete(d); else train.open.add(d);
+        renderTraining();
+        break;
+      }
       case 'med-earned': med.showEarned = !med.showEarned; renderMedals(); break;
       case 'med-hidden': med.showHidden = !med.showHidden; renderMedals(); break;
       case 'hon-hidden': hon.showHidden = !hon.showHidden; renderHonors(); break;
@@ -3346,6 +3506,8 @@
         members: Array.isArray(f.members) ? f.members.filter(validId) : [],
       }));
     }
+    // Training history: merge with this device's own snapshots instead of replacing them
+    if (Array.isArray(s.trainHistory)) s.trainHistory = mergeTrainHistory(getTrainHist(), s.trainHistory.filter(isTrainSnap));
     const valid = Object.keys(SETTINGS).filter((k) => k in s && SETTINGS[k](s[k]));
     if (!valid.length) { alert(t('importEmpty')); return; }
     const players = Array.isArray(s.list) ? s.list.length : 0;
@@ -4139,23 +4301,27 @@
     $('.twl-main').hidden = settingsOpen || tab !== 'list';
     $('.twl-honors').hidden = settingsOpen || tab !== 'honors';
     $('.twl-medals').hidden = settingsOpen || tab !== 'medals';
+    $('.twl-train').hidden = settingsOpen || tab !== 'training';
     const onMenu = tab === 'menu' && !settingsOpen;
     $('.twl-back').hidden = onMenu;
     $('.twl-title-ic').hidden = !onMenu;
     $('.twl-title-name').textContent = settingsOpen ? t('settings')
-      : tab === 'honors' ? 'Honors' : tab === 'medals' ? 'Medals' : tab === 'list' ? 'Watchlist' : t('menuTitle');
+      : tab === 'honors' ? 'Honors' : tab === 'medals' ? 'Medals' : tab === 'training' ? 'Training'
+        : tab === 'list' ? 'Watchlist' : t('menuTitle');
     $('.twl-count').hidden = settingsOpen || tab !== 'list';
     renderHonors();
     renderMedals();
+    renderTraining();
     renderMenu();
   }
   function setTab(v) {
-    curTab = v === 'honors' || v === 'medals' || v === 'menu' ? v : 'list';
+    curTab = PAGES.includes(v) ? v : 'list';
     GM_setValue('tab', curTab);
     if (!$('.twl-spage').hidden) showSettings(false);
     else applyTab();
     if (getTab() === 'honors') refreshHonors(false);
     if (getTab() === 'medals') refreshMedals(false);
+    if (getTab() === 'training') refreshTraining(false);
   }
   // Menu tiles: values from data that is already cached – the menu itself never calls the API
   function renderMenu() {
@@ -4178,6 +4344,7 @@
     mBar.hidden = !mAll.length;
     const mW = `${mAll.length ? Math.round((mN / mAll.length) * 100) : 0}%`;
     if (mBar.firstElementChild.style.width !== mW) mBar.firstElementChild.style.width = mW;
+    renderTrainTile();
     const set = $('.twl-m-set');
     setText(set, getKey() ? (SCRIPT_VERSION ? `v${SCRIPT_VERSION}` : '') : t('menuNoKey'));
     set.classList.toggle('twl-ff-err', !getKey());
@@ -4627,6 +4794,269 @@
     GM_addValueChangeListener(k, (_k, _o, _n, remote) => { if (remote) renderMedals(); });
   }
   medReady = true;
+
+  // ---- Training tracker: page behind the 💪 tile -------------------------------------------
+  // v2 user/battlestats, 1 call per sync. Auto sync every "trainEvery" minutes (0 = off) while any
+  // Torn tab is open; all tabs share "trainAt", so they don't sync twice. A snapshot
+  // [time in s, str, def, spd, dex] is only stored when a stat changed, so the history stays small.
+  // var on purpose: renderTraining() may be called (and must return early) before this section ran
+  var trainReady = false; // eslint-disable-line no-var
+  let trainLoading = false;
+  const TRAIN_KEYS = ['strength', 'defense', 'speed', 'dexterity'];
+  const TRAIN_NAMES = ['Strength', 'Defense', 'Speed', 'Dexterity'];
+  const TRAIN_SHORT = ['STR', 'DEF', 'SPD', 'DEX'];
+  const TRAIN_COLOR = ['#f87171', '#60a5fa', '#4ade80', '#facc15'];
+  const TRAIN_EVERY = [0, 30, 60, 180, 360]; // minutes
+  const TRAIN_DAYS = { 7: 7, 30: 30, 90: 90, all: 0 };
+  const TRAIN_MAX = 5000;                     // snapshots; older than 90 days are thinned to one per day
+  const train = { days: 14, open: new Set(), tileKey: '' };
+  const getTrainEvery = () => { const v = GM_getValue('trainEvery', 60); return TRAIN_EVERY.includes(v) ? v : 60; };
+  const getTrainRange = () => { const v = GM_getValue('trainRange', '30'); return v in TRAIN_DAYS ? v : '30'; };
+  const getTrainMode = () => (GM_getValue('trainMode', 'gain') === 'value' ? 'value' : 'gain');
+  const getTrainHist = () => { const h = GM_getValue('trainHistory', []); return Array.isArray(h) ? h.filter(isTrainSnap) : []; };
+  const trainVisible = () => trainReady && !$('.twl-train').hidden && !panel.classList.contains('twl-collapsed');
+  const trainDue = () => getTrainEvery() > 0 && !isPaused() && Date.now() - GM_getValue('trainAt', 0) >= getTrainEvery() * 60000;
+
+  const dayStart = (sec) => { const d = new Date(sec * 1000); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 1000; };
+  const nextDay = (start) => { const d = new Date(start * 1000); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() / 1000; };
+  const prevDay = (start) => { const d = new Date(start * 1000); return new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1).getTime() / 1000; };
+  const trLocale = () => (getLang() === 'en' ? 'en-US' : 'de-DE');
+  // Short numbers: 9.876 · 12,3k · 1,24M (full numbers on the cards)
+  const trShort = (n) => {
+    const a = Math.abs(n);
+    const f = (v, d) => v.toLocaleString(trLocale(), { maximumFractionDigits: d });
+    return a >= 1e9 ? `${f(n / 1e9, 2)}B` : a >= 1e6 ? `${f(n / 1e6, 2)}M` : a >= 1e4 ? `${f(n / 1e3, 1)}k` : f(Math.round(n), 0);
+  };
+  const trSigned = (n) => (n > 0 ? `+${trShort(n)}` : n < 0 ? `−${trShort(-n)}` : '±0');
+  const trCls = (n) => (n > 0 ? 'twl-tr-up' : n < 0 ? 'twl-tr-down' : 'twl-tr-zero');
+
+  // Both shapes: v2 { battlestats: { strength: { value, modifier } } } and v1 { strength, strength_modifier }
+  function parseBattlestats(d) {
+    const b = d && isObj(d.battlestats) ? d.battlestats : d;
+    if (!isObj(b)) return null;
+    const v = TRAIN_KEYS.map((k) => Number(isObj(b[k]) ? b[k].value : b[k]));
+    if (!v.every((x) => Number.isFinite(x) && x > 0)) return null;
+    const mods = TRAIN_KEYS.map((k) => Number(isObj(b[k]) ? b[k].modifier : b[`${k}_modifier`]) || 0);
+    return { v, mods };
+  }
+  // Older than 90 days: keep only the last snapshot of each day (plus the very first one)
+  function compactTrain(h) {
+    const cut = Date.now() / 1000 - 90 * 86400;
+    const out = h.filter((e, i) => i === 0 || !h[i + 1] || h[i + 1][0] >= cut || dayStart(e[0]) !== dayStart(h[i + 1][0]));
+    return out.slice(-TRAIN_MAX);
+  }
+  // Export/import between devices: union by time, then drop snapshots that repeat the one before
+  function mergeTrainHistory(a, b) {
+    const byT = new Map();
+    for (const e of [...a, ...b]) byT.set(e[0], e);
+    const all = [...byT.values()].sort((x, y) => x[0] - y[0]);
+    return compactTrain(all.filter((e, i) => i === 0 || e.slice(1).some((v, j) => v !== all[i - 1][j + 1])));
+  }
+
+  async function refreshTraining(force) {
+    const key = getKey();
+    if (!key || trainLoading) return;
+    if (!force && !trainDue()) return;
+    trainLoading = true;
+    GM_setValue('trainAt', Date.now()); // claim the sync first, so other open tabs don't run it too
+    renderTraining();
+    try {
+      const d = await apiGet('v2/user/battlestats', key);
+      if (d && d.error) throw new Error(d.error.code === 16 ? t('trainAccess') : `${d.error.error || 'API error'} (Code ${d.error.code})`);
+      const p = parseBattlestats(d);
+      if (!p) throw new Error(t('invalidResponse'));
+      const h = getTrainHist();
+      const last = h[h.length - 1];
+      if (!last || p.v.some((x, i) => x !== last[i + 1])) {
+        h.push([Math.floor(Date.now() / 1000), ...p.v]);
+        GM_setValue('trainHistory', compactTrain(h));
+      }
+      GM_setValue('trainNow', { at: Date.now(), mods: p.mods });
+      GM_setValue('trainError', '');
+    } catch (e) {
+      GM_setValue('trainError', e.message);
+    } finally {
+      GM_setValue('trainAt', Date.now());
+      trainLoading = false;
+      renderTraining();
+      renderMenu();
+    }
+  }
+
+  // Points of the range: the last snapshot before the start becomes the baseline at the start,
+  // the newest one is carried on to "now". Without an older snapshot the lines start later.
+  function trainSeries(h, days) {
+    const now = Date.now() / 1000;
+    const start = days ? now - days * 86400 : (h.length ? h[0][0] : now);
+    let base = null;
+    const pts = [];
+    for (const e of h) { if (e[0] <= start) base = e; else pts.push(e); }
+    if (base) pts.unshift([start, ...base.slice(1)]);
+    if (pts.length) pts.push([now, ...pts[pts.length - 1].slice(1)]);
+    return { start: base ? start : pts.length ? pts[0][0] : start, end: now, pts };
+  }
+  function trainSvg(s, mode, cls, grid) {
+    const W = 300, H = 100, P = 3;
+    const first = s.pts[0];
+    const y = (e, i) => (mode === 'gain' ? e[i + 1] - first[i + 1] : e[i + 1]);
+    let lo = Infinity, hi = -Infinity;
+    for (const e of s.pts) for (let i = 0; i < 4; i++) { lo = Math.min(lo, y(e, i)); hi = Math.max(hi, y(e, i)); }
+    if (mode === 'gain') lo = Math.min(lo, 0);
+    if (hi - lo < 1) hi = lo + 1;
+    const X = (tm) => (((tm - s.start) / Math.max(1, s.end - s.start)) * W).toFixed(1);
+    const Y = (v) => (H - P - ((v - lo) / (hi - lo)) * (H - 2 * P)).toFixed(1);
+    const lines = TRAIN_COLOR.map((c, i) => `<path stroke="${c}" d="${s.pts.map((e, j) => `${j ? 'L' : 'M'}${X(e[0])},${Y(y(e, i))}`).join('')}"/>`).join('');
+    const gl = grid ? [25, 50, 75].map((g) => `<line x1="0" x2="${W}" y1="${g}" y2="${g}"/>`).join('') : '';
+    return { svg: `<svg class="${cls}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${gl}${lines}</svg>`, lo, hi };
+  }
+  // Index of the last snapshot with time < t (-1 if none)
+  function trainBefore(h, tm) {
+    let lo = 0, hi = h.length - 1, r = -1;
+    while (lo <= hi) { const m = (lo + hi) >> 1; if (h[m][0] < tm) { r = m; lo = m + 1; } else hi = m - 1; }
+    return r;
+  }
+  const trainGains = (a, b) => [0, 1, 2, 3].map((i) => b[i + 1] - a[i + 1]);
+  const trainCols = (g) => `<span class="twl-tr-row-g">${g.map((x, i) => `<span style="color:${x ? TRAIN_COLOR[i] : '#555'}">${x ? trSigned(x) : '–'}</span>`).join('')}</span>`;
+
+  function trainHistoryHtml(h) {
+    if (!h.length) return '';
+    const today = dayStart(Date.now() / 1000);
+    const firstDay = dayStart(h[0][0]);
+    const fmtDate = (sec) => new Date(sec * 1000).toLocaleDateString(trLocale(), { day: 'numeric', month: 'short' });
+    const fmtDay = (sec) => (sec === today ? t('trainToday') : sec === prevDay(today) ? t('trainYesterday')
+      : new Date(sec * 1000).toLocaleDateString(trLocale(), { weekday: 'short' }));
+    const fmtTime = (sec) => new Date(sec * 1000).toLocaleTimeString(trLocale(), { hour: '2-digit', minute: '2-digit', hour12: false });
+    let html = '';
+    let n = 0;
+    for (let d = today; d >= firstDay; d = prevDay(d)) {
+      if (n++ >= train.days) {
+        html += `<button type="button" class="twl-tr-more" data-act="tr-more">${esc(t('trainMore'))}</button>`;
+        break;
+      }
+      const end = nextDay(d);
+      const iEnd = trainBefore(h, end);
+      const iStart = trainBefore(h, d);
+      const a = h[iStart >= 0 ? iStart : 0];
+      const g = trainGains(a, h[iEnd]);
+      const sum = g.reduce((x, y) => x + y, 0);
+      const key = String(d);
+      const open = train.open.has(key) && iEnd > iStart;
+      const head = `<span class="twl-tr-dhead"><b>${esc(fmtDay(d))}</b> ${esc(fmtDate(d))}`
+        + (sum ? `<span class="twl-tr-dsum ${trCls(sum)}">${esc(trSigned(sum))}</span>` : '') + '</span>';
+      const body = iStart < 0 && iEnd === 0 ? `<span class="twl-tr-none">${esc(t('trainStart'))}</span>`
+        : sum || g.some((x) => x) ? trainCols(g) : `<span class="twl-tr-none">${esc(t('trainNoGain'))}</span>`;
+      html += `<button type="button" class="twl-tr-day" data-act="tr-day" data-v="${key}"${iEnd > iStart ? '' : ' disabled'}>${head}${body}</button>`;
+      if (open) {
+        let rows = '';
+        for (let i = iEnd; i > iStart; i--) {
+          rows += `<div class="twl-tr-sync-row">${esc(fmtTime(h[i][0]))}${i > 0 ? trainCols(trainGains(h[i - 1], h[i])) : `<span class="twl-tr-row-g">${esc(t('trainStart'))}</span>`}</div>`;
+        }
+        html += `<div class="twl-tr-syncs">${rows}</div>`;
+      }
+    }
+    return html;
+  }
+
+  function renderTraining() {
+    if (!trainReady || $('.twl-train').hidden) return;
+    const setText = (el, txt) => { if (el.textContent !== txt) el.textContent = txt; };
+    const range = getTrainRange();
+    const mode = getTrainMode();
+    const every = getTrainEvery();
+    for (const b of panel.querySelectorAll('[data-act="tr-range"]')) {
+      b.classList.toggle('twl-on', b.dataset.v === range);
+      if (b.dataset.v !== 'all') setText(b, t('trainRange', b.dataset.v));
+    }
+    for (const b of panel.querySelectorAll('[data-act="tr-mode"]')) b.classList.toggle('twl-on', b.dataset.v === mode);
+    for (const b of panel.querySelectorAll('[data-act="tr-every"]')) b.classList.toggle('twl-on', parseInt(b.dataset.v, 10) === every);
+
+    const h = getTrainHist();
+    const now = GM_getValue('trainNow', null);
+    const days = TRAIN_DAYS[range];
+    const s = trainSeries(h, days);
+    const last = h[h.length - 1];
+    const g = s.pts.length ? trainGains(s.pts[0], s.pts[s.pts.length - 1]) : [0, 0, 0, 0];
+
+    // Cards: base value, gain in the range, current modifier
+    setHtml($('.twl-tr-cards'), last ? TRAIN_NAMES.map((name, i) => {
+      const mod = now && Array.isArray(now.mods) ? now.mods[i] : 0;
+      const modHtml = mod ? `<span class="twl-tr-mod ${trCls(mod)}"${IS_TOUCH ? '' : ` title="${esc(t('trainModTip'))}"`}>${mod > 0 ? '+' : '−'}${Math.abs(mod)} %</span>` : '';
+      return `<div class="twl-tr-card" style="--c:${TRAIN_COLOR[i]}"><div class="twl-tr-name"><i></i>${name}${modHtml}</div>`
+        + `<div class="twl-tr-val">${honNum(Math.round(last[i + 1]))}</div>`
+        + `<div class="twl-tr-gain ${trCls(g[i])}">${esc(trSigned(g[i]))}</div></div>`;
+    }).join('') : '');
+    const gSum = g.reduce((a, b) => a + b, 0);
+    setHtml($('.twl-tr-total'), last ? `${esc(t('trainTotal'))} <b>${honNum(Math.round(last[1] + last[2] + last[3] + last[4]))}</b> · `
+      + `<span class="${trCls(gSum)}">${esc(trSigned(gSum))}</span> ${esc(t('trainInRange', days))}` : '');
+
+    // Chart
+    const chart = $('.twl-tr-chart');
+    let chartHtml;
+    if (!h.length) chartHtml = `<div class="twl-tr-msg">${esc(!getKey() ? t('honNoKey') : t('trainNoData'))}</div>`;
+    else if (h.length < 2 || s.pts.length < 2) chartHtml = `<div class="twl-tr-msg">${esc(t('trainOneSnap'))}</div>`;
+    else {
+      const c = trainSvg(s, mode, 'twl-tr-svg', true);
+      const lab = (v) => (mode === 'gain' ? trSigned(v) : trShort(v));
+      const fmtDate = (sec) => new Date(sec * 1000).toLocaleDateString(trLocale(), { day: 'numeric', month: 'short' });
+      chartHtml = `${c.svg}<span class="twl-tr-y" style="top:4px">${esc(lab(c.hi))}</span>`
+        + `<span class="twl-tr-y" style="bottom:18px">${esc(lab(c.lo))}</span>`
+        + `<div class="twl-tr-ax"><span>${esc(fmtDate(s.start))}</span><span>${esc(fmtDate((s.start + s.end) / 2))}</span><span>${esc(fmtDate(s.end))}</span></div>`;
+    }
+    setHtml(chart, chartHtml);
+    $('.twl-tr-under').hidden = h.length < 2;
+
+    // Status: last sync, next auto sync, errors
+    const err = GM_getValue('trainError', '');
+    const at = GM_getValue('trainAt', 0);
+    let status;
+    if (!getKey()) status = `<span class="twl-hs-m">${esc(t('honNoKey'))}</span>`;
+    else if (trainLoading) status = esc(t('trainLoading'));
+    else if (err) status = `<span class="twl-hs-m">${esc(err)}</span>`;
+    else {
+      const parts = [];
+      if (at) parts.push(t('trainLast', formatAge(Math.max(0, Math.floor((Date.now() - at) / 1000)))));
+      if (isPaused()) parts.push(t('trainPaused'));
+      else if (!every) parts.push(t('trainAutoOff'));
+      else if (at) {
+        const left = Math.floor((at + every * 60000 - Date.now()) / 1000);
+        parts.push(left > 30 ? t('trainNext', formatAge(left)) : t('trainNextSoon'));
+      }
+      status = esc(parts.join(' · '));
+    }
+    setHtml($('.twl-tr-status'), status);
+    $('.twl-tr-sync').disabled = trainLoading || !getKey();
+
+    // History by day, newest first
+    setHtml($('.twl-tr-cols'), h.length ? TRAIN_SHORT.map((n, i) => `<span style="color:${TRAIN_COLOR[i]}">${n}</span>`).join('') : '');
+    $('.twl-tr-hhead').hidden = !h.length;
+    setHtml($('.twl-tr-hist'), trainHistoryHtml(h));
+  }
+
+  // Menu tile: total, gain in 7 days and a small 30-day chart. Rebuilt only when the data changes.
+  function renderTrainTile() {
+    if (!trainReady) return;
+    const h = getTrainHist();
+    const key = `${h.length}|${h.length ? h[h.length - 1][0] : 0}|${Math.floor(Date.now() / 600000)}|${getLang()}`;
+    if (key === train.tileKey) return;
+    train.tileKey = key;
+    const last = h[h.length - 1];
+    if (!last) {
+      setHtml($('.twl-m-tr'), esc(t('menuHonorsLoad')));
+      setHtml($('.twl-m-trspark'), '');
+      return;
+    }
+    const s7 = trainSeries(h, 7);
+    const g7 = s7.pts.length ? trainGains(s7.pts[0], s7.pts[s7.pts.length - 1]).reduce((a, b) => a + b, 0) : 0;
+    setHtml($('.twl-m-tr'), `${esc(trShort(last[1] + last[2] + last[3] + last[4]))}`
+      + (g7 ? ` · <span class="${trCls(g7)}">${esc(trSigned(g7))}</span>` : ''));
+    const s30 = trainSeries(h, 30);
+    setHtml($('.twl-m-trspark'), s30.pts.length >= 2 && h.length >= 2 ? trainSvg(s30, 'gain', '', false).svg : '');
+  }
+
+  for (const k of ['trainHistory', 'trainAt', 'trainError']) {
+    GM_addValueChangeListener(k, (_k, _o, _n, remote) => { if (remote) { renderTraining(); renderMenu(); } });
+  }
+  trainReady = true;
   applyTab();
 
   applyLayout();
@@ -4635,6 +5065,7 @@
   refreshAll(false);
   if (getTab() === 'honors') refreshHonors(false);
   if (getTab() === 'medals') refreshMedals(false);
+  refreshTraining(false); // only when the auto sync is due
   scheduleNyan();
   updateChain();
   setInterval(updateChain, 250); // more often than 1×/s so the display doesn't lag behind Torn's timer
@@ -4647,6 +5078,8 @@
     decorateWarRows(); // keeps ➕/✓ in sync when the list changes in another tab
     if (++tick % 5 === 0) refreshAll(false);
     if (tick % 15 === 0 && medalsVisible()) { refreshMedals(false); renderMedals(); }
+    if (tick % 30 === 0) refreshTraining(false); // auto sync, whatever page is open
+    if (tick % 15 === 0 && trainVisible()) renderTraining(); // keep "x min ago" current
     if (tick % 15 === 0 && honorsVisible()) { // honors: refetch when due, keep "x min ago" current
       refreshHonors(false);
       renderHonors();
