@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.27.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.27.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -300,7 +300,7 @@ Its own page in the start menu (PC and iPhone) shows which **medals** you're sti
 - **Types** as chips (combat, commitment, crime, level, misc, networth, rank) and **All**, each with earned/total, plus search and sorting (up next, rarest, A–Z).
 - **Progress bars** from your personal stats and profile, e.g. „Attacks won 742 / 1,000“, level, rank, days in faction, days married, years in Torn. *Up next* puts the medals you're closest to first.
 - Old Crimes 1.0 medals that can't be earned any more are left out.
-- Mark medals as **done** or **hide** them; both are part of export/import. **🔄 Sync** loads your real state from Torn and resets the ✓ marks.
+- **🔄 Sync** loads your real state from Torn.
 
 It uses the same Torn API key (at least *Limited* access) and makes up to 4 requests every 5 minutes, **only while the page is open**. Personal stats are shared with the honor tracker, so they're not loaded twice.
 
@@ -483,6 +483,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.27.1** | Medals: rank progress counts from 1 like Torn (e.g. *Competent* is 9 / 10, not 8 / 9); the *Done* and *Hide* buttons on single medals are gone |
 | **2.27.0** | New **💪 Training** page in the start menu: battle stats with gains, a graph of all four stats over time, auto sync (30 min to 6 h or off), 🔄 Sync and a daily history. The ✨ custom key now also includes `battlestats` – create it once again to use the page |
 | **2.26.0** | New **🏅 Medals** page in the start menu: missing medals by type with progress bars, search, sorting (up next, rarest, A–Z) and done/hide marks. The ✨ custom key now also includes `medals` – create it once again to use the page |
 | **2.25.3** | iPhone/iPad: the UI scale slider can be dragged again (it jumped back to the saved value while the finger was on it) |
