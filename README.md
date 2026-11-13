@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.26.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.27.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -68,7 +68,7 @@ Big timer, red alarm below 1:30 and an optional 💣 bomb sound.
 <td valign="top">
 
 **🎖 Honor & 🏅 medal tracker**<br>
-Own pages in the menu: missing honors by difficulty with how-to guides, missing medals by type, both with progress bars.
+Own pages in the menu: missing honors by difficulty with how-to guides, missing medals by type, both with progress bars. Plus 💪 training: your battle stats and gains over time.
 
 </td>
 </tr>
@@ -96,7 +96,7 @@ Big 2-column tiles: tap = profile, long press = attack, copy, remove.
 <td valign="top">
 
 **🧭 Start menu & settings as tiles**<br>
-Big tiles for watchlist, honors, medals and settings; English and German, ✨ custom API key in one click.
+Big tiles for watchlist, honors, medals, training and settings; English and German, ✨ custom API key in one click.
 
 </td>
 <td valign="top">
@@ -174,7 +174,7 @@ Works with [Tampermonkey for Safari](https://apps.apple.com/app/tampermonkey/id6
 
 | What | Where | Note |
 |---|---|---|
-| **Torn API key** | ⚙ → ✨ Create custom key, then 🔑 Torn API key | **✨ Create custom key** opens Torn's API key page with a pre-filled key that has exactly the access this script needs. You click *Create* there and paste the key into 🔑 Torn API key. A *Public* key also works for the watchlist; **Today's hits** and the **Honors** and **Medals** pages need more (*Limited* or the custom key). |
+| **Torn API key** | ⚙ → ✨ Create custom key, then 🔑 Torn API key | **✨ Create custom key** opens Torn's API key page with a pre-filled key that has exactly the access this script needs. You click *Create* there and paste the key into 🔑 Torn API key. A *Public* key also works for the watchlist; **Today's hits** and the **Honors**, **Medals** and **Training** pages need more (*Limited* or the custom key). |
 | **FF Scouter** | ⚙ → 📊 FF Scouter tile → 🔑 FF key | A Torn API key registered at [ffscouter.com](https://ffscouter.com). Leave empty to use the watchlist key. |
 | **Update interval** | ⚙ → Update interval | 15 s – 5 min, default 1 min. |
 | **Language** | ⚙ → Language | English / Deutsch |
@@ -272,7 +272,7 @@ Everything is saved and shared across all Torn tabs.
 <details>
 <summary><b>⚙ Settings & language</b></summary>
 
-The panel has a **start menu** with big tiles: 🎃 Watchlist, 🎖 Honors, 🏅 Medals and ⚙ Settings. Each tile shows its key number, e.g. players and how many are okay, or honors earned. **‹ Menu** in the header leads back from every page. Chain timer and today's hits stay on top of every page. Under *Start page* you choose whether the panel opens on the **last opened page** (default) or on the **menu**. The tiles keep their size: a wider panel fits more per row.
+The panel has a **start menu** with big tiles: 🎃 Watchlist, 🎖 Honors, 🏅 Medals, 💪 Training and ⚙ Settings. Each tile shows its key number, e.g. players and how many are okay, or honors earned. **‹ Menu** in the header leads back from every page. Chain timer and today's hits stay on top of every page. Under *Start page* you choose whether the panel opens on the **last opened page** (default) or on the **menu**. The tiles keep their size: a wider panel fits more per row.
 
 **UI scale** (settings): a slider from 80 % to 150 % makes text, buttons and tiles bigger or smaller together. 100 % is the original size, **Default** (or a double-click on the slider) goes back to it. PC and iPhone keep separate values, so an export from the PC doesn't change the size on your phone. A size you dragged the panel to stays as it is; only tiles and text scale.
 
@@ -309,6 +309,19 @@ It uses the same Torn API key (at least *Limited* access) and makes up to 4 requ
 </details>
 
 <details>
+<summary><b>💪 Training tracker</b></summary>
+
+Its own page in the start menu (PC and iPhone) tracks your **battle stats** over time:
+- **Cards** for strength, defense, speed and dexterity: current base value, gain in the chosen range (7 d, 30 d, 90 d, all) and the current modifier (merits, drugs, …). Below them the total.
+- **Graph** of all four stats, as gains since the start of the range or as absolute values.
+- **Auto sync** every 30 min, 1 h (default), 3 h or 6 h, or off – while any Torn tab is open, on whatever page. Open tabs share it, so it runs once. **🔄 Sync** fetches the stats right away.
+- **History** by day with the gain per stat; tap a day to see the single syncs.
+
+A snapshot is only stored when a stat changed, and snapshots older than 90 days are thinned to one per day, so the history stays small. It's part of export/import and the backup; importing merges the snapshots of both devices instead of replacing them. Your stats stay in your browser and are not sent anywhere else (also not to FF Scouter).
+
+</details>
+
+<details>
 <summary><b>💾 Export, import & backup</b></summary>
 
 - **⬇ Export / ⬆ Import:** save settings, API keys, players and factions to a file and restore them.
@@ -334,6 +347,7 @@ Torn allows **100 requests per minute per account**, for all keys combined. Per 
 - **1 call** for today's hits (if enabled)
 - Honor tracker: **3 calls every 5 minutes**, only while its page is open
 - Medal tracker: **up to 4 calls every 5 minutes**, only while its page is open
+- Training tracker: **1 call per auto sync** (default once an hour), plus 1 per 🔄 Sync
 
 The current rate is shown **bottom right in the panel** (e.g. „≈ 4 requests/min“) and turns orange above 60/min.
 
@@ -376,13 +390,13 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 
 | Data Storage | Data Sharing | Purpose of Use | Key Storage & Sharing | Key Access Level |
 |---|---|---|---|---|
-| `Only locally` | `Nobody` | `Not eligible – only the end user has access` | `Stored locally / Not shared` | `Custom` – `user: basic, profile, attacks, honors, medals, personalstats` · `faction: basic, members, chain` · `torn: honors, medals` |
+| `Only locally` | `Nobody` | `Not eligible – only the end user has access` | `Stored locally / Not shared` | `Custom` – `user: basic, profile, attacks, battlestats, honors, medals, personalstats` · `faction: basic, members, chain` · `torn: honors, medals` |
 
-**In plain words:** everything stays in your browser. The key, your lists, settings and cached data (player status, faction members, FF values, honors, medals) are kept in the Tampermonkey storage, with a backup in torn.com's `localStorage`. Nothing is sent to a server of the script author. There is none. The key is only used to read your own game data for your own panel.
+**In plain words:** everything stays in your browser. The key, your lists, settings and cached data (player status, faction members, FF values, honors, medals, your battle stats history) are kept in the Tampermonkey storage, with a backup in torn.com's `localStorage`. Nothing is sent to a server of the script author. There is none. The key is only used to read your own game data for your own panel.
 
 **Custom key (recommended):** ⚙ → **✨ Create custom key** opens Torn's own key form, pre-filled with exactly the selections listed above, nothing more. The script never creates a key by itself. You check the access and click *Create* on Torn's page. Where you enter a key, the panel shows a short note on how it's used.
 
-**Other keys work too:** a *Public* key is enough for the watchlist, factions and the chain timer. *Today's hits* and the *Honors* and *Medals* pages need *Limited* (or the custom key). The table below shows which level covers each selection.
+**Other keys work too:** a *Public* key is enough for the watchlist, factions and the chain timer. *Today's hits* and the *Honors*, *Medals* and *Training* pages need *Limited* (or the custom key). The table below shows which level covers each selection.
 
 **Requests made with your key** go to `api.torn.com` only, each tagged with `comment=watchlist`. You can see them in your [API key log](https://www.torn.com/preferences.php#tab=api) (*key → log*):
 
@@ -398,6 +412,7 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 | v2 `user/attacks` | Today's hits | ✓ / Limited |
 | v2 `torn/honors`, `user/honors`, `user/personalstats` | Honors page, only while it's open | ✓ / Limited |
 | v2 `torn/medals`, `user/medals`, `user/personalstats`, `user/?selections=profile` | Medals page, only while it's open | ✓ / Limited |
+| v2 `user/battlestats` | Training page: auto sync (default 1×/hour, can be switched off) and 🔄 Sync | ✓ / Limited |
 
 </details>
 
@@ -468,6 +483,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.27.0** | New **💪 Training** page in the start menu: battle stats with gains, a graph of all four stats over time, auto sync (30 min to 6 h or off), 🔄 Sync and a daily history. The ✨ custom key now also includes `battlestats` – create it once again to use the page |
 | **2.26.0** | New **🏅 Medals** page in the start menu: missing medals by type with progress bars, search, sorting (up next, rarest, A–Z) and done/hide marks. The ✨ custom key now also includes `medals` – create it once again to use the page |
 | **2.25.3** | iPhone/iPad: the UI scale slider can be dragged again (it jumped back to the saved value while the finger was on it) |
 | **2.25.2** | Settings: version and update status sit in one box again (no gap, no wrapping apart); the shake animation works again (negative sizes were lost since the UI scale) |
@@ -531,9 +547,10 @@ The script restores its browser backup automatically. If something is still miss
 - **FF-Scouter-Werte.**
 - **Chain-Timer:** große Anzeige mit rotem Alarm (optional mit Bomben-Sound) unter 1:30.
 - **Zähler für die heutigen Hits.**
-- **Startmenü mit Kacheln:** Watchlist, Honors, Medals und Einstellungen auf einen Blick, „‹ Menü“ führt zurück. Die Größe der ganzen Oberfläche stellst du in den Einstellungen ein (80–150 %).
+- **Startmenü mit Kacheln:** Watchlist, Honors, Medals, Training und Einstellungen auf einen Blick, „‹ Menü“ führt zurück. Die Größe der ganzen Oberfläche stellst du in den Einstellungen ein (80–150 %).
 - **Honor-Tracker:** fehlende Honors nach Schwierigkeit, mit Anleitung (englisch), Kategorien und Fortschritt.
 - **Medal-Tracker:** fehlende Medals nach Typ, mit Fortschritt (Level, Rang, Angriffe, Crimes, Tage in der Faction …). Wer schon einen eigenen Key hat, erstellt ihn einmal neu (✨ Eigenen Key erstellen), damit er `medals` lesen darf.
+- **Training-Tracker:** deine Battle Stats mit Zuwachs, Graph über die Zeit, Auto-Sync (30 min bis 6 h oder aus) und Verlauf pro Tag. Dafür braucht der Key `battlestats` – einmal neu erstellen.
 
 Ganze Factions kosten nur einen API-Call pro Update. Die Oberfläche gibt es auf **Englisch und Deutsch**: ⚙ → Sprache.
 
