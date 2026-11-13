@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.25.2
+// @version      2.25.3
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -3209,8 +3209,17 @@
     applyLayout();
     syncGrid();
   }
+  // While a finger/mouse is on the slider the tick must not put the saved value back.
+  // Not document.activeElement: iOS doesn't focus a range input on touch.
+  let scaleDrag = false;
+  let scaleDragEnd = 0;
+  const scaleDragStart = () => { scaleDrag = true; clearTimeout(scaleDragEnd); };
+  const scaleDragStop = () => { clearTimeout(scaleDragEnd); scaleDragEnd = setTimeout(() => { scaleDrag = false; }, 400); };
+  gridScale.addEventListener('pointerdown', scaleDragStart);
+  gridScale.addEventListener('touchstart', scaleDragStart, { passive: true });
+  for (const type of ['pointerup', 'pointercancel', 'touchend', 'touchcancel']) window.addEventListener(type, () => { if (scaleDrag) scaleDragStop(); }, { passive: true });
   gridScale.addEventListener('input', () => { $('.twl-scale-val').textContent = `${gridScale.value} %`; });
-  gridScale.addEventListener('change', () => setScale(Number(gridScale.value)));
+  gridScale.addEventListener('change', () => { scaleDrag = false; setScale(Number(gridScale.value)); });
   gridScale.addEventListener('dblclick', () => setScale(100));
   const gridVol = $('.twl-g-vol');
   gridVol.addEventListener('input', () => {
@@ -3242,9 +3251,9 @@
     for (const b of panel.querySelectorAll('[data-act="seg-lang"]')) b.classList.toggle('twl-on', b.dataset.v === getLang());
     for (const b of panel.querySelectorAll('[data-act="seg-view"]')) b.classList.toggle('twl-on', b.dataset.v === getView());
     for (const b of panel.querySelectorAll('[data-act="seg-start"]')) b.classList.toggle('twl-on', b.dataset.v === getStartPage());
-    if (document.activeElement !== gridScale) gridScale.value = String(getScale());
-    // while the slider has focus it shows its own value, otherwise the tick would flip it back to the saved one
-    setText($('.twl-scale-val'), `${document.activeElement === gridScale ? gridScale.value : getScale()} %`);
+    const sliding = scaleDrag || document.activeElement === gridScale;
+    if (!sliding) gridScale.value = String(getScale());
+    setText($('.twl-scale-val'), `${sliding ? gridScale.value : getScale()} %`);
     const secs = getRefreshS();
     for (const b of panel.querySelectorAll('[data-act="seg-interval"]')) b.classList.toggle('twl-on', Number(b.dataset.v) === secs);
     const rate = $('.twl-rate');
