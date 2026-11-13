@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.27.4
+// @version      2.28.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -1301,6 +1301,7 @@
     /* Settings tiles keep a fixed size too: a wider panel fits more per row */
     #twl-panel { --twl-stile-w: 68px; --twl-stile2-w: 104px; }
     #twl-panel.twl-touch { --twl-stile-w: 108px; --twl-stile2-w: 140px; }
+    #twl-panel.twl-touch .twl-tiles:not(.twl-tiles-2) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .twl-tiles { display: grid; grid-template-columns: repeat(auto-fill, var(--twl-stile-w)); justify-content: center; gap: 6px; }
     .twl-tiles.twl-tiles-2 { grid-template-columns: repeat(auto-fill, var(--twl-stile2-w)); }
     .twl-scale-val { min-width: 42px; text-align: right; font-weight: bold; color: #ffcf9e; }
@@ -1412,9 +1413,13 @@
     .twl-mbar { display: block; width: 80%; height: 4px; border-radius: 3px; background: #111; overflow: hidden; }
     .twl-mbar[hidden] { display: none; }
     .twl-mbar i { display: block; height: 100%; background: var(--c, #60a5fa); }
-    #twl-panel.twl-touch .twl-mtile .twl-ic { font-size: 30px; }
-    #twl-panel.twl-touch .twl-mtile .twl-lb { font-size: 15px; }
-    #twl-panel.twl-touch .twl-mtile .twl-sub { font-size: 12px; }
+    /* iPhone/iPad: always 3 tiles per row, filling the width (no UI scale there) */
+    #twl-panel.twl-touch .twl-mgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+    #twl-panel.twl-touch button.twl-mtile { width: auto; min-width: 0; min-height: 100px; padding: 8px 4px; }
+    #twl-panel.twl-touch .twl-mtile .twl-ic { font-size: 28px; }
+    #twl-panel.twl-touch .twl-mtile .twl-lb { font-size: 14px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+    #twl-panel.twl-touch .twl-mtile .twl-sub { font-size: 11px; }
+    #twl-panel.twl-touch .twl-scale-only { display: none; }
     /* Header: "‹ Menu" instead of the pumpkin on every page but the menu */
     #twl-panel button.twl-back { flex: none; padding: 1px 6px; background: #22160c; border-color: #ff7518; color: #ffcf9e; font-weight: bold; }
     #twl-panel button.twl-back[hidden] { display: none; }
@@ -1720,9 +1725,9 @@
             <button type="button" data-act="seg-start" data-v="last" data-i18n="startLast"></button>
             <button type="button" data-act="seg-start" data-v="menu" data-i18n="startMenu"></button>
           </div>
-          <div class="twl-sec" data-i18n="secScale"></div>
-          <div class="twl-vol"><input type="range" class="twl-g-scale" min="${SCALE_MIN}" max="${SCALE_MAX}" step="10" /><span class="twl-scale-val"></span><button type="button" data-act="scale-reset" data-i18n="scaleReset"></button></div>
-          <div class="twl-hint" data-i18n="scaleHint"></div>
+          <div class="twl-sec twl-scale-only" data-i18n="secScale"></div>
+          <div class="twl-vol twl-scale-only"><input type="range" class="twl-g-scale" min="${SCALE_MIN}" max="${SCALE_MAX}" step="10" /><span class="twl-scale-val"></span><button type="button" data-act="scale-reset" data-i18n="scaleReset"></button></div>
+          <div class="twl-hint twl-scale-only" data-i18n="scaleHint"></div>
           <div class="twl-sec" data-i18n="secInterval"></div>
           <div class="twl-seg">
             ${REFRESH_PRESETS.map((v) => `<button type="button" data-act="seg-interval" data-v="${v}">${v < 60 ? `${v} s` : `${v / 60} min`}</button>`).join('')}
@@ -1800,6 +1805,7 @@
   // UI scale, separate for PC and touch so an export from the PC doesn't blow up the phone
   const SCALE_KEY = IS_TOUCH ? 'uiScaleTouch' : 'uiScalePc';
   const getScale = () => {
+    if (IS_TOUCH) return 100; // iPhone/iPad: fixed size, 3 menu tiles per row
     const v = Math.round(GM_getValue(SCALE_KEY, 100) / 10) * 10;
     return Number.isFinite(v) ? Math.min(SCALE_MAX, Math.max(SCALE_MIN, v)) : 100;
   };
