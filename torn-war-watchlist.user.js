@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.25.0
+// @version      2.25.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -1278,7 +1278,11 @@
     #twl-panel .twl-spage { padding-bottom: 8px; }
     /* Header buttons: real refresh icon; on touch the dock button is gone, collapse too when the header P toggles */
     .twl-refresh svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.6;
-      stroke-linecap: round; stroke-linejoin: round; vertical-align: -2px; }
+      stroke-linecap: round; stroke-linejoin: round; display: block; }
+    /* All header icon buttons: same box, icon centered (glyph widths and baselines differ, so they jumped when scaling) */
+    #twl-panel:not(.twl-touch) .twl-head button:not(.twl-back) { display: inline-flex; align-items: center; justify-content: center;
+      flex: none; box-sizing: border-box; width: 24px; height: 20px; padding: 0; line-height: 1; }
+    #twl-panel:not(.twl-touch) .twl-head button.twl-back { display: inline-flex; align-items: center; box-sizing: border-box; height: 20px; line-height: 1; }
     /* Pause lives in the settings grid on touch screens */
     #twl-panel.twl-touch .twl-head [data-act="side"], #twl-panel.twl-touch .twl-head .twl-pause,
     #twl-panel.twl-touch.twl-inline .twl-head [data-act="collapse"] { display: none; }
@@ -3241,7 +3245,8 @@
     for (const b of panel.querySelectorAll('[data-act="seg-view"]')) b.classList.toggle('twl-on', b.dataset.v === getView());
     for (const b of panel.querySelectorAll('[data-act="seg-start"]')) b.classList.toggle('twl-on', b.dataset.v === getStartPage());
     if (document.activeElement !== gridScale) gridScale.value = String(getScale());
-    setText($('.twl-scale-val'), `${getScale()} %`);
+    // while the slider has focus it shows its own value, otherwise the tick would flip it back to the saved one
+    setText($('.twl-scale-val'), `${document.activeElement === gridScale ? gridScale.value : getScale()} %`);
     const secs = getRefreshS();
     for (const b of panel.querySelectorAll('[data-act="seg-interval"]')) b.classList.toggle('twl-on', Number(b.dataset.v) === secs);
     const rate = $('.twl-rate');
