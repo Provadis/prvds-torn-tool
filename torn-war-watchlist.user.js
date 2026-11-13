@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.25.3
+// @version      2.26.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -47,7 +47,7 @@
   const isPaused = () => GM_getValue('paused', false);
   // Current page: menu, list or honors. Saved in GM "tab"; "Start page: menu" ignores it on load.
   const getStartPage = () => (GM_getValue('startPage', 'last') === 'menu' ? 'menu' : 'last');
-  const savedTab = () => { const v = GM_getValue('tab', 'list'); return v === 'honors' || v === 'menu' ? v : 'list'; };
+  const savedTab = () => { const v = GM_getValue('tab', 'list'); return v === 'honors' || v === 'medals' || v === 'menu' ? v : 'list'; };
   let curTab = getStartPage() === 'menu' ? 'menu' : savedTab();
   const getTab = () => curTab;
   let menuPlayers = { n: 0, ok: 0 }; // watchlist numbers for the menu tile, counted in render()
@@ -82,13 +82,15 @@
     ffKey: (v) => typeof v === 'string',
     lang: (v) => v === 'de' || v === 'en',
     view: (v) => v === 'list' || v === 'tiles',
-    tab: (v) => v === 'menu' || v === 'list' || v === 'honors',
+    tab: (v) => v === 'menu' || v === 'list' || v === 'honors' || v === 'medals',
     startPage: (v) => v === 'last' || v === 'menu',
     uiScalePc: isNum,
     uiScaleTouch: isNum,
     honMode: (v) => v === 'easy' || v === 'cat' || v === 'all',
     honorsDone: Array.isArray,
     honorsHidden: Array.isArray,
+    medalsDone: Array.isArray,
+    medalsHidden: Array.isArray,
   };
 
   // ---- Language (English / German) ----------------------------------------
@@ -117,8 +119,13 @@
       menuPlayers: (n, ok) => `${n} Spieler · ${ok} okay`,
       menuNoPlayers: 'noch leer',
       menuHonorsLoad: 'öffnen zum Laden',
-      menuSoon: 'bald',
       menuNoKey: 'API-Key fehlt',
+      medAccess: 'Dem API-Key fehlt der Zugriff auf Medals (neu seit 2.26). Erstelle unter ⚙ → „✨ Custom-Key erstellen“ einen neuen Key und trag ihn ein. Watchlist und Honors laufen solange normal.',
+      medTypes: { combat: 'Kampf', commitment: 'Treue', crime: 'Verbrechen', level: 'Level', miscellaneous: 'Sonstiges', networth: 'Vermögen', rank: 'Rang' },
+      medAll: 'Alle',
+      medSortNext: 'Als Nächstes',
+      medNoBar: 'Kein Messwert aus der API – per ✓ selbst abhaken.',
+      medSearch: 'Medals suchen…',
       secScale: 'UI-Skalierung',
       scaleReset: 'Standard',
       scaleHint: 'Schrift, Buttons und Kacheln. Gilt nur für dieses Gerät.',
@@ -142,6 +149,7 @@
       honSyncTitle: 'Echten Stand von Torn laden – eigene ✓-Markierungen werden dabei zurückgesetzt',
       honAgo: (a) => `vor ${a}`,
       honLoading: 'Lade Honors…',
+      medLoading: 'Lade Medals…',
       honNoKey: 'Bitte zuerst einen Torn API-Key setzen (⚙ → Torn API-Key).',
       honNoData: 'Noch keine Daten – ⟳ lädt sie.',
       honAccess: 'Der API-Key hat dafür nicht genug Zugriff. „✨ Custom-Key erstellen“ in ⚙ legt einen passenden an.',
@@ -330,8 +338,13 @@
       menuPlayers: (n, ok) => `${n} players · ${ok} okay`,
       menuNoPlayers: 'empty so far',
       menuHonorsLoad: 'open to load',
-      menuSoon: 'soon',
       menuNoKey: 'API key missing',
+      medAccess: 'Your API key has no access to medals (new in 2.26). Create a new key under ⚙ → „✨ Create custom key“ and enter it. Watchlist and honors keep working meanwhile.',
+      medTypes: { combat: 'Combat', commitment: 'Commitment', crime: 'Crime', level: 'Level', miscellaneous: 'Misc', networth: 'Networth', rank: 'Rank' },
+      medAll: 'All',
+      medSortNext: 'Up next',
+      medNoBar: 'No value from the API – tick it yourself with ✓.',
+      medSearch: 'Search medals…',
       secScale: 'UI scale',
       scaleReset: 'Default',
       scaleHint: 'Text, buttons and tiles. Only for this device.',
@@ -355,6 +368,7 @@
       honSyncTitle: 'Load your real state from Torn – your own ✓ marks are reset',
       honAgo: (a) => `${a} ago`,
       honLoading: 'Loading honors…',
+      medLoading: 'Loading medals…',
       honNoKey: 'Set a Torn API key first (⚙ → Torn API key).',
       honNoData: 'No data yet – ⟳ loads it.',
       honAccess: "The API key doesn't have enough access for this. „✨ Create custom key“ in ⚙ creates a matching one.",
@@ -661,7 +675,7 @@
   // Torn's pre-filled "new API key" form with exactly the selections this script uses
   // (see README → API Terms of Service). The key is only created when you click "Create" there.
   const KEY_CREATE_URL = 'https://www.torn.com/preferences.php#tab=api?step=addNewKey&title=Torn%20War%20Watchlist'
-    + '&user=basic,profile,attacks,honors,personalstats&faction=basic,members,chain&torn=honors';
+    + '&user=basic,profile,attacks,honors,medals,personalstats&faction=basic,members,chain&torn=honors,medals';
 
   function apiGet(path, key) {
     const sep = path.includes('?') ? '&' : '?';
@@ -1351,8 +1365,9 @@
     .twl-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .twl-title-ic[hidden] { display: none; }
     /* Honor tracker */
-    #twl-panel .twl-honors[hidden] { display: none !important; } /* else the sized flex rule below wins */
-    #twl-panel.twl-sized .twl-honors { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    #twl-panel .twl-honors[hidden], #twl-panel .twl-medals[hidden] { display: none !important; } /* else the sized flex rule below wins */
+    #twl-panel.twl-sized .twl-honors, #twl-panel.twl-sized .twl-medals { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .twl-hc-note { margin-top: 4px; font-size: 10.5px; color: #8b8b95; }
     .twl-honors > .twl-seg { margin: 2px 0 6px; }
     .twl-hon-list { max-height: 60vh; overflow-y: auto; }
     #twl-panel.twl-sized .twl-hon-list { flex: 1; min-height: 0; max-height: none; }
@@ -1465,7 +1480,7 @@
         <div class="twl-mgrid">
           <button type="button" class="twl-mtile" data-act="tab" data-v="list"><span class="twl-ic">🎃</span><span class="twl-lb">Watchlist</span><span class="twl-sub twl-m-list"></span></button>
           <button type="button" class="twl-mtile" data-act="tab" data-v="honors"><span class="twl-ic">🎖</span><span class="twl-lb">Honors</span><span class="twl-sub twl-m-hon"></span><span class="twl-mbar twl-m-honbar"><i></i></span></button>
-          <button type="button" class="twl-mtile" disabled><span class="twl-ic">🏅</span><span class="twl-lb">Medals</span><span class="twl-sub" data-i18n="menuSoon"></span></button>
+          <button type="button" class="twl-mtile" data-act="tab" data-v="medals"><span class="twl-ic">🏅</span><span class="twl-lb">Medals</span><span class="twl-sub twl-m-med"></span><span class="twl-mbar twl-m-medbar" style="--c:#facc15"><i></i></span></button>
           <button type="button" class="twl-mtile" data-act="settings"><span class="twl-ic">⚙</span><span class="twl-lb" data-i18n="settings"></span><span class="twl-sub twl-m-set"></span></button>
         </div>
       </div>
@@ -1500,6 +1515,24 @@
           <button type="button" data-act="hon-hidden"></button>
         </div>
         <div class="twl-hon-list"></div>
+      </div>
+      <div class="twl-medals" hidden>
+        <div class="twl-hon-pills twl-chips twl-med-pills"></div>
+        <div class="twl-hon-ctrl">
+          <input type="search" class="twl-med-search" data-i18n-ph="medSearch" autocomplete="off" />
+          <select class="twl-med-sort">
+            <option value="next" data-i18n="medSortNext"></option>
+            <option value="rarity" data-i18n="honSortRarity"></option>
+            <option value="name" data-i18n="honSortName"></option>
+          </select>
+        </div>
+        <div class="twl-hon-sub">
+          <span class="twl-hon-status twl-med-status"></span>
+          <button type="button" data-act="med-sync" class="twl-hon-sync twl-med-sync" data-i18n="honSync" data-i18n-tip="honSyncTitle"></button>
+          <button type="button" data-act="med-earned"></button>
+          <button type="button" data-act="med-hidden"></button>
+        </div>
+        <div class="twl-hon-list twl-med-list"></div>
       </div>
       <div class="twl-spage" hidden>
         <div class="twl-sgrid">
@@ -2132,7 +2165,8 @@
     // plus the chain timer on touch screens: every 6 s while a chain runs
     const chainPerMin = useApiChain() && apiChainRunning() ? Math.round(60000 / CHAIN_POLL_RUNNING_MS) : 0;
     const honPerMin = honorsVisible() && getKey() && !isPaused() ? 3 * 60000 / HON_REFRESH_MS : 0;
-    const perMin = Math.round(calls * 60 / getRefreshS() + honPerMin) + chainPerMin;
+    const medPerMin = medalsVisible() && getKey() && !isPaused() ? 3 * 60000 / HON_REFRESH_MS : 0; // user/medals + stats + profile
+    const perMin = Math.round(calls * 60 / getRefreshS() + honPerMin + medPerMin) + chainPerMin;
     const rate = $('.twl-rate');
     rate.textContent = t('perMin', perMin);
     rate.title = t('callsPerUpdate', calls);
@@ -2202,6 +2236,7 @@
       case 'add-input-faction': addFromInput(addFaction); break;
       case 'refresh':
         if (getTab() === 'honors' && $('.twl-spage').hidden) refreshHonors(true);
+        else if (getTab() === 'medals' && $('.twl-spage').hidden) refreshMedals(true);
         else refreshAll(true);
         break;
       case 'sound-test': testBomb(); break;
@@ -2354,6 +2389,12 @@
       case 'hon-hide': toggleIn('honorsHidden', id); break;
       case 'hon-sync': refreshHonors(true); break;
       case 'hon-earned': hon.showEarned = !hon.showEarned; renderHonors(); break;
+      case 'med-type': med.type = btn.dataset.v; renderMedals(); $('.twl-med-list').scrollTop = 0; break;
+      case 'med-done': toggleMed('medalsDone', id); break;
+      case 'med-hide': toggleMed('medalsHidden', id); break;
+      case 'med-sync': refreshMedals(true); break;
+      case 'med-earned': med.showEarned = !med.showEarned; renderMedals(); break;
+      case 'med-hidden': med.showHidden = !med.showHidden; renderMedals(); break;
       case 'hon-hidden': hon.showHidden = !hon.showHidden; renderHonors(); break;
       // Action menu of a tile (long press)
       case 'menu-attack':
@@ -4072,7 +4113,10 @@
       try {
         await sleep(REQUEST_GAP_MS);
         const ps = await apiGet('v2/user/personalstats?cat=all', key);
-        if (ps && !ps.error && ps.personalstats) GM_setValue('honorsStats', ps.personalstats);
+        if (ps && !ps.error && ps.personalstats) {
+          GM_setValue('honorsStats', ps.personalstats);
+          GM_setValue('honorsStatsAt', Date.now());
+        }
       } catch {
         // no progress bars then – the honors themselves are there
       }
@@ -4094,21 +4138,24 @@
     $('.twl-menu').hidden = settingsOpen || tab !== 'menu';
     $('.twl-main').hidden = settingsOpen || tab !== 'list';
     $('.twl-honors').hidden = settingsOpen || tab !== 'honors';
+    $('.twl-medals').hidden = settingsOpen || tab !== 'medals';
     const onMenu = tab === 'menu' && !settingsOpen;
     $('.twl-back').hidden = onMenu;
     $('.twl-title-ic').hidden = !onMenu;
     $('.twl-title-name').textContent = settingsOpen ? t('settings')
-      : tab === 'honors' ? 'Honors' : tab === 'list' ? 'Watchlist' : t('menuTitle');
+      : tab === 'honors' ? 'Honors' : tab === 'medals' ? 'Medals' : tab === 'list' ? 'Watchlist' : t('menuTitle');
     $('.twl-count').hidden = settingsOpen || tab !== 'list';
     renderHonors();
+    renderMedals();
     renderMenu();
   }
   function setTab(v) {
-    curTab = v === 'honors' || v === 'menu' ? v : 'list';
+    curTab = v === 'honors' || v === 'medals' || v === 'menu' ? v : 'list';
     GM_setValue('tab', curTab);
     if (!$('.twl-spage').hidden) showSettings(false);
     else applyTab();
     if (getTab() === 'honors') refreshHonors(false);
+    if (getTab() === 'medals') refreshMedals(false);
   }
   // Menu tiles: values from data that is already cached – the menu itself never calls the API
   function renderMenu() {
@@ -4123,6 +4170,14 @@
     bar.hidden = !all.length;
     const w = `${all.length ? Math.round((got / all.length) * 100) : 0}%`;
     if (bar.firstElementChild.style.width !== w) bar.firstElementChild.style.width = w;
+    const mAll = GM_getValue('medalsAll', []);
+    const mGot = new Set([...GM_getValue('medalsMine', []), ...GM_getValue('medalsDone', [])]);
+    const mN = mAll.filter((m) => mGot.has(m.id)).length;
+    setText($('.twl-m-med'), mAll.length ? `${mN} / ${mAll.length}` : t('menuHonorsLoad'));
+    const mBar = $('.twl-m-medbar');
+    mBar.hidden = !mAll.length;
+    const mW = `${mAll.length ? Math.round((mN / mAll.length) * 100) : 0}%`;
+    if (mBar.firstElementChild.style.width !== mW) mBar.firstElementChild.style.width = mW;
     const set = $('.twl-m-set');
     setText(set, getKey() ? (SCRIPT_VERSION ? `v${SCRIPT_VERSION}` : '') : t('menuNoKey'));
     set.classList.toggle('twl-ff-err', !getKey());
@@ -4139,6 +4194,11 @@
     return (Array.isArray(pm) ? pm : [pm]).map(({ path, target, label, fmt, sub }) => {
       const raw = honStat(stats, path);
       if (raw === null) return '';
+      return progressBarHtml(raw, target, label, fmt, sub);
+    }).join('');
+  }
+  function progressBarHtml(raw, target, label, fmt, sub) {
+    {
       const pct = Math.min(100, Math.round((raw / target) * 100));
       const done = raw >= target;
       const color = done ? '#4ade80' : pct >= 75 ? '#f5a623' : pct >= 40 ? '#60a5fa' : '#8b8b95';
@@ -4146,7 +4206,7 @@
       return `<div class="twl-hp"><div class="twl-hp-l"><span>${esc(label)}</span><span style="color:${color}">${esc(val)}</span></div>`
         + `<div class="twl-hp-bar"><i style="width:${pct}%;background:${color}"></i></div>`
         + `${!done && sub ? `<div class="twl-hp-sub">${esc(sub(raw, target))}</div>` : ''}</div>`;
-    }).join('');
+    }
   }
 
   function honCardHtml(h, s) {
@@ -4309,6 +4369,264 @@
     GM_addValueChangeListener(k, (_k, _o, _n, remote) => { if (remote) renderHonors(); });
   }
   honReady = true;
+
+  // ---- Medal tracker: page behind the 🏅 tile ----------------------------------------------
+  // Data: v2 torn/medals (all, once a day), v2 user/medals (own), plus the personal stats
+  // (shared with the honors) and the own v1 profile for level, rank and the "days" medals.
+  // var on purpose: renderMedals() may be called (and must return early) before this section ran
+  var medReady = false; // eslint-disable-line no-var
+  let medLoading = false;
+  const med = { type: 'all', search: '', sort: 'next', showEarned: false, showHidden: false };
+  const MED_TYPE_ICON = { combat: '⚔️', commitment: '📅', crime: '🔪', level: '⭐', miscellaneous: '🎲', networth: '💰', rank: '🏆' };
+  const medalsVisible = () => medReady && !$('.twl-medals').hidden && !panel.classList.contains('twl-collapsed');
+  // Torn's rank names in order (v1 profile "rank" is "<rank> <title>", e.g. "Average Punchbag")
+  const MED_RANKS = ['Absolute beginner', 'Beginner', 'Inexperienced', 'Rookie', 'Novice', 'Below average', 'Average',
+    'Reasonable', 'Above average', 'Competent', 'Highly competent', 'Veteran', 'Distinguished', 'Highly distinguished',
+    'Professional', 'Star', 'Master', 'Outstanding', 'Celebrity', 'Supreme', 'Idolized', 'Champion', 'Heroic', 'Legendary',
+    'Elite', 'Invincible'];
+  const medRankIndex = (name) => {
+    const n = String(name || '').toLowerCase();
+    let best = -1;
+    MED_RANKS.forEach((r, i) => { if (n.startsWith(r.toLowerCase()) && (best < 0 || r.length > MED_RANKS[best].length)) best = i; });
+    return best;
+  };
+  // Progress of a medal: one rule per description phrase (from the real v2 torn/medals texts).
+  // The target is the first number in the text; level and "years" medals spell it out ("Fifty Five").
+  // Stat paths that the API doesn't return just give no bar.
+  const MED_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+    fifteen: 15, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90, hundred: 100 };
+  const medNumber = (txt) => {
+    const m = String(txt).replace(/,/g, '').match(/\$?(\d+(?:\.\d+)?)\s*(k|m|b|thousand|million|billion)?\b/i);
+    if (m) return parseFloat(m[1]) * ({ k: 1e3, thousand: 1e3, m: 1e6, million: 1e6, b: 1e9, billion: 1e9 }[(m[2] || '').toLowerCase()] || 1);
+    // number words: "One Hundred" = 100, "Fifty Five" = 55
+    let n = 0;
+    for (const w of String(txt).toLowerCase().split(/[^a-z]+/)) {
+      if (w === 'hundred') n = (n || 1) * 100;
+      else if (MED_WORDS[w]) n += MED_WORDS[w];
+    }
+    return n || null;
+  };
+  const st = (path) => (stats) => honStat(stats, path);
+  const MED_CRIME = { vandalism: 'vandalism', theft: 'theft', counterfeiting: 'counterfeiting', fraud: 'fraud',
+    'illicit service': 'illicit_services', cybercrime: 'cybercrime', extortion: 'extortion', 'illegal production': 'illegal_production' };
+  const MED_RULES = [
+    { re: /^reach level/i, get: (s, pr) => (pr ? pr.level : null), label: 'Level' },
+    { re: /^live in torn for/i, get: (s, pr) => (pr && pr.age != null ? pr.age : null), label: 'Days in Torn', mult: 365 },
+    { re: /single faction/i, get: (s, pr) => (pr && pr.faction ? pr.faction.days_in_faction : null), label: 'Days in faction' },
+    { re: /married/i, get: (s, pr) => (pr && pr.married ? pr.married.duration : null), label: 'Days married' },
+    { re: /networth/i, get: st('networth.total'), label: 'Networth', money: true },
+    { re: /^win \d/i, get: st('attacking.attacks.won'), label: 'Attacks won' },
+    { re: /defend against/i, get: st('attacking.defends.won'), label: 'Defends won' },
+    { re: /escape from \S+ foes/i, get: st('attacking.escapes.player'), label: 'Escapes' },
+    { re: /enemies escape/i, get: st('attacking.escapes.foes'), label: 'Foes escaped' },
+    { re: /kill streak/i, get: st('attacking.killstreak.best'), label: 'Best kill streak' },
+    { re: /critical hits/i, get: st('attacking.hits.critical'), label: 'Critical hits' },
+    { re: /respect for your faction/i, get: st('attacking.faction.respect'), label: 'Respect' },
+    { re: /collect .* bounties/i, get: st('bounties.collected.amount'), label: 'Bounties' },
+    { re: /donator/i, get: st('other.donator_days'), label: 'Donator days' },
+    { re: /^bust/i, get: st('jail.busts.success'), label: 'Busts' },
+    { re: /items in the city/i, get: st('items.found.city'), label: 'Items found' },
+    { re: /travel abroad/i, get: st('travel.total'), label: 'Trips' },
+    { re: /medical items/i, get: st('hospital.medical_items_used'), label: 'Medical items' },
+    { re: /total of .* criminal offenses/i, get: st('crimes.offenses.total'), label: 'Offenses' },
+    { re: /^commit \S+ (.+) offenses/i, get: (s, pr, m) => {
+      const k = MED_CRIME[(m.desc.match(/^commit \S+ (.+) offenses/i) || [])[1].toLowerCase()];
+      return k ? honStat(s, `crimes.offenses.${k}`) : null;
+    }, label: 'Offenses' },
+  ];
+  function medProgress(m, stats, profile) {
+    if (m.type === 'rank') {
+      const want = medRankIndex(m.desc.replace(/^.*?rank of\s*/i, ''));
+      const have = profile ? medRankIndex(profile.rank) : -1;
+      return want >= 0 && have >= 0 ? { raw: have, target: want, label: 'Rank' } : null;
+    }
+    for (const r of MED_RULES) {
+      if (!r.re.test(m.desc)) continue;
+      const n = medNumber(m.desc);
+      if (!n) return null;
+      const raw = r.get(stats, profile, m);
+      return typeof raw === 'number' ? { raw, target: n * (r.mult || 1), label: r.label, money: r.money } : null;
+    }
+    return null;
+  }
+  const medMoney = (v) => (v >= 1e9 ? `$${+(v / 1e9).toFixed(1)}b` : v >= 1e6 ? `$${+(v / 1e6).toFixed(1)}m` : `$${honNum(Math.round(v))}`);
+
+  async function refreshMedals(force) {
+    const key = getKey();
+    if (!key || medLoading) return;
+    if (!force && (isPaused() || Date.now() - GM_getValue('medalsAt', 0) < HON_REFRESH_MS)) return;
+    medLoading = true;
+    renderMedals();
+    const check = (d) => {
+      if (d && d.error) {
+        throw new Error(d.error.code === 16 ? t('medAccess') : `${d.error.error || 'API error'} (Code ${d.error.code})`);
+      }
+      return d || {};
+    };
+    try {
+      if (force || !GM_getValue('medalsAll', []).length || Date.now() - GM_getValue('medalsAllAt', 0) > HON_ALL_MS) {
+        const d = check(await apiGet('v2/torn/medals', key));
+        const all = (d.medals || [])
+          .filter((m) => m && m.id && m.crimes_version !== 'v1') // Crimes 1.0 medals can't be earned any more
+          .map((m) => ({ id: m.id, name: m.name || '', desc: m.description || '', type: m.type ? String(m.type.title || '') : '',
+            rarity: m.rarity || '', circ: m.circulation || 0 }));
+        GM_setValue('medalsAll', all);
+        GM_setValue('medalsAllAt', Date.now());
+        await sleep(REQUEST_GAP_MS);
+      }
+      const u = check(await apiGet('v2/user/medals', key));
+      const mine = (u.medals || []).map((m) => m.id);
+      GM_setValue('medalsMine', mine);
+      const mineSet = new Set(mine);
+      const marks = GM_getValue('medalsDone', []);
+      const keep = force ? [] : marks.filter((id) => !mineSet.has(id));
+      if (keep.length !== marks.length) GM_setValue('medalsDone', keep);
+      try {
+        // Personal stats are shared with the honors: only fetch them if they're older than 5 min
+        if (force || Date.now() - GM_getValue('honorsStatsAt', 0) > HON_REFRESH_MS) {
+          await sleep(REQUEST_GAP_MS);
+          const ps = await apiGet('v2/user/personalstats?cat=all', key);
+          if (ps && !ps.error && ps.personalstats) {
+            GM_setValue('honorsStats', ps.personalstats);
+            GM_setValue('honorsStatsAt', Date.now());
+          }
+        }
+        await sleep(REQUEST_GAP_MS);
+        const pr = await apiGet('user/?selections=profile', key);
+        if (pr && !pr.error) {
+          GM_setValue('medalsProfile', { level: pr.level, rank: pr.rank, age: pr.age,
+            faction: pr.faction ? { days_in_faction: pr.faction.days_in_faction } : null,
+            married: pr.married ? { duration: pr.married.duration } : null });
+        }
+      } catch {
+        // no progress bars then – the medals themselves are there
+      }
+      GM_setValue('medalsError', '');
+    } catch (e) {
+      GM_setValue('medalsError', e.message);
+    } finally {
+      GM_setValue('medalsAt', Date.now()); // also after an error, so it isn't retried every few seconds
+      medLoading = false;
+      renderMedals();
+    }
+  }
+  function toggleMed(key, id) {
+    const arr = GM_getValue(key, []);
+    GM_setValue(key, arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]);
+    renderMedals();
+  }
+
+  function medCardHtml(m, s) {
+    const apiEarned = s.mine.has(m.id);
+    const marked = s.done.has(m.id);
+    const earned = apiEarned || marked;
+    const hidden = s.hidden.has(m.id);
+    const pr = earned ? null : s.prog.get(m.id);
+    const pct = pr ? Math.min(100, Math.round((pr.raw / pr.target) * 100)) : 0;
+    const color = earned ? '#4ade80' : !pr ? '#6b7280' : pct >= 75 ? '#f5a623' : pct >= 40 ? '#60a5fa' : '#8b8b95';
+    let badges = '';
+    if (apiEarned) badges += `<span class="twl-hb" style="color:#4ade80">${esc(t('honEarnedBadge'))}</span>`;
+    if (marked && !apiEarned) badges += `<span class="twl-hb" style="color:#60a5fa">${esc(t('honMarkedBadge'))}</span>`;
+    if (m.rarity) {
+      const tip = !IS_TOUCH && m.circ ? ` title="${esc(honNum(m.circ))} ×"` : '';
+      badges += `<span class="twl-hb" style="color:${HON_RARITY_COLOR[m.rarity] || '#9ca3af'}"${tip}>${esc(m.rarity)}</span>`;
+    }
+    const acts = [];
+    if (!apiEarned) acts.push(`<button type="button" data-act="med-done" data-id="${m.id}">${esc(t(marked ? 'honUndo' : 'honDone'))}</button>`);
+    acts.push(`<button type="button" data-act="med-hide" data-id="${m.id}">${esc(t(hidden ? 'honUnhide' : 'honHide'))}</button>`);
+    const bar = earned ? '' : pr
+      ? progressBarHtml(pr.raw, pr.target, pr.label, pr.money ? (v, tg) => `${medMoney(v)} / ${medMoney(tg)}` : null)
+      : `<div class="twl-hc-note">${esc(t('medNoBar'))}</div>`;
+    return `<div class="twl-hc${earned ? ' twl-hc-earned' : ''}${hidden ? ' twl-hc-dim' : ''}" style="--c:${color}">`
+      + `<div class="twl-hc-name">${MED_TYPE_ICON[m.type] || '🏅'} ${esc(m.name)}</div><div class="twl-hc-desc">${esc(m.desc)}</div>`
+      + (badges ? `<div class="twl-hc-badges">${badges}</div>` : '')
+      + bar + `<div class="twl-hc-acts">${acts.join('')}</div></div>`;
+  }
+
+  function renderMedals() {
+    if (!medReady || $('.twl-medals').hidden) return;
+    const all = GM_getValue('medalsAll', []);
+    const stats = GM_getValue('honorsStats', null);
+    const profile = GM_getValue('medalsProfile', null);
+    const s = {
+      mine: new Set(GM_getValue('medalsMine', [])),
+      done: new Set(GM_getValue('medalsDone', [])),
+      hidden: new Set(GM_getValue('medalsHidden', [])),
+      prog: new Map(),
+    };
+    for (const m of all) {
+      const p = medProgress(m, stats, profile);
+      if (p) s.prog.set(m.id, p);
+    }
+    const isEarned = (id) => s.mine.has(id) || s.done.has(id);
+    const earnedCount = all.filter((m) => isEarned(m.id)).length;
+
+    // Pills: one per medal type from the API
+    const counts = {};
+    for (const m of all) {
+      const c = counts[m.type] || (counts[m.type] = { total: 0, earned: 0 });
+      c.total++;
+      if (isEarned(m.id)) c.earned++;
+    }
+    const names = t('medTypes');
+    let pillHtml = `<button type="button" class="twl-hpill${med.type === 'all' ? ' twl-on' : ''}" data-act="med-type" data-v="all">`
+      + `${esc(t('medAll'))} <span class="twl-hpill-n">${earnedCount}/${all.length}</span></button>`;
+    for (const type of Object.keys(counts).sort((a, b) => String(names[a] || a).localeCompare(String(names[b] || b)))) {
+      const c = counts[type];
+      pillHtml += `<button type="button" class="twl-hpill${med.type === type ? ' twl-on' : ''}" data-act="med-type" data-v="${esc(type)}">`
+        + `${MED_TYPE_ICON[type] || '🏅'} ${esc(names[type] || type)} <span class="twl-hpill-n">${c.earned}/${c.total}</span></button>`;
+    }
+    const pills = $('.twl-med-pills');
+    pills.hidden = !all.length;
+    setHtml(pills, all.length ? pillHtml : '');
+
+    // Status line + toggles
+    const err = GM_getValue('medalsError', '');
+    let status;
+    if (!getKey()) status = `<span class="twl-hs-m">${esc(t('honNoKey'))}</span>`;
+    else if (medLoading) status = esc(t('medLoading'));
+    else if (err) status = `<span class="twl-hs-m">${esc(err)}</span>`;
+    else if (all.length) {
+      const at = GM_getValue('medalsAt', 0);
+      status = `<span class="twl-hs-e">${honNum(earnedCount)}</span> / ${honNum(all.length)} · `
+        + `${Math.round((earnedCount / all.length) * 100)} %${at ? ` · ${esc(t('honAgo', formatAge(Math.max(0, Math.floor((Date.now() - at) / 1000)))))}` : ''}`;
+    } else status = esc(t('honNoData'));
+    setHtml($('.twl-med-status'), status);
+    $('.twl-med-sync').disabled = medLoading || !getKey();
+    const earnedBtn = $('[data-act="med-earned"]');
+    earnedBtn.textContent = t(med.showEarned ? 'honHideEarned' : 'honShowEarned');
+    earnedBtn.classList.toggle('twl-on', med.showEarned);
+    const hiddenBtn = $('[data-act="med-hidden"]');
+    hiddenBtn.textContent = t(med.showHidden ? 'honHideHidden' : 'honShowHidden');
+    hiddenBtn.classList.toggle('twl-on', med.showHidden);
+
+    const listEl = $('.twl-med-list');
+    if (!all.length) {
+      setHtml(listEl, `<div class="twl-hon-msg">${esc(!getKey() ? t('honNoKey') : medLoading ? t('medLoading') : err || t('honNoData'))}</div>`);
+      return;
+    }
+    let list = med.type === 'all' ? all.slice() : all.filter((m) => m.type === med.type);
+    if (!med.showEarned) list = list.filter((m) => !isEarned(m.id));
+    if (!med.showHidden) list = list.filter((m) => !s.hidden.has(m.id));
+    const q = med.search.trim().toLowerCase();
+    if (q) list = list.filter((m) => m.name.toLowerCase().includes(q) || m.desc.toLowerCase().includes(q));
+    const rank = (m) => HON_RARITY_RANK[m.rarity] || 0;
+    const pctOf = (m) => { const p = s.prog.get(m.id); return p ? p.raw / p.target : -1; };
+    list.sort((a, b) => {
+      if (med.showEarned && isEarned(a.id) !== isEarned(b.id)) return isEarned(a.id) ? 1 : -1;
+      if (med.sort === 'name') return a.name.localeCompare(b.name);
+      if (med.sort === 'rarity') return rank(b) - rank(a);
+      return pctOf(b) - pctOf(a) || rank(a) - rank(b); // up next: closest to done first
+    });
+    setHtml(listEl, list.map((m) => medCardHtml(m, s)).join('') || `<div class="twl-hon-msg">${esc(t('honEmpty'))}</div>`);
+  }
+
+  $('.twl-med-search').addEventListener('input', (ev) => { med.search = ev.target.value; renderMedals(); });
+  $('.twl-med-sort').addEventListener('change', (ev) => { med.sort = ev.target.value; renderMedals(); });
+  for (const k of ['medalsDone', 'medalsHidden', 'medalsMine', 'medalsAll']) {
+    GM_addValueChangeListener(k, (_k, _o, _n, remote) => { if (remote) renderMedals(); });
+  }
+  medReady = true;
   applyTab();
 
   applyLayout();
@@ -4316,6 +4634,7 @@
   render();
   refreshAll(false);
   if (getTab() === 'honors') refreshHonors(false);
+  if (getTab() === 'medals') refreshMedals(false);
   scheduleNyan();
   updateChain();
   setInterval(updateChain, 250); // more often than 1×/s so the display doesn't lag behind Torn's timer
@@ -4327,6 +4646,7 @@
     render();
     decorateWarRows(); // keeps ➕/✓ in sync when the list changes in another tab
     if (++tick % 5 === 0) refreshAll(false);
+    if (tick % 15 === 0 && medalsVisible()) { refreshMedals(false); renderMedals(); }
     if (tick % 15 === 0 && honorsVisible()) { // honors: refetch when due, keep "x min ago" current
       refreshHonors(false);
       renderHonors();
