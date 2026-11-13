@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.27.2
+// @version      2.27.3
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -93,6 +93,7 @@
     honorsDone: Array.isArray,
     honorsHidden: Array.isArray,
     medalsDone: Array.isArray,
+    medalsNwSince: isObj,
     medalsHidden: Array.isArray, // no longer used (2.27.1), kept so old exports still import cleanly
     trainHistory: (v) => Array.isArray(v) && v.every(isTrainSnap),
     trainEvery: isNum,
@@ -132,6 +133,8 @@
       medAll: 'Alle',
       medSortNext: 'Als Nächstes',
       medNoBar: 'Kein Messwert aus der API – per ✓ selbst abhaken.',
+      medNwDays: (m) => `Tage mit ≥ ${m}`,
+      medNwSub: 'Gezählt ab der ersten Messung durch das Script (die API liefert keinen Tage-Zähler).',
       trainAccess: 'Dem API-Key fehlt der Zugriff auf Battle Stats (neu seit 2.27). Erstelle unter ⚙ → „✨ Custom-Key erstellen“ einen neuen Key und trag ihn ein. Alles andere läuft solange normal.',
       trainRange: (d) => `${d} T`,
       trainAll: 'Alles',
@@ -376,6 +379,8 @@
       medAll: 'All',
       medSortNext: 'Up next',
       medNoBar: 'No value from the API – tick it yourself with ✓.',
+      medNwDays: (m) => `Days at ≥ ${m}`,
+      medNwSub: 'Counted from the script\'s first check (the API has no day counter).',
       trainAccess: 'Your API key has no access to battle stats (new in 2.27). Create a new key under ⚙ → „✨ Create custom key“ and enter it. Everything else keeps working meanwhile.',
       trainRange: (d) => `${d} d`,
       trainAll: 'All',
@@ -4598,7 +4603,32 @@
       return k ? honStat(s, `crimes.offenses.${k}`) : null;
     }, label: 'Offenses' },
   ];
+  // Networth medals: "a recorded networth value of $X for at least N days". Below $X the bar shows the
+  // networth; from $X on it shows the days. The API has no day counter, so the script remembers when it
+  // first saw the networth at or above each threshold (medalsNwSince, reset when it drops below).
+  const medNwDaysOf = (desc) => parseInt((String(desc).match(/at least (\d+) days?/i) || [])[1], 10) || 0;
+  function trackNetworthDays() {
+    const nw = honStat(GM_getValue('honorsStats', null), 'networth.total');
+    if (typeof nw !== 'number') return;
+    const old = GM_getValue('medalsNwSince', {}) || {};
+    const next = {};
+    for (const m of GM_getValue('medalsAll', [])) {
+      if (!/networth/i.test(m.desc) || !medNwDaysOf(m.desc)) continue;
+      const target = medNumber(m.desc);
+      if (target && nw >= target) next[target] = old[target] || Date.now();
+    }
+    if (JSON.stringify(next) !== JSON.stringify(old)) GM_setValue('medalsNwSince', next);
+  }
   function medProgress(m, stats, profile) {
+    if (/networth/i.test(m.desc) && medNwDaysOf(m.desc)) {
+      const target = medNumber(m.desc);
+      const nw = honStat(stats, 'networth.total');
+      if (!target || typeof nw !== 'number') return null;
+      if (nw < target) return { raw: nw, target, label: 'Networth', money: true };
+      const since = (GM_getValue('medalsNwSince', {}) || {})[target];
+      const held = since ? Math.floor((Date.now() - since) / 86400000) : 0;
+      return { raw: held, target: medNwDaysOf(m.desc), label: t('medNwDays', medMoney(target)), sub: t('medNwSub') };
+    }
     if (m.type === 'rank') {
       const want = medRankIndex(m.desc.replace(/^.*?rank of\s*/i, ''));
       const have = profile ? medRankIndex(profile.rank) : -1;
@@ -4666,6 +4696,7 @@
       } catch {
         // no progress bars then – the medals themselves are there
       }
+      trackNetworthDays();
       GM_setValue('medalsError', '');
     } catch (e) {
       GM_setValue('medalsError', e.message);
@@ -4691,7 +4722,7 @@
       badges += `<span class="twl-hb" style="color:${HON_RARITY_COLOR[m.rarity] || '#9ca3af'}"${tip}>${esc(m.rarity)}</span>`;
     }
     const bar = earned ? '' : pr
-      ? progressBarHtml(pr.raw, pr.target, pr.label, pr.money ? (v, tg) => `${medMoney(v)} / ${medMoney(tg)}` : null)
+      ? progressBarHtml(pr.raw, pr.target, pr.label, pr.money ? (v, tg) => `${medMoney(v)} / ${medMoney(tg)}` : null, pr.sub ? () => pr.sub : null)
       : `<div class="twl-hc-note">${esc(t('medNoBar'))}</div>`;
     return `<div class="twl-hc${earned ? ' twl-hc-earned' : ''}" style="--c:${color}">`
       + `<div class="twl-hc-name">${MED_TYPE_ICON[m.type] || '🏅'} ${esc(m.name)}</div><div class="twl-hc-desc">${esc(m.desc)}</div>`
