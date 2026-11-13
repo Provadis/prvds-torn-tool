@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.24.0
+// @version      2.24.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -4127,8 +4127,9 @@
       hidden: new Set(GM_getValue('honorsHidden', [])),
       stats: GM_getValue('honorsStats', null),
     };
-    const isEarned = (id) => s.mine.has(id) || s.done.has(id);
     if ($('.twl-honors').hidden) return;
+    const isEarned = (id) => s.mine.has(id) || s.done.has(id);
+    const earnedCount = all.filter((h) => isEarned(h.id)).length;
 
     const mode = honMode();
     for (const b of panel.querySelectorAll('[data-act="hon-mode"]')) b.classList.toggle('twl-on', b.dataset.v === mode);
