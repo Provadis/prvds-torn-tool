@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.27.2-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.27.3-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -483,6 +483,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.27.3** | Medals: networth medals with a „for at least N days“ rule show the days once your networth reaches the amount (counted from the script's first check, the API has no day counter) |
 | **2.27.2** | Training history: a **TOTAL** column per day and per sync; gains are shortened with k / m / b (e.g. +1.4k) |
 | **2.27.1** | Medals: rank progress counts from 1 like Torn (e.g. *Competent* is 9 / 10, not 8 / 9); the *Done* and *Hide* buttons on single medals are gone |
 | **2.27.0** | New **💪 Training** page in the start menu: battle stats with gains, a graph of all four stats over time, auto sync (30 min to 6 h or off), 🔄 Sync and a daily history. The ✨ custom key now also includes `battlestats` – create it once again to use the page |
