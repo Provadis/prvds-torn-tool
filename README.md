@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.27.4-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.28.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -274,7 +274,7 @@ Everything is saved and shared across all Torn tabs.
 
 The panel has a **start menu** with big tiles: 🎃 Watchlist, 🎖 Honors, 🏅 Medals, 💪 Training and ⚙ Settings. Each tile shows its key number, e.g. players and how many are okay, or honors earned. **‹ Menu** in the header leads back from every page. Chain timer and today's hits stay on top of every page. Under *Start page* you choose whether the panel opens on the **last opened page** (default) or on the **menu**. The tiles keep their size: a wider panel fits more per row.
 
-**UI scale** (settings): a slider from 80 % to 150 % makes text, buttons and tiles bigger or smaller together. 100 % is the original size, **Default** (or a double-click on the slider) goes back to it. PC and iPhone keep separate values, so an export from the PC doesn't change the size on your phone. A size you dragged the panel to stays as it is; only tiles and text scale.
+**UI scale** (settings): a slider from 80 % to 150 % makes text, buttons and tiles bigger or smaller together. 100 % is the original size, **Default** (or a double-click on the slider) goes back to it. It's for the PC only: on iPhone/iPad the size is fixed and the menu always shows 3 tiles per row. A size you dragged the panel to stays as it is; only tiles and text scale.
 
 All options live on their own settings page behind the **⚙ Settings** tile, laid out as a grid: on/off options are tiles you click or tap (orange = on, grey = off), keys and data are dashed tiles, and language, view and update interval are switch bars. Hover a tile on the PC for a short explanation. The UI is available in **English and German** and switches instantly, without a reload. At the bottom of the settings page there is a **legend** explaining every marker.
 
@@ -484,6 +484,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.28.0** | iPhone/iPad: no UI scale any more; the menu and the feature tiles in the settings always show 3 tiles per row, filling the width. The scale slider stays on the PC |
 | **2.27.4** | Medals: the days for networth medals now come from Torn's daily recorded networth, so days before the update count too (one-time catch-up of up to 27 calls, then at most 1 a day) |
 | **2.27.3** | Medals: networth medals with a „for at least N days“ rule show the days once your networth reaches the amount (counted from the script's first check, the API has no day counter) |
 | **2.27.2** | Training history: a **TOTAL** column per day and per sync; gains are shortened with k / m / b (e.g. +1.4k) |
@@ -552,7 +553,7 @@ The script restores its browser backup automatically. If something is still miss
 - **FF-Scouter-Werte.**
 - **Chain-Timer:** große Anzeige mit rotem Alarm (optional mit Bomben-Sound) unter 1:30.
 - **Zähler für die heutigen Hits.**
-- **Startmenü mit Kacheln:** Watchlist, Honors, Medals, Training und Einstellungen auf einen Blick, „‹ Menü“ führt zurück. Die Größe der ganzen Oberfläche stellst du in den Einstellungen ein (80–150 %).
+- **Startmenü mit Kacheln:** Watchlist, Honors, Medals, Training und Einstellungen auf einen Blick, „‹ Menü“ führt zurück. Am PC stellst du die Größe der ganzen Oberfläche in den Einstellungen ein (80–150 %), auf dem iPhone sind es immer 3 Kacheln pro Reihe.
 - **Honor-Tracker:** fehlende Honors nach Schwierigkeit, mit Anleitung (englisch), Kategorien und Fortschritt.
 - **Medal-Tracker:** fehlende Medals nach Typ, mit Fortschritt (Level, Rang, Angriffe, Crimes, Tage in der Faction …). Wer schon einen eigenen Key hat, erstellt ihn einmal neu (✨ Eigenen Key erstellen), damit er `medals` lesen darf.
 - **Training-Tracker:** deine Battle Stats mit Zuwachs, Graph über die Zeit, Auto-Sync (30 min bis 6 h oder aus) und Verlauf pro Tag. Dafür braucht der Key `battlestats` – einmal neu erstellen.
