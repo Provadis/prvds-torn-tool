@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.28.0
+// @version      2.29.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -1470,24 +1470,20 @@
     .twl-tr-cols { padding-right: 8px; }
     .twl-tr-cols span { letter-spacing: 0; }
     .twl-tr-day .twl-tr-row-g { justify-content: flex-end; }
-    #twl-panel button.twl-tr-day { display: block; width: 100%; margin: 0 0 4px; padding: 4px 7px; border-radius: 5px; text-align: left;
-      background: #222227; border: 1px solid #2e2e34; color: #ddd; font-size: 11px; touch-action: manipulation; cursor: pointer; }
-    #twl-panel button.twl-tr-day:disabled { cursor: default; opacity: 1; }
-    @media (hover: hover) { #twl-panel button.twl-tr-day:hover:not(:disabled) { border-color: #4a4a52; } }
+    .twl-tr-day { margin: 0 0 4px; padding: 4px 7px; border-radius: 5px; background: #222227; border: 1px solid #2e2e34; color: #ddd; font-size: 11px; }
+    .twl-tr-day > span { display: flex; }
     .twl-tr-dhead { display: flex; gap: 5px; color: #999; }
     .twl-tr-dhead b { color: #eee; }
     .twl-tr-none { color: #666; font-style: italic; font-size: 10.5px; }
-    .twl-tr-syncs { margin: -2px 0 5px 3px; padding-left: 4px; border-left: 2px solid #34343c; }
-    .twl-tr-sync-row { display: flex; align-items: baseline; padding: 1px 8px 1px 0; color: #999; font-size: 10.5px; white-space: nowrap; }
     #twl-panel button.twl-tr-more { width: 100%; margin: 2px 0 4px; padding: 4px; font-size: 11px; }
     #twl-panel.twl-touch .twl-tr-val { font-size: 17px; }
     #twl-panel.twl-touch .twl-tr-name, #twl-panel.twl-touch .twl-tr-gain, #twl-panel.twl-touch .twl-tr-total,
-    #twl-panel.twl-touch button.twl-tr-day, #twl-panel.twl-touch .twl-tr-sync-row { font-size: 13px; }
+    #twl-panel.twl-touch .twl-tr-day { font-size: 13px; }
     #twl-panel.twl-touch .twl-tr-svg { height: 140px; }
     #twl-panel.twl-touch .twl-tr-cols span, #twl-panel.twl-touch .twl-tr-row-g span { width: 50px; }
     #twl-panel.twl-touch .twl-tr-cols span:last-child, #twl-panel.twl-touch .twl-tr-row-g span:last-child { width: 60px; }
-    #twl-panel.twl-touch button.twl-tr-day { padding: 7px 9px; }
-    #twl-panel.twl-touch .twl-tr-cols, #twl-panel.twl-touch .twl-tr-sync-row { padding-right: 10px; }
+    #twl-panel.twl-touch .twl-tr-day { padding: 7px 9px; }
+    #twl-panel.twl-touch .twl-tr-cols { padding-right: 10px; }
     .twl-m-trspark { display: block; width: 80%; }
     .twl-m-trspark:empty { display: none; }
     .twl-m-trspark svg { display: block; width: 100%; height: 16px; }
@@ -2555,12 +2551,6 @@
       case 'tr-mode': GM_setValue('trainMode', btn.dataset.v); renderTraining(); break;
       case 'tr-every': GM_setValue('trainEvery', parseInt(btn.dataset.v, 10)); renderTraining(); render(); break;
       case 'tr-more': train.days += 30; renderTraining(); break;
-      case 'tr-day': {
-        const d = btn.dataset.v;
-        if (train.open.has(d)) train.open.delete(d); else train.open.add(d);
-        renderTraining();
-        break;
-      }
       case 'med-earned': med.showEarned = !med.showEarned; renderMedals(); break;
       case 'hon-hidden': hon.showHidden = !hon.showHidden; renderHonors(); break;
       // Action menu of a tile (long press)
@@ -4866,7 +4856,7 @@
   const TRAIN_EVERY = [0, 30, 60, 180, 360]; // minutes
   const TRAIN_DAYS = { 7: 7, 30: 30, 90: 90, all: 0 };
   const TRAIN_MAX = 5000;                     // snapshots; older than 90 days are thinned to one per day
-  const train = { days: 14, open: new Set(), tileKey: '' };
+  const train = { days: 14, tileKey: '' };
   const getTrainEvery = () => { const v = GM_getValue('trainEvery', 60); return TRAIN_EVERY.includes(v) ? v : 60; };
   const getTrainRange = () => { const v = GM_getValue('trainRange', '30'); return v in TRAIN_DAYS ? v : '30'; };
   const getTrainMode = () => (GM_getValue('trainMode', 'gain') === 'value' ? 'value' : 'gain');
@@ -4910,6 +4900,54 @@
     return compactTrain(all.filter((e, i) => i === 0 || e.slice(1).some((v, j) => v !== all[i - 1][j + 1])));
   }
 
+  // Torn records each battle stat once per day (personalstats with stat + timestamp returns the newest
+  // record up to that time, together with the day it was recorded). A sync that finds new stats asks for
+  // these records and puts the gains on the Torn day (UTC) they happened, not on the day of the sync.
+  // Walks back one call per day with a change until it reaches the values of the previous snapshot.
+  async function trainDated(key, last, cur, nowSec) {
+    const base = last.slice(1);
+    const chains = [[], [], [], []]; // per stat: [{ day, value }] newest first
+    const open = new Set([0, 1, 2, 3].filter((i) => cur[i] !== base[i]));
+    let ts = nowSec;
+    for (let calls = 0; open.size && calls < 10; calls++) {
+      if (calls) await sleep(REQUEST_GAP_MS);
+      const r = await apiGet(`v2/user/personalstats?stat=${TRAIN_KEYS.join(',')}&timestamp=${ts}`, key);
+      if (!r || r.error || !Array.isArray(r.personalstats)) break;
+      let next = 0;
+      for (const i of [...open]) {
+        const e = r.personalstats.find((x) => x && x.name === TRAIN_KEYS[i]);
+        if (!e || !isNum(e.value) || !isNum(e.timestamp)) { open.delete(i); continue; }
+        const day = Math.floor(e.timestamp / 86400) * 86400;
+        const ch = chains[i];
+        if (!ch.length || ch[ch.length - 1].day !== day) ch.push({ day, value: e.value });
+        // done once the record is back at the old value, or older than the previous snapshot's day
+        if (e.value <= base[i] || day + 86400 <= last[0]) open.delete(i);
+        else next = Math.max(next, day - 1);
+      }
+      if (!next) break;
+      ts = next;
+    }
+    // One snapshot per changed day (at noon UTC, so it lands on the same date in Europe and the Americas)
+    const days = [...new Set(chains.flat().map((x) => x.day))].sort((a, b) => a - b);
+    const out = [];
+    let prevT = last[0];
+    for (const day of days) {
+      const v = [0, 1, 2, 3].map((i) => {
+        const rec = chains[i].find((x) => x.day <= day);
+        return rec && rec.value > base[i] ? Math.min(rec.value, cur[i]) : base[i];
+      });
+      const prev = out.length ? out[out.length - 1].slice(1) : base;
+      if (v.every((x, i) => x === prev[i])) continue;
+      const tm = Math.min(nowSec, Math.max(prevT + 1, day + 43200));
+      out.push([tm, ...v]);
+      prevT = tm;
+    }
+    // Whatever the records don't cover yet (today's record may lag) goes to the sync time
+    const lastV = out.length ? out[out.length - 1].slice(1) : base;
+    if (cur.some((x, i) => x !== lastV[i])) out.push([Math.max(nowSec, prevT + 1), ...cur]);
+    return out;
+  }
+
   async function refreshTraining(force) {
     const key = getKey();
     if (!key || trainLoading) return;
@@ -4924,8 +4962,29 @@
       if (!p) throw new Error(t('invalidResponse'));
       const h = getTrainHist();
       const last = h[h.length - 1];
+      const nowSec = Math.floor(Date.now() / 1000);
+      // 2.29: once, put the newest change of an older version on its real day as well
+      if (last && h.length >= 2 && !GM_getValue('trainDatedV', 0) && p.v.every((x, i) => x === last[i + 1])) {
+        const before = h[h.length - 2];
+        try {
+          const dated = await trainDated(key, before, last.slice(1), last[0]);
+          if (dated.length) { h.splice(h.length - 1, 1, ...dated); GM_setValue('trainHistory', compactTrain(h)); }
+        } catch {
+          // keep it as it was
+        }
+      }
+      GM_setValue('trainDatedV', 1);
       if (!last || p.v.some((x, i) => x !== last[i + 1])) {
-        h.push([Math.floor(Date.now() / 1000), ...p.v]);
+        let add = [[nowSec, ...p.v]];
+        if (last) {
+          try {
+            add = await trainDated(key, last, p.v, nowSec);
+          } catch {
+            // no records: the gain stays on the sync time
+          }
+          if (!add.length) add = [[nowSec, ...p.v]];
+        }
+        h.push(...add);
         GM_setValue('trainHistory', compactTrain(h));
       }
       GM_setValue('trainNow', { at: Date.now(), mods: p.mods });
@@ -4987,7 +5046,6 @@
     const fmtDate = (sec) => new Date(sec * 1000).toLocaleDateString(trLocale(), { day: 'numeric', month: 'short' });
     const fmtDay = (sec) => (sec === today ? t('trainToday') : sec === prevDay(today) ? t('trainYesterday')
       : new Date(sec * 1000).toLocaleDateString(trLocale(), { weekday: 'short' }));
-    const fmtTime = (sec) => new Date(sec * 1000).toLocaleTimeString(trLocale(), { hour: '2-digit', minute: '2-digit', hour12: false });
     let html = '';
     let n = 0;
     for (let d = today; d >= firstDay; d = prevDay(d)) {
@@ -5001,20 +5059,11 @@
       const a = h[iStart >= 0 ? iStart : 0];
       const g = trainGains(a, h[iEnd]);
       const sum = g.reduce((x, y) => x + y, 0);
-      const key = String(d);
-      const open = train.open.has(key) && iEnd > iStart;
       const head = `<span class="twl-tr-dhead"><b>${esc(fmtDay(d))}</b> ${esc(fmtDate(d))}`
         + '</span>';
       const body = iStart < 0 && iEnd === 0 ? `<span class="twl-tr-none">${esc(t('trainStart'))}</span>`
         : sum || g.some((x) => x) ? trainCols(g) : `<span class="twl-tr-none">${esc(t('trainNoGain'))}</span>`;
-      html += `<button type="button" class="twl-tr-day" data-act="tr-day" data-v="${key}"${iEnd > iStart ? '' : ' disabled'}>${head}${body}</button>`;
-      if (open) {
-        let rows = '';
-        for (let i = iEnd; i > iStart; i--) {
-          rows += `<div class="twl-tr-sync-row">${esc(fmtTime(h[i][0]))}${i > 0 ? trainCols(trainGains(h[i - 1], h[i])) : `<span class="twl-tr-row-g">${esc(t('trainStart'))}</span>`}</div>`;
-        }
-        html += `<div class="twl-tr-syncs">${rows}</div>`;
-      }
+      html += `<div class="twl-tr-day">${head}${body}</div>`;
     }
     return html;
   }
