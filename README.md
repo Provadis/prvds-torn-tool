@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.28.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.29.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -315,7 +315,7 @@ Its own page in the start menu (PC and iPhone) tracks your **battle stats** over
 - **Cards** for strength, defense, speed and dexterity: current base value, gain in the chosen range (7 d, 30 d, 90 d, all) and the current modifier (merits, drugs, …). Below them the total.
 - **Graph** of all four stats, as gains since the start of the range or as absolute values.
 - **Auto sync** every 30 min, 1 h (default), 3 h or 6 h, or off – while any Torn tab is open, on whatever page. Open tabs share it, so it runs once. **🔄 Sync** fetches the stats right away.
-- **History** by day with the gain per stat and the total (short numbers like +1.4k); tap a day to see the single syncs.
+- **History** by day with the gain per stat and the total (short numbers like +1.4k). Gains are put on the Torn day (UTC) they happened, from Torn's daily recorded stats, even if the sync runs days later.
 
 A snapshot is only stored when a stat changed, and snapshots older than 90 days are thinned to one per day, so the history stays small. It's part of export/import and the backup; importing merges the snapshots of both devices instead of replacing them. Your stats stay in your browser and are not sent anywhere else (also not to FF Scouter).
 
@@ -347,7 +347,7 @@ Torn allows **100 requests per minute per account**, for all keys combined. Per 
 - **1 call** for today's hits (if enabled)
 - Honor tracker: **3 calls every 5 minutes**, only while its page is open
 - Medal tracker: **up to 4 calls every 5 minutes**, only while its page is open; for networth medals once up to 27 more (one per past day), then at most 1 a day
-- Training tracker: **1 call per auto sync** (default once an hour), plus 1 per 🔄 Sync
+- Training tracker: **1 call per auto sync** (default once an hour), plus 1 per 🔄 Sync; when the stats changed, 1 more (plus 1 per further day with a change) to find the day
 
 The current rate is shown **bottom right in the panel** (e.g. „≈ 4 requests/min“) and turns orange above 60/min.
 
@@ -414,6 +414,7 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 | v2 `torn/medals`, `user/medals`, `user/personalstats`, `user/?selections=profile` | Medals page, only while it's open | ✓ / Limited |
 | v2 `user/personalstats?stat=networth&timestamp=…` | Medals page: days at a networth amount (once per past day, cached) | ✓ / Limited |
 | v2 `user/battlestats` | Training page: auto sync (default 1×/hour, can be switched off) and 🔄 Sync | ✓ / Limited |
+| v2 `user/personalstats?stat=strength,defense,speed,dexterity&timestamp=…` | Training page: the day a gain happened, only when a sync finds new stats | ✓ / Limited |
 
 </details>
 
@@ -484,6 +485,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.29.0** | Training: gains land on the Torn day they happened, not on the day of the sync – from Torn's daily recorded stats (no new key access; 1 extra call per sync with new stats, plus 1 per further day with a change). The newest gain from before the update is moved once as well. The history shows totals per day only |
 | **2.28.0** | iPhone/iPad: no UI scale any more; the menu and the feature tiles in the settings always show 3 tiles per row, filling the width. The scale slider stays on the PC |
 | **2.27.4** | Medals: the days for networth medals now come from Torn's daily recorded networth, so days before the update count too (one-time catch-up of up to 27 calls, then at most 1 a day) |
 | **2.27.3** | Medals: networth medals with a „for at least N days“ rule show the days once your networth reaches the amount (counted from the script's first check, the API has no day counter) |
