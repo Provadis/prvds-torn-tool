@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.30.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.30.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -497,6 +497,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.30.1** | Attack links (target finder and the tile menu) use Torn's new attack page `page.php?sid=attack`; the old `loader.php` link only showed an error |
 | **2.30.0** | 🔍 Target finder: new tile in the start menu, one tap opens a matching target (attack page or profile). Source FFScouter (`get-targets`, at most 1 request per tap, cached for 1 h) or your watchlist (no requests), with its own settings section: fair fight, level, inactive, factionless, status Okay. Watched players now also keep their level (no extra calls) |
 | **2.29.0** | Training: gains land on the Torn day they happened, not on the day of the sync – from Torn's daily recorded stats (no new key access; 1 extra call per sync with new stats, plus 1 per further day with a change). The newest gain from before the update is moved once as well. The history shows totals per day only |
 | **2.28.0** | iPhone/iPad: no UI scale any more; the menu and the feature tiles in the settings always show 3 tiles per row, filling the width. The scale slider stays on the PC |
