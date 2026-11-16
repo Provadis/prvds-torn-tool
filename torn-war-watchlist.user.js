@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.30.0
+// @version      2.30.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -1121,7 +1121,7 @@
     tfMarkUsed(x.id);
     const url = o.open === 'profile'
       ? `https://www.torn.com/profiles.php?XID=${x.id}`
-      : `https://www.torn.com/loader.php?sid=attack&user2ID=${x.id}`;
+      : `https://www.torn.com/page.php?sid=attack&user2ID=${x.id}`;
     tfNote(`→ ${x.name || x.id}${x.ff != null ? ` · FF ${fmtFf(x.ff)}` : ''}${x.level ? ` · Lvl ${x.level}` : ''}`);
     if (o.tab === 'new') window.open(url, '_blank', 'noopener');
     else location.href = url;
@@ -2854,7 +2854,7 @@
       // Action menu of a tile (long press)
       case 'menu-attack':
         hidePlayerMenu();
-        location.href = `https://www.torn.com/loader.php?sid=attack&user2ID=${id}`;
+        location.href = `https://www.torn.com/page.php?sid=attack&user2ID=${id}`;
         break;
       case 'menu-profile':
         hidePlayerMenu();
