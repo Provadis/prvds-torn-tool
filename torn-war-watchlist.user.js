@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.30.1
+// @version      2.31.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -15,6 +15,7 @@
 // @grant        GM_xmlhttpRequest
 // @connect      api.torn.com
 // @connect      ffscouter.com
+// @connect      www.tornstats.com
 // @connect      raw.githubusercontent.com
 // @connect      api.github.com
 // @run-at       document-idle
@@ -83,6 +84,7 @@
     collapsedGroups: isObj,
     ffOn: isBool,
     ffKey: (v) => typeof v === 'string',
+    tsKey: (v) => typeof v === 'string',
     lang: (v) => v === 'de' || v === 'en',
     view: (v) => v === 'list' || v === 'tiles',
     tab: (v) => PAGES.includes(v),
@@ -258,9 +260,14 @@
       tileApiKey: 'Torn API-Key',
       tileFfKey: 'FF-Key',
       tileFfReload: 'FF neu laden',
+      tileTsKey: 'TornStats-Key',
+      tsKeyTitle: 'TornStats-Key setzen: die Training-Seite holt ihre Daten dann von TornStats',
+      tsKeyPrompt: 'TornStats-API-Key (tornstats.com → Settings → API Key).\nMit Key holt die Training-Seite deine Stats von TornStats statt von Torn.\nLeer lassen = Torn-API verwenden.',
+      tsKeyNone: 'aus',
+      trainSourceTs: 'Quelle: TornStats',
       tileGenKey: 'Custom-Key erstellen',
       genKeyTitle: 'Öffnet Torns API-Key-Seite mit einem fertig ausgefüllten Key, der nur die nötigen Rechte hat. Dort selbst auf „Create“ tippen und den Key hier unter „Torn API-Key“ eintragen.',
-      keysTos: '🔒 Deine Keys bleiben nur in diesem Browser und gehen nur an api.torn.com (und ffscouter.com, wenn FF Scouter an ist).',
+      keysTos: '🔒 Deine Keys bleiben nur in diesem Browser und gehen nur an api.torn.com (und ffscouter.com, wenn FF Scouter an ist, bzw. tornstats.com, wenn ein TornStats-Key gesetzt ist).',
       keysTosLink: 'Details',
       chainTip: 'Chain-Zähler und Timer im Panel, unter 1:30 rot blinkend',
       ffTip: 'Fair-Fight-Werte von ffscouter.com neben jedem Spieler',
@@ -529,9 +536,14 @@
       tileApiKey: 'Torn API key',
       tileFfKey: 'FF key',
       tileFfReload: 'Reload FF',
+      tileTsKey: 'TornStats key',
+      tsKeyTitle: 'Set TornStats key: the training page then gets its data from TornStats',
+      tsKeyPrompt: 'TornStats API key (tornstats.com → Settings → API Key).\nWith a key the training page gets your stats from TornStats instead of Torn.\nLeave empty to use the Torn API.',
+      tsKeyNone: 'off',
+      trainSourceTs: 'Source: TornStats',
       tileGenKey: 'Create custom key',
       genKeyTitle: "Opens Torn's API key page with a pre-filled key that has only the access this script needs. Tap „Create“ there yourself and enter the key here under „Torn API key“.",
-      keysTos: '🔒 Your keys stay in this browser and are only sent to api.torn.com (and ffscouter.com if FF Scouter is on).',
+      keysTos: '🔒 Your keys stay in this browser and are only sent to api.torn.com (and ffscouter.com if FF Scouter is on, tornstats.com if a TornStats key is set).',
       keysTosLink: 'Details',
       chainTip: 'Chain count and timer in the panel, blinks red below 1:30',
       ffTip: 'Fair fight values from ffscouter.com next to every player',
@@ -1945,6 +1957,7 @@
             <button type="button" class="twl-tile twl-act twl-tile-gen" data-act="gen-key" data-i18n-tip="genKeyTitle"><span class="twl-ic">✨</span><span class="twl-lb" data-i18n="tileGenKey"></span></button>
             <button type="button" class="twl-tile twl-act" data-act="key" data-i18n-tip="apiKeyTitle"><span class="twl-ic">🔑</span><span class="twl-lb" data-i18n="tileApiKey"></span><span class="twl-sub twl-g-key"></span></button>
             <button type="button" class="twl-tile twl-act" data-act="ff-key" data-i18n-tip="ffKeyTitle"><span class="twl-ic">🔑</span><span class="twl-lb" data-i18n="tileFfKey"></span><span class="twl-sub twl-g-ffkey"></span></button>
+            <button type="button" class="twl-tile twl-act" data-act="ts-key" data-i18n-tip="tsKeyTitle"><span class="twl-ic">📈</span><span class="twl-lb" data-i18n="tileTsKey"></span><span class="twl-sub twl-g-tskey"></span></button>
             <button type="button" class="twl-tile twl-act twl-g-ffreload" data-act="ff-reload" data-i18n-tip="ffReloadTitle"><span class="twl-ic">🔄</span><span class="twl-lb" data-i18n="tileFfReload"></span></button>
           </div>
           <div class="twl-keys-tos"><span data-i18n="keysTos"></span>
@@ -2593,7 +2606,7 @@
     const chainPerMin = useApiChain() && apiChainRunning() ? Math.round(60000 / CHAIN_POLL_RUNNING_MS) : 0;
     const honPerMin = honorsVisible() && getKey() && !isPaused() ? 3 * 60000 / HON_REFRESH_MS : 0;
     const medPerMin = medalsVisible() && getKey() && !isPaused() ? 3 * 60000 / HON_REFRESH_MS : 0; // user/medals + stats + profile
-    const trainPerMin = trainReady && getKey() && !isPaused() && getTrainEvery() ? 1 / getTrainEvery() : 0; // battlestats
+    const trainPerMin = trainReady && getKey() && !getTsKey() && !isPaused() && getTrainEvery() ? 1 / getTrainEvery() : 0; // battlestats
     const perMin = Math.round(calls * 60 / getRefreshS() + honPerMin + medPerMin + trainPerMin) + chainPerMin;
     const rate = $('.twl-rate');
     rate.textContent = t('perMin', perMin);
@@ -2670,6 +2683,17 @@
         break;
       case 'sound-test': testBomb(); break;
       case 'export': exportSettings(); break;
+      case 'ts-key': {
+        const k = prompt(t('tsKeyPrompt'), GM_getValue('tsKey', ''));
+        if (k === null) break;
+        GM_setValue('tsKey', k.trim());
+        GM_setValue('trainTsHist', []); // belongs to the old key
+        GM_setValue('trainError', '');
+        GM_setValue('trainAt', 0);      // sync with the new source right away
+        refreshTraining(true);
+        render();
+        break;
+      }
       case 'ff-key': {
         const k = prompt(t('ffKeyPrompt'), GM_getValue('ffKey', ''));
         if (k === null) break;
@@ -3771,6 +3795,7 @@
     const ffKey = $('.twl-g-ffkey');
     setText(ffKey, ffErr || (GM_getValue('ffKey', '') ? t('ffOwnKey') : getKey() ? t('ffWatchlistKey') : t('ffNoKey')));
     ffKey.classList.toggle('twl-ff-err', !!ffErr);
+    setText($('.twl-g-tskey'), GM_getValue('tsKey', '') ? `✓ ${t('apiKeySet')}` : t('tsKeyNone'));
     const reload = $('.twl-g-ffreload');
     reload.disabled = !ffEnabled() || ffLoading || !getFfKey();
     setText(reload.querySelector('.twl-ic'), ffLoading ? '⏳' : '🔄');
@@ -3854,6 +3879,7 @@
     soundToggle.checked = soundEnabled();
     ffToggle.checked = ffEnabled();
     if ('ffKey' in s) GM_setValue('ffCache', {});
+    if ('tsKey' in s) { GM_setValue('trainTsHist', []); GM_setValue('trainAt', 0); }
     volInput.value = soundVol();
     if (master) master.gain.value = soundVol() / 100;
     if (!soundEnabled()) disarm();
@@ -5211,6 +5237,14 @@
   const getTrainRange = () => { const v = GM_getValue('trainRange', '30'); return v in TRAIN_DAYS ? v : '30'; };
   const getTrainMode = () => (GM_getValue('trainMode', 'gain') === 'value' ? 'value' : 'gain');
   const getTrainHist = () => { const h = GM_getValue('trainHistory', []); return Array.isArray(h) ? h.filter(isTrainSnap) : []; };
+  // With a TornStats key the page shows TornStats' history (cached in trainTsHist) instead of the own snapshots
+  const getTsKey = () => GM_getValue('tsKey', '');
+  const trainKey = () => getTsKey() || getKey();
+  const getTrainView = () => {
+    if (!getTsKey()) return getTrainHist();
+    const h = GM_getValue('trainTsHist', []);
+    return Array.isArray(h) ? h.filter(isTrainSnap) : [];
+  };
   const trainVisible = () => trainReady && !$('.twl-train').hidden && !panel.classList.contains('twl-collapsed');
   const trainDue = () => getTrainEvery() > 0 && !isPaused() && Date.now() - GM_getValue('trainAt', 0) >= getTrainEvery() * 60000;
 
@@ -5298,14 +5332,53 @@
     return out;
   }
 
+  // TornStats: GET www.tornstats.com/api/v2/{key}/{path}. Doesn't count against Torn's limit.
+  function tsGet(path, key) {
+    return new Promise((resolve, reject) => {
+      GM_xmlhttpRequest({
+        method: 'GET',
+        url: `https://www.tornstats.com/api/v2/${encodeURIComponent(key)}/${path}`,
+        timeout: 20000,
+        onload: (r) => {
+          try { resolve(JSON.parse(r.responseText)); } catch { reject(new Error(`TornStats: ${t('invalidResponse')}`)); }
+        },
+        onerror: () => reject(new Error(`TornStats: ${t('networkError')}`)),
+        ontimeout: () => reject(new Error(`TornStats: ${t('timeout')}`)),
+      });
+    });
+  }
+  // battlestats/record lets TornStats store your current stats first (so today's gains are in),
+  // then battlestats/graph returns its history of the last ~3 months: { strength, defense, speed, dexterity, timestamp }
+  async function refreshTrainingTs(key) {
+    try {
+      await tsGet('battlestats/record', key);
+    } catch {
+      // the graph below still shows what TornStats has
+    }
+    await sleep(REQUEST_GAP_MS);
+    const d = await tsGet('battlestats/graph', key);
+    if (!d || d.status === false || !Array.isArray(d.data)) throw new Error(`TornStats: ${(d && d.message) || t('invalidResponse')}`);
+    const snaps = d.data
+      .map((e) => [Number(e.timestamp), Number(e.strength), Number(e.defense), Number(e.speed), Number(e.dexterity)])
+      .filter((e) => isTrainSnap(e) && e[0] > 0)
+      .sort((a, b) => a[0] - b[0]);
+    GM_setValue('trainTsHist', snaps);
+  }
+
   async function refreshTraining(force) {
+    const tsKey = getTsKey();
     const key = getKey();
-    if (!key || trainLoading) return;
+    if (!(tsKey || key) || trainLoading) return;
     if (!force && !trainDue()) return;
     trainLoading = true;
     GM_setValue('trainAt', Date.now()); // claim the sync first, so other open tabs don't run it too
     renderTraining();
     try {
+      if (tsKey) {
+        await refreshTrainingTs(tsKey);
+        GM_setValue('trainError', '');
+        return;
+      }
       const d = await apiGet('v2/user/battlestats', key);
       if (d && d.error) throw new Error(d.error.code === 16 ? t('trainAccess') : `${d.error.error || 'API error'} (Code ${d.error.code})`);
       const p = parseBattlestats(d);
@@ -5431,8 +5504,9 @@
     for (const b of panel.querySelectorAll('[data-act="tr-mode"]')) b.classList.toggle('twl-on', b.dataset.v === mode);
     for (const b of panel.querySelectorAll('[data-act="tr-every"]')) b.classList.toggle('twl-on', parseInt(b.dataset.v, 10) === every);
 
-    const h = getTrainHist();
-    const now = GM_getValue('trainNow', null);
+    const h = getTrainView();
+    const fromTs = !!getTsKey();
+    const now = fromTs ? null : GM_getValue('trainNow', null);
     const days = TRAIN_DAYS[range];
     const s = trainSeries(h, days);
     const last = h[h.length - 1];
@@ -5453,7 +5527,7 @@
     // Chart
     const chart = $('.twl-tr-chart');
     let chartHtml;
-    if (!h.length) chartHtml = `<div class="twl-tr-msg">${esc(!getKey() ? t('honNoKey') : t('trainNoData'))}</div>`;
+    if (!h.length) chartHtml = `<div class="twl-tr-msg">${esc(!trainKey() ? t('honNoKey') : t('trainNoData'))}</div>`;
     else if (h.length < 2 || s.pts.length < 2) chartHtml = `<div class="twl-tr-msg">${esc(t('trainOneSnap'))}</div>`;
     else {
       const c = trainSvg(s, mode, 'twl-tr-svg', true);
@@ -5470,11 +5544,12 @@
     const err = GM_getValue('trainError', '');
     const at = GM_getValue('trainAt', 0);
     let status;
-    if (!getKey()) status = `<span class="twl-hs-m">${esc(t('honNoKey'))}</span>`;
+    if (!trainKey()) status = `<span class="twl-hs-m">${esc(t('honNoKey'))}</span>`;
     else if (trainLoading) status = esc(t('trainLoading'));
     else if (err) status = `<span class="twl-hs-m">${esc(err)}</span>`;
     else {
       const parts = [];
+      if (fromTs) parts.push(t('trainSourceTs'));
       if (at) parts.push(t('trainLast', formatAge(Math.max(0, Math.floor((Date.now() - at) / 1000)))));
       if (isPaused()) parts.push(t('trainPaused'));
       else if (!every) parts.push(t('trainAutoOff'));
@@ -5485,7 +5560,7 @@
       status = esc(parts.join(' · '));
     }
     setHtml($('.twl-tr-status'), status);
-    $('.twl-tr-sync').disabled = trainLoading || !getKey();
+    $('.twl-tr-sync').disabled = trainLoading || !trainKey();
 
     // History by day, newest first
     setHtml($('.twl-tr-cols'), h.length ? TRAIN_SHORT.map((n, i) => `<span style="color:${TRAIN_COLOR[i]}">${n}</span>`).join('') + '<span style="color:#ddd">TOTAL</span>' : '');
@@ -5496,7 +5571,7 @@
   // Menu tile: total, gain in 7 days and a small 30-day chart. Rebuilt only when the data changes.
   function renderTrainTile() {
     if (!trainReady) return;
-    const h = getTrainHist();
+    const h = getTrainView();
     const key = `${h.length}|${h.length ? h[h.length - 1][0] : 0}|${Math.floor(Date.now() / 600000)}|${getLang()}`;
     if (key === train.tileKey) return;
     train.tileKey = key;
@@ -5514,7 +5589,7 @@
     setHtml($('.twl-m-trspark'), s30.pts.length >= 2 && h.length >= 2 ? trainSvg(s30, 'gain', '', false).svg : '');
   }
 
-  for (const k of ['trainHistory', 'trainAt', 'trainError']) {
+  for (const k of ['trainHistory', 'trainTsHist', 'trainAt', 'trainError']) {
     GM_addValueChangeListener(k, (_k, _o, _n, remote) => { if (remote) { renderTraining(); renderMenu(); } });
   }
   trainReady = true;
