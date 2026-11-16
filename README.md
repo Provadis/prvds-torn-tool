@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.30.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.31.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -317,6 +317,8 @@ Its own page in the start menu (PC and iPhone) tracks your **battle stats** over
 - **Auto sync** every 30 min, 1 h (default), 3 h or 6 h, or off – while any Torn tab is open, on whatever page. Open tabs share it, so it runs once. **🔄 Sync** fetches the stats right away.
 - **History** by day with the gain per stat and the total (short numbers like +1.4k). Gains are put on the Torn day (UTC) they happened, from Torn's daily recorded stats, even if the sync runs days later.
 
+**TornStats (optional):** with a TornStats key (⚙ → 📈 TornStats key) the page shows TornStats' history of the last ~3 months instead, synced at the same interval. Modifiers aren't shown then, since TornStats doesn't have them. Remove the key to go back to the Torn API.
+
 A snapshot is only stored when a stat changed, and snapshots older than 90 days are thinned to one per day, so the history stays small. It's part of export/import and the backup; importing merges the snapshots of both devices instead of replacing them. Your stats stay in your browser and are not sent anywhere else (also not to FF Scouter).
 
 </details>
@@ -432,6 +434,7 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 
 **Integrations:**
 - **FF Scouter: opt-in, off by default.** When you switch it on, your FF Scouter key goes to `ffscouter.com` together with the IDs of the players shown in the panel, to fetch fair-fight estimates. If you didn't set a separate FF key, that's your watchlist key. With the target finder on *FFScouter*, a tap on its tile also sends the key and your filters (FF range, level range, inactive, factionless) to `ffscouter.com/api/v1/get-targets`, at most once per tap. FF Scouter's own terms apply, see [ffscouter.com](https://ffscouter.com).
+- **TornStats: opt-in, off by default.** When you enter a TornStats key (⚙ → 📈 TornStats key), the training page gets your battle stats from TornStats instead of Torn: at each sync it calls `www.tornstats.com/api/v2/{key}/battlestats/record` (TornStats stores your current stats) and `…/battlestats/graph` (its history of the last ~3 months). Only your TornStats key is sent, nothing else. Without a key nothing goes to TornStats. TornStats' own terms apply, see [tornstats.com](https://www.tornstats.com).
 - **Update check: GitHub, no key.** Only when you press *Check for updates* does the script ask `api.github.com` / `raw.githubusercontent.com` for the newest version. No key and no game data are sent.
 
 ---
@@ -439,7 +442,7 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 ## 🔒 Privacy
 
 - **Your API keys and lists stay local:** in the Tampermonkey storage, plus a backup in torn.com's `localStorage`. They are not in the code and are never uploaded.
-- **Network:** the script only talks to `api.torn.com`, `ffscouter.com` (if FF Scouter is on) and GitHub (only when you check for updates, without key). Details: [API Terms of Service](#-api-terms-of-service).
+- **Network:** the script only talks to `api.torn.com`, `ffscouter.com` (if FF Scouter is on), `www.tornstats.com` (if a TornStats key is set) and GitHub (only when you check for updates, without key). Details: [API Terms of Service](#-api-terms-of-service).
 - ⚠️ **The export file contains your API key in plain text.** Don't share it.
 - ⚠️ Other userscripts running on torn.com could read the `localStorage` backup.
 
@@ -497,6 +500,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.31.0** | Training: optional **TornStats** source – with a TornStats key (⚙ → 📈 TornStats key) the page shows TornStats' battle stats history (~3 months) instead of the Torn API; without a key nothing changes |
 | **2.30.1** | Attack links (target finder and the tile menu) use Torn's new attack page `page.php?sid=attack`; the old `loader.php` link only showed an error |
 | **2.30.0** | 🔍 Target finder: new tile in the start menu, one tap opens a matching target (attack page or profile). Source FFScouter (`get-targets`, at most 1 request per tap, cached for 1 h) or your watchlist (no requests), with its own settings section: fair fight, level, inactive, factionless, status Okay. Watched players now also keep their level (no extra calls) |
 | **2.29.0** | Training: gains land on the Torn day they happened, not on the day of the sync – from Torn's daily recorded stats (no new key access; 1 extra call per sync with new stats, plus 1 per further day with a change). The newest gain from before the update is moved once as well. The history shows totals per day only |
