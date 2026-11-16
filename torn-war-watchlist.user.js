@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.29.0
+// @version      2.30.0
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -98,6 +98,17 @@
     trainEvery: isNum,
     trainRange: (v) => v === '7' || v === '30' || v === '90' || v === 'all',
     trainMode: (v) => v === 'gain' || v === 'value',
+    tfSource: (v) => v === 'ffs' || v === 'watch',
+    tfFfMin: isNum,
+    tfFfMax: isNum,
+    tfLvMin: isNum,
+    tfLvMax: isNum,
+    tfInactive: isBool,
+    tfInactiveDays: isNum,
+    tfNoFaction: isBool,
+    tfOkayOnly: isBool,
+    tfOpen: (v) => v === 'attack' || v === 'profile',
+    tfTab: (v) => v === 'same' || v === 'new',
   };
 
   // ---- Language (English / German) ----------------------------------------
@@ -136,6 +147,31 @@
       medNwSub: 'Aus Torns täglich gespeichertem Networth, heute zählt mit (ungefähr).',
       trainAccess: 'Dem API-Key fehlt der Zugriff auf Battle Stats (neu seit 2.27). Erstelle unter ⚙ → „✨ Custom-Key erstellen“ einen neuen Key und trag ihn ein. Alles andere läuft solange normal.',
       trainRange: (d) => `${d} T`,
+      tfSource: 'Quelle',
+      tfLevel: 'Level',
+      tfInactive: 'Nur inaktive',
+      tfInactiveDays: 'Inaktiv ab',
+      tfNoFaction: 'Nur factionless',
+      tfOkayOnly: 'Nur Status Okay',
+      tfOnlyWatch: 'nur Watchlist',
+      tfOnlyFfs: 'nur FFScouter',
+      tfOpen: 'Öffnen als',
+      tfProfile: 'Profil',
+      tfTab: 'Tab',
+      tfSame: 'gleicher',
+      tfNew: 'neuer',
+      tfReload: 'Neu laden',
+      tfCache: (n, m) => `${n} Ziele im Cache · noch ${m} min`,
+      tfCacheEmpty: 'Cache leer – der nächste Tipp lädt neue Ziele',
+      tfHintFfs: 'Nutzt deinen FF-Scouter-Key. Ein Tipp = höchstens 1 Request, meist 0 (Cache).',
+      tfHintWatch: 'Sucht in deiner Watchlist, kostet keine Requests. Der FF-Filter braucht FF Scouter.',
+      tfNone: 'Kein Ziel mit diesen Filtern',
+      tfNeedFf: 'FF Scouter in den Settings einschalten',
+      tfLoading: 'Suche …',
+      tfMatches: (n) => `${n} passende`,
+      tfInCache: (n) => `${n} im Cache`,
+      tfTip: 'Tippen: passendes Ziel öffnen · ⚙: Filter',
+      tfCogTip: 'Target-Finder-Einstellungen',
       trainAll: 'Alles',
       trainGain: 'Zuwachs',
       trainValue: 'Werte',
@@ -382,6 +418,31 @@
       medNwSub: 'From the networth Torn records each day, today included (approximate).',
       trainAccess: 'Your API key has no access to battle stats (new in 2.27). Create a new key under ⚙ → „✨ Create custom key“ and enter it. Everything else keeps working meanwhile.',
       trainRange: (d) => `${d} d`,
+      tfSource: 'Source',
+      tfLevel: 'Level',
+      tfInactive: 'Inactive only',
+      tfInactiveDays: 'Inactive for',
+      tfNoFaction: 'Factionless only',
+      tfOkayOnly: 'Status Okay only',
+      tfOnlyWatch: 'watchlist only',
+      tfOnlyFfs: 'FFScouter only',
+      tfOpen: 'Open as',
+      tfProfile: 'Profile',
+      tfTab: 'Tab',
+      tfSame: 'same',
+      tfNew: 'new',
+      tfReload: 'Reload',
+      tfCache: (n, m) => `${n} targets cached · ${m} min left`,
+      tfCacheEmpty: 'Cache empty – the next tap loads new targets',
+      tfHintFfs: 'Uses your FF Scouter key. One tap = at most 1 request, usually 0 (cache).',
+      tfHintWatch: 'Searches your watchlist, costs no requests. The FF filter needs FF Scouter.',
+      tfNone: 'No target matches these filters',
+      tfNeedFf: 'Turn on FF Scouter in the settings',
+      tfLoading: 'Searching …',
+      tfMatches: (n) => `${n} matching`,
+      tfInCache: (n) => `${n} cached`,
+      tfTip: 'Tap: open a matching target · ⚙: filters',
+      tfCogTip: 'Target finder settings',
       trainAll: 'All',
       trainGain: 'Gains',
       trainValue: 'Values',
@@ -776,6 +837,7 @@
         name: d.name,
         ts: d.last_action.timestamp,
         status: statusOf(d.status),
+        level: d.level || null,
         faction: profileFaction(d),
         error: null,
       });
@@ -811,6 +873,7 @@
           name: m.name,
           ts: m.last_action ? m.last_action.timestamp : null,
           status: statusOf(m.status),
+          level: m.level || null,
         }));
       updateFaction(id, { members, error: null });
     } catch (e) {
@@ -962,6 +1025,157 @@
     }
     for (const e of getList()) ids.add(e.id);
     return [...ids];
+  }
+
+  // ---- Target finder: one tap on the menu tile opens a matching target --------------------
+  // Two sources: FFScouter's get-targets (players from their database, cached, at most one
+  // request per tap) or the own watchlist (no request at all). Only opens a link – the user
+  // attacks by hand.
+  const TF_LIMIT = 50;                  // targets per get-targets call (FFScouter maximum)
+  const TF_MAX_AGE_MS = 60 * 60 * 1000; // fetched list stays valid for 1 h
+  const TF_USED_MS = 60 * 60 * 1000;    // a target already opened is skipped for 1 h
+  const tfOpt = () => {
+    const num = (k, d, lo, hi) => {
+      const v = GM_getValue(k, d);
+      return isNum(v) ? Math.min(hi, Math.max(lo, v)) : d;
+    };
+    const ffA = num('tfFfMin', 1, 1, 10);
+    const ffB = num('tfFfMax', 3, 1, 10);
+    const lvA = num('tfLvMin', 1, 1, 100);
+    const lvB = num('tfLvMax', 100, 1, 100);
+    return {
+      source: GM_getValue('tfSource', 'ffs') === 'watch' ? 'watch' : 'ffs',
+      ffMin: Math.min(ffA, ffB), ffMax: Math.max(ffA, ffB),
+      lvMin: Math.min(lvA, lvB), lvMax: Math.max(lvA, lvB),
+      inactive: GM_getValue('tfInactive', true),
+      inactiveDays: num('tfInactiveDays', 7, 1, 365),
+      noFaction: GM_getValue('tfNoFaction', false),
+      okayOnly: GM_getValue('tfOkayOnly', true),
+      open: GM_getValue('tfOpen', 'attack') === 'profile' ? 'profile' : 'attack',
+      tab: GM_getValue('tfTab', 'same') === 'new' ? 'new' : 'same',
+    };
+  };
+  const fmtFf = (v) => (Math.round(v * 10) / 10).toFixed(1);
+  // Query string for get-targets; it also tells whether the cached list still fits the filters
+  const tfQuery = (o) => `minlevel=${o.lvMin}&maxlevel=${o.lvMax}&minff=${o.ffMin.toFixed(2)}&maxff=${o.ffMax.toFixed(2)}`
+    + `&inactiveonly=${o.inactive ? 1 : 0}&factionless=${o.noFaction ? 1 : 0}&limit=${TF_LIMIT}`;
+  const tfUsedIds = () => {
+    const used = GM_getValue('tfUsed', {});
+    const now = Date.now();
+    return new Set(Object.keys(used).filter((id) => now - used[id] < TF_USED_MS).map(Number));
+  };
+  function tfMarkUsed(id) {
+    const used = GM_getValue('tfUsed', {});
+    const now = Date.now();
+    for (const k of Object.keys(used)) if (now - used[k] >= TF_USED_MS) delete used[k];
+    used[id] = now;
+    GM_setValue('tfUsed', used);
+  }
+  // Cached FFScouter list for the current filters (null = none, expired or other filters)
+  function tfCached(o) {
+    const c = GM_getValue('tfCache', null);
+    if (!c || c.query !== tfQuery(o) || Date.now() - c.fetched > TF_MAX_AGE_MS) return null;
+    return c;
+  }
+  // FFScouter targets that are still usable: not opened yet, not in hospital (as far as known)
+  function tfFfsLeft(c) {
+    if (!c) return [];
+    const used = tfUsedIds();
+    const now = Math.floor(Date.now() / 1000);
+    return c.targets.filter((x) => !used.has(x.id) && !(x.hosp > now));
+  }
+  // Watchlist candidates that match the filters right now (from data already loaded)
+  function tfWatchMatches(o) {
+    const now = Math.floor(Date.now() / 1000);
+    const myId = GM_getValue('myId', null);
+    const ff = ffEnabled() ? getFfCache() : null;
+    const levelFilter = o.lvMin > 1 || o.lvMax < 100;
+    const all = new Map();
+    for (const f of getFactions()) {
+      const hidden = new Set(f.hidden);
+      for (const m of f.members) if (!hidden.has(m.id)) all.set(m.id, m);
+    }
+    for (const e of getList()) if (!all.has(e.id)) all.set(e.id, e);
+    const out = [];
+    for (const e of all.values()) {
+      if (e.id === myId) continue;
+      if (o.okayOnly && !(e.status && statusLabel(e.status, now) === 'Okay')) continue;
+      if (o.inactive && !(e.ts && now - e.ts >= o.inactiveDays * 86400)) continue;
+      if (levelFilter && !(e.level && e.level >= o.lvMin && e.level <= o.lvMax)) continue;
+      let v = null;
+      if (ff) {
+        v = ff[e.id] && ff[e.id].ff;
+        if (v == null || v < o.ffMin || v > o.ffMax) continue;
+      }
+      out.push({ id: e.id, name: e.name || '', level: e.level || null, ff: v });
+    }
+    return out;
+  }
+  let tfBusy = false;
+  let tfMsg = null; // { text, err, until } – short feedback on the menu tile
+  function tfNote(text, err) {
+    tfMsg = { text, err: !!err, until: Date.now() + 4000 };
+    renderMenu();
+  }
+  function tfOpenTarget(x, o) {
+    tfMarkUsed(x.id);
+    const url = o.open === 'profile'
+      ? `https://www.torn.com/profiles.php?XID=${x.id}`
+      : `https://www.torn.com/loader.php?sid=attack&user2ID=${x.id}`;
+    tfNote(`→ ${x.name || x.id}${x.ff != null ? ` · FF ${fmtFf(x.ff)}` : ''}${x.level ? ` · Lvl ${x.level}` : ''}`);
+    if (o.tab === 'new') window.open(url, '_blank', 'noopener');
+    else location.href = url;
+  }
+  const tfPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  // One tap. Watchlist: no request. FFScouter: a request only if the cached list is used up.
+  async function findTarget() {
+    if (tfBusy) return;
+    const o = tfOpt();
+    if (o.source === 'watch') {
+      const used = tfUsedIds();
+      const list = tfWatchMatches(o);
+      const fresh = list.filter((x) => !used.has(x.id));
+      if (!list.length) return tfNote(t('tfNone'), true);
+      return tfOpenTarget(tfPick(fresh.length ? fresh : list), o);
+    }
+    // FFScouter: only when FF Scouter is turned on (opt-in for requests to ffscouter.com)
+    if (!ffEnabled()) return tfNote(t('tfNeedFf'), true);
+    const key = getFfKey();
+    if (!key) return tfNote(t('ffNoKey'), true);
+    let left = tfFfsLeft(tfCached(o));
+    if (!left.length) {
+      tfBusy = true;
+      tfNote(t('tfLoading'));
+      try {
+        const d = await ffGet(`get-targets?key=${encodeURIComponent(key)}&${tfQuery(o)}`);
+        if (!d || !Array.isArray(d.targets)) {
+          const code = d && d.code;
+          return tfNote(code === 6 ? t('ffNotRegistered')
+            : `${(d && d.error) || t('ffUnexpected')}${code != null ? ` (Code ${code})` : ''}`, true);
+        }
+        const targets = d.targets.filter((x) => x && x.player_id).map((x) => ({
+          id: x.player_id, name: x.name || '', level: x.level || null,
+          ff: x.fair_fight ?? null, hosp: x.hospital_until || 0,
+        }));
+        // Shuffle once, so the taps walk through the list in random order
+        for (let i = targets.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [targets[i], targets[j]] = [targets[j], targets[i]];
+        }
+        const c = { query: tfQuery(o), targets, fetched: Date.now() };
+        GM_setValue('tfCache', c);
+        left = tfFfsLeft(c);
+        // Everything was opened in the last hour? Then allow repeats rather than nothing.
+        if (!left.length) left = targets.filter((x) => !(x.hosp > Math.floor(Date.now() / 1000)));
+      } catch (e) {
+        return tfNote(e.message, true);
+      } finally {
+        tfBusy = false;
+        renderMenu();
+      }
+    }
+    if (!left.length) return tfNote(t('tfNone'), true);
+    tfOpenTarget(left[0], o);
   }
 
   const KEY_ERRORS = [1, 2, 10, 13, 16, 18]; // key missing/wrong/locked/insufficient access
@@ -1552,6 +1766,34 @@
     .twl-hc-guide .twl-hb { display: inline-block; margin-bottom: 4px; }
     .twl-keys-tos { margin-top: 6px; font-size: 10px; line-height: 1.4; color: #999; }
     #twl-panel .twl-keys-tos a { color: #ffcf9e; text-decoration: underline; }
+    /* Target finder: menu tile with a ⚙ corner, own section in the settings */
+    #twl-panel button.twl-tf-tile { position: relative; }
+    #twl-panel button.twl-tf-tile.twl-tf-busy .twl-ic { animation: twl-tf-pulse .8s ease-in-out infinite alternate; }
+    @keyframes twl-tf-pulse { to { opacity: .35; } }
+    .twl-tf-cog { position: absolute; top: 3px; right: 4px; padding: 2px 4px; font-size: 12px; line-height: 1; color: #ff9a3c; border-radius: 5px; }
+    @media (hover: hover) { .twl-tf-cog:hover { background: #3a230f; } }
+    #twl-panel.twl-touch .twl-tf-cog { top: 2px; right: 2px; padding: 5px 6px; font-size: 14px; }
+    .twl-tf { padding: 8px 10px; border-radius: 8px; background: #22201e; border: 1px solid #5a3a1c; }
+    .twl-tf-lb { font-size: 12px; color: #ddd; margin-bottom: 4px; }
+    #twl-panel .twl-tf-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; margin: 0;
+      padding: 6px 0; border: 0; border-bottom: 1px solid #333; border-radius: 0; background: none; color: #ddd;
+      font: 12px Arial, sans-serif; text-align: left; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .twl-tf > .twl-seg + .twl-tf-row { margin-top: 4px; }
+    .twl-tf-row small { display: block; font-size: 9.5px; color: #888; }
+    .twl-tf-row.twl-tf-dim { opacity: .4; }
+    .twl-tf-rng { display: flex; align-items: center; gap: 4px; color: #999; }
+    #twl-panel input.twl-tf-num { width: 48px; margin: 0; padding: 3px 4px; border: 1px solid #555; border-radius: 4px;
+      background: #141417; color: #fff; text-align: center; font: 12px Arial, sans-serif; }
+    .twl-tf-sw { flex: none; position: relative; width: 32px; height: 18px; border-radius: 9px; background: #444; transition: background .15s; }
+    .twl-tf-sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #bbb; transition: left .15s; }
+    .twl-on > .twl-tf-sw { background: #ff7518; }
+    .twl-on > .twl-tf-sw::after { left: 16px; background: #fff; }
+    #twl-panel .twl-tf-mini { flex: none; }
+    #twl-panel .twl-tf-mini button { flex: none; padding: 4px 8px; font-size: 11px; }
+    .twl-tf-cache { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 5px 8px;
+      border: 1px dashed #444; border-radius: 6px; font-size: 11px; color: #aaa; }
+    #twl-panel .twl-tf-cache button { flex: none; margin: 0; padding: 3px 8px; font-weight: bold; white-space: nowrap; }
+    .twl-tf-cache.twl-tf-dim { display: none; }
     #twl-panel button.twl-tile.twl-tile-gen { border-color: #ff9a3c; }
     .twl-rate { color: #999; }
     .twl-rate.twl-warn { color: #ff9a3c; }
@@ -1603,6 +1845,7 @@
           <button type="button" class="twl-mtile" data-act="tab" data-v="honors"><span class="twl-ic">🎖</span><span class="twl-lb">Honors</span><span class="twl-sub twl-m-hon"></span><span class="twl-mbar twl-m-honbar"><i></i></span></button>
           <button type="button" class="twl-mtile" data-act="tab" data-v="medals"><span class="twl-ic">🏅</span><span class="twl-lb">Medals</span><span class="twl-sub twl-m-med"></span><span class="twl-mbar twl-m-medbar" style="--c:#facc15"><i></i></span></button>
           <button type="button" class="twl-mtile" data-act="tab" data-v="training"><span class="twl-ic">💪</span><span class="twl-lb">Training</span><span class="twl-sub twl-m-tr"></span><span class="twl-m-trspark"></span></button>
+          <button type="button" class="twl-mtile twl-tf-tile" data-act="tf-go" data-i18n-tip="tfTip"><span class="twl-tf-cog" data-i18n-tip="tfCogTip">⚙</span><span class="twl-ic">🔍</span><span class="twl-lb">Target Finder</span><span class="twl-sub twl-m-tf"></span><span class="twl-sub twl-m-tf2"></span></button>
           <button type="button" class="twl-mtile" data-act="settings"><span class="twl-ic">⚙</span><span class="twl-lb" data-i18n="settings"></span><span class="twl-sub twl-m-set"></span></button>
         </div>
       </div>
@@ -1706,6 +1949,37 @@
           </div>
           <div class="twl-keys-tos"><span data-i18n="keysTos"></span>
             <a href="https://github.com/Provadis/prvds-torn-tool#-api-terms-of-service" target="_blank" rel="noopener" data-i18n="keysTosLink"></a></div>
+          <div class="twl-sec twl-tf-sec">🔍 Target Finder</div>
+          <div class="twl-tf">
+            <div class="twl-tf-lb" data-i18n="tfSource"></div>
+            <div class="twl-seg">
+              <button type="button" data-act="tf-set" data-k="tfSource" data-v="ffs">FFScouter</button>
+              <button type="button" data-act="tf-set" data-k="tfSource" data-v="watch">Watchlist</button>
+            </div>
+            <div class="twl-tf-row"><span>Fair Fight</span><span class="twl-tf-rng"><input type="number" class="twl-tf-num" data-k="tfFfMin" min="1" max="10" step="0.1" inputmode="decimal" /> – <input type="number" class="twl-tf-num" data-k="tfFfMax" min="1" max="10" step="0.1" inputmode="decimal" /></span></div>
+            <div class="twl-tf-row"><span data-i18n="tfLevel"></span><span class="twl-tf-rng"><input type="number" class="twl-tf-num" data-k="tfLvMin" min="1" max="100" step="1" inputmode="numeric" /> – <input type="number" class="twl-tf-num" data-k="tfLvMax" min="1" max="100" step="1" inputmode="numeric" /></span></div>
+            <button type="button" class="twl-tf-row" data-act="tf-toggle" data-k="tfInactive"><span data-i18n="tfInactive"></span><span class="twl-tf-sw"></span></button>
+            <div class="twl-tf-row" data-only="watch"><span><span data-i18n="tfInactiveDays"></span><small data-i18n="tfOnlyWatch"></small></span>
+              <span class="twl-seg twl-tf-mini">
+                <button type="button" data-act="tf-set" data-k="tfInactiveDays" data-v="1"></button>
+                <button type="button" data-act="tf-set" data-k="tfInactiveDays" data-v="7"></button>
+                <button type="button" data-act="tf-set" data-k="tfInactiveDays" data-v="30"></button>
+              </span></div>
+            <button type="button" class="twl-tf-row" data-act="tf-toggle" data-k="tfNoFaction" data-only="ffs"><span><span data-i18n="tfNoFaction"></span><small data-i18n="tfOnlyFfs"></small></span><span class="twl-tf-sw"></span></button>
+            <button type="button" class="twl-tf-row" data-act="tf-toggle" data-k="tfOkayOnly" data-only="watch"><span><span data-i18n="tfOkayOnly"></span><small data-i18n="tfOnlyWatch"></small></span><span class="twl-tf-sw"></span></button>
+            <div class="twl-tf-row"><span data-i18n="tfOpen"></span>
+              <span class="twl-seg twl-tf-mini">
+                <button type="button" data-act="tf-set" data-k="tfOpen" data-v="attack">Attack</button>
+                <button type="button" data-act="tf-set" data-k="tfOpen" data-v="profile" data-i18n="tfProfile"></button>
+              </span></div>
+            <div class="twl-tf-row"><span data-i18n="tfTab"></span>
+              <span class="twl-seg twl-tf-mini">
+                <button type="button" data-act="tf-set" data-k="tfTab" data-v="same" data-i18n="tfSame"></button>
+                <button type="button" data-act="tf-set" data-k="tfTab" data-v="new" data-i18n="tfNew"></button>
+              </span></div>
+            <div class="twl-tf-cache" data-only="ffs"><span class="twl-tf-cache-txt"></span><button type="button" data-act="tf-clear" data-i18n="tfReload"></button></div>
+          </div>
+          <div class="twl-keys-tos twl-tf-hint"></div>
           <div class="twl-sec" data-i18n="language"></div>
           <div class="twl-seg">
             <button type="button" data-act="seg-lang" data-v="de">Deutsch</button>
@@ -2473,6 +2747,30 @@
         break;
       case 'menu':
         setTab('menu');
+        break;
+      // Target finder: tile = open a target, its ⚙ corner = jump to the settings section
+      case 'tf-go':
+        if (ev.target.closest('.twl-tf-cog')) {
+          showSettings(true);
+          const sp = $('.twl-spage');
+          sp.scrollTop += $('.twl-tf-sec').getBoundingClientRect().top - sp.getBoundingClientRect().top - 4;
+        } else findTarget();
+        break;
+      case 'tf-set': {
+        const k = btn.dataset.k;
+        GM_setValue(k, k === 'tfInactiveDays' ? parseInt(btn.dataset.v, 10) : btn.dataset.v);
+        syncGrid();
+        break;
+      }
+      case 'tf-toggle': {
+        const k = btn.dataset.k;
+        GM_setValue(k, !tfOpt()[{ tfInactive: 'inactive', tfNoFaction: 'noFaction', tfOkayOnly: 'okayOnly' }[k]]);
+        syncGrid();
+        break;
+      }
+      case 'tf-clear':
+        GM_setValue('tfCache', null); // the next tap on the tile loads a new list
+        syncGrid();
         break;
       case 'scale-reset':
         setScale(100);
@@ -3424,7 +3722,38 @@
     volInput.value = gridVol.value;
     volInput.dispatchEvent(new Event('input'));
   });
+  for (const inp of panel.querySelectorAll('.twl-tf-num')) {
+    inp.addEventListener('change', () => {
+      const v = parseFloat(inp.value);
+      if (Number.isFinite(v)) GM_setValue(inp.dataset.k, v);
+      syncGrid();
+    });
+  }
+  function syncTf() {
+    const o = tfOpt();
+    const set = { tfSource: o.source, tfInactiveDays: String(o.inactiveDays), tfOpen: o.open, tfTab: o.tab };
+    for (const b of panel.querySelectorAll('[data-act="tf-set"]')) {
+      b.classList.toggle('twl-on', set[b.dataset.k] === b.dataset.v);
+      if (b.dataset.k === 'tfInactiveDays' && b.textContent !== t('trainRange', b.dataset.v)) b.textContent = t('trainRange', b.dataset.v);
+    }
+    const on = { tfInactive: o.inactive, tfNoFaction: o.noFaction, tfOkayOnly: o.okayOnly };
+    for (const b of panel.querySelectorAll('[data-act="tf-toggle"]')) b.classList.toggle('twl-on', on[b.dataset.k]);
+    for (const el of panel.querySelectorAll('.twl-tf [data-only]')) el.classList.toggle('twl-tf-dim', el.dataset.only !== o.source);
+    const val = { tfFfMin: fmtFf(o.ffMin), tfFfMax: fmtFf(o.ffMax), tfLvMin: String(o.lvMin), tfLvMax: String(o.lvMax) };
+    for (const inp of panel.querySelectorAll('.twl-tf-num')) {
+      if (document.activeElement !== inp && inp.value !== val[inp.dataset.k]) inp.value = val[inp.dataset.k];
+    }
+    const c = tfCached(o);
+    const n = tfFfsLeft(c).length;
+    const txt = n ? t('tfCache', n, Math.max(1, Math.ceil((c.fetched + TF_MAX_AGE_MS - Date.now()) / 60000))) : t('tfCacheEmpty');
+    const el = $('.twl-tf-cache-txt');
+    if (el.textContent !== txt) el.textContent = txt;
+    const hint = $('.twl-tf-hint');
+    const h = t(o.source === 'ffs' ? 'tfHintFfs' : 'tfHintWatch');
+    if (hint.textContent !== h) hint.textContent = h;
+  }
   function syncGrid() {
+    syncTf();
     const setOn = (tile, on) => {
       tile.classList.toggle('twl-on', on);
       const pill = tile.querySelector('.twl-pill');
@@ -4342,9 +4671,30 @@
     const mW = `${mAll.length ? Math.round((mN / mAll.length) * 100) : 0}%`;
     if (mBar.firstElementChild.style.width !== mW) mBar.firstElementChild.style.width = mW;
     renderTrainTile();
+    renderTfTile();
     const set = $('.twl-m-set');
     setText(set, getKey() ? (SCRIPT_VERSION ? `v${SCRIPT_VERSION}` : '') : t('menuNoKey'));
     set.classList.toggle('twl-ff-err', !getKey());
+  }
+  function renderTfTile() {
+    const o = tfOpt();
+    const tile = $('.twl-tf-tile');
+    tile.classList.toggle('twl-tf-busy', tfBusy);
+    const sub = $('.twl-m-tf');
+    const sub2 = $('.twl-m-tf2');
+    const line1 = `${o.source === 'ffs' ? 'FFScouter' : 'Watchlist'} · FF ${fmtFf(o.ffMin)}–${fmtFf(o.ffMax)}`;
+    let line2;
+    let err = false;
+    if (tfMsg && Date.now() < tfMsg.until) {
+      line2 = tfMsg.text;
+      err = tfMsg.err;
+    } else if (o.source === 'ffs') {
+      line2 = ffEnabled() ? t('tfInCache', tfFfsLeft(tfCached(o)).length) : t('tfNeedFf');
+      err = !ffEnabled();
+    } else line2 = t('tfMatches', tfWatchMatches(o).length);
+    if (sub.textContent !== line1) sub.textContent = line1;
+    if (sub2.textContent !== line2) sub2.textContent = line2;
+    sub2.classList.toggle('twl-ff-err', err);
   }
   function toggleIn(key, id) {
     const arr = GM_getValue(key, []);

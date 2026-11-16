@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.29.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.30.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -96,7 +96,7 @@ Big 2-column tiles: tap = profile, long press = attack, copy, remove.
 <td valign="top">
 
 **🧭 Start menu & settings as tiles**<br>
-Big tiles for watchlist, honors, medals, training and settings; English and German, ✨ custom API key in one click.
+Big tiles for watchlist, honors, medals, training, target finder and settings; English and German, ✨ custom API key in one click.
 
 </td>
 <td valign="top">
@@ -107,8 +107,8 @@ Move list and settings between devices; automatic browser backup.
 </td>
 <td valign="top">
 
-**🌈 Nyan Cat**<br>
-Runs around the panel every now and then. Just because.
+**🔍 Target finder**<br>
+One tap on the menu tile opens a matching target – from FFScouter or your watchlist, filtered by fair fight, level, inactive and factionless.
 
 </td>
 </tr>
@@ -322,6 +322,18 @@ A snapshot is only stored when a stat changed, and snapshots older than 90 days 
 </details>
 
 <details>
+<summary><b>🔍 Target finder</b></summary>
+
+A tile in the start menu (PC and iPhone): **one tap opens the attack page** (or the profile) of a player that matches your filters. You attack by hand – the script only opens the link. The ⚙ in the tile's corner jumps to its own section in the settings:
+- **Source:** *FFScouter* (players from FFScouter's database) or *Watchlist* (players from your watched factions and single players).
+- **Filters:** fair fight range, level range, inactive only, factionless only (FFScouter), inactive for 1/7/30 days and status Okay only (watchlist). Options the chosen source doesn't support are greyed out.
+- **On tap:** attack page or profile, in the same or a new tab. A target you opened is skipped for an hour, so you don't get the same one twice.
+
+**Requests:** *FFScouter* needs FF Scouter switched on and uses your FF Scouter key. One request loads up to 50 targets, which are cached for an hour; the next taps use that list (players known to be in hospital are skipped), so a tap makes at most one request, usually none. **Reload** in the settings empties the list. *Watchlist* makes no requests at all: it uses the status, last action, level and FF values the panel already has. The FF filter needs FF Scouter; without it, FF is ignored.
+
+</details>
+
+<details>
 <summary><b>💾 Export, import & backup</b></summary>
 
 - **⬇ Export / ⬆ Import:** save settings, API keys, players and factions to a file and restore them.
@@ -354,7 +366,7 @@ The current rate is shown **bottom right in the panel** (e.g. „≈ 4 requests/
 More ways the script saves calls:
 - With several Torn tabs open, **only one tab** makes requests; the others get the data via the shared storage.
 - ⏸ pauses all requests.
-- FF Scouter requests go to ffscouter.com and don't count against Torn's limit.
+- FF Scouter requests go to ffscouter.com and don't count against Torn's limit. The target finder (FFScouter source) makes at most 1 request per tap, usually none (cached for an hour).
 
 ---
 
@@ -419,7 +431,7 @@ How this script uses your Torn API key, following [Torn's API ToS guidelines](ht
 </details>
 
 **Integrations:**
-- **FF Scouter: opt-in, off by default.** When you switch it on, your FF Scouter key goes to `ffscouter.com` together with the IDs of the players shown in the panel, to fetch fair-fight estimates. If you didn't set a separate FF key, that's your watchlist key. FF Scouter's own terms apply, see [ffscouter.com](https://ffscouter.com).
+- **FF Scouter: opt-in, off by default.** When you switch it on, your FF Scouter key goes to `ffscouter.com` together with the IDs of the players shown in the panel, to fetch fair-fight estimates. If you didn't set a separate FF key, that's your watchlist key. With the target finder on *FFScouter*, a tap on its tile also sends the key and your filters (FF range, level range, inactive, factionless) to `ffscouter.com/api/v1/get-targets`, at most once per tap. FF Scouter's own terms apply, see [ffscouter.com](https://ffscouter.com).
 - **Update check: GitHub, no key.** Only when you press *Check for updates* does the script ask `api.github.com` / `raw.githubusercontent.com` for the newest version. No key and no game data are sent.
 
 ---
@@ -485,6 +497,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.30.0** | 🔍 Target finder: new tile in the start menu, one tap opens a matching target (attack page or profile). Source FFScouter (`get-targets`, at most 1 request per tap, cached for 1 h) or your watchlist (no requests), with its own settings section: fair fight, level, inactive, factionless, status Okay. Watched players now also keep their level (no extra calls) |
 | **2.29.0** | Training: gains land on the Torn day they happened, not on the day of the sync – from Torn's daily recorded stats (no new key access; 1 extra call per sync with new stats, plus 1 per further day with a change). The newest gain from before the update is moved once as well. The history shows totals per day only |
 | **2.28.0** | iPhone/iPad: no UI scale any more; the menu and the feature tiles in the settings always show 3 tiles per row, filling the width. The scale slider stays on the PC |
 | **2.27.4** | Medals: the days for networth medals now come from Torn's daily recorded networth, so days before the update count too (one-time catch-up of up to 27 calls, then at most 1 a day) |
@@ -555,9 +568,10 @@ The script restores its browser backup automatically. If something is still miss
 - **FF-Scouter-Werte.**
 - **Chain-Timer:** große Anzeige mit rotem Alarm (optional mit Bomben-Sound) unter 1:30.
 - **Zähler für die heutigen Hits.**
-- **Startmenü mit Kacheln:** Watchlist, Honors, Medals, Training und Einstellungen auf einen Blick, „‹ Menü“ führt zurück. Am PC stellst du die Größe der ganzen Oberfläche in den Einstellungen ein (80–150 %), auf dem iPhone sind es immer 3 Kacheln pro Reihe.
+- **Startmenü mit Kacheln:** Watchlist, Honors, Medals, Training, Target Finder und Einstellungen auf einen Blick, „‹ Menü“ führt zurück. Am PC stellst du die Größe der ganzen Oberfläche in den Einstellungen ein (80–150 %), auf dem iPhone sind es immer 3 Kacheln pro Reihe.
 - **Honor-Tracker:** fehlende Honors nach Schwierigkeit, mit Anleitung (englisch), Kategorien und Fortschritt.
 - **Medal-Tracker:** fehlende Medals nach Typ, mit Fortschritt (Level, Rang, Angriffe, Crimes, Tage in der Faction …). Wer schon einen eigenen Key hat, erstellt ihn einmal neu (✨ Eigenen Key erstellen), damit er `medals` lesen darf.
+- **Target Finder:** Kachel im Startmenü, ein Tipp öffnet ein passendes Ziel (Attack-Seite oder Profil). Quelle FFScouter oder deine Watchlist, Filter für Fair Fight, Level, inaktiv und factionless in einem eigenen Abschnitt der Einstellungen.
 - **Training-Tracker:** deine Battle Stats mit Zuwachs, Graph über die Zeit, Auto-Sync (30 min bis 6 h oder aus) und Verlauf pro Tag. Dafür braucht der Key `battlestats` – einmal neu erstellen.
 
 Ganze Factions kosten nur einen API-Call pro Update. Die Oberfläche gibt es auf **Englisch und Deutsch**: ⚙ → Sprache.
