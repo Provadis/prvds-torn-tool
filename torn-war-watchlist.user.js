@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn War Watchlist
 // @namespace    torn-war-watchlist
-// @version      2.31.0
+// @version      2.31.1
 // @description  Ranked war watchlist for Torn: players and whole factions, hospital countdown, last-action colors, FF Scouter, chain timer
 // @author       Provadis
 // @homepageURL  https://github.com/Provadis/prvds-torn-tool
@@ -265,6 +265,7 @@
       tsKeyPrompt: 'TornStats-API-Key (tornstats.com → Settings → API Key).\nMit Key holt die Training-Seite deine Stats von TornStats statt von Torn.\nLeer lassen = Torn-API verwenden.',
       tsKeyNone: 'aus',
       trainSourceTs: 'Quelle: TornStats',
+      trainTsUpdateFail: 'TornStats-Update fehlgeschlagen',
       tileGenKey: 'Custom-Key erstellen',
       genKeyTitle: 'Öffnet Torns API-Key-Seite mit einem fertig ausgefüllten Key, der nur die nötigen Rechte hat. Dort selbst auf „Create“ tippen und den Key hier unter „Torn API-Key“ eintragen.',
       keysTos: '🔒 Deine Keys bleiben nur in diesem Browser und gehen nur an api.torn.com (und ffscouter.com, wenn FF Scouter an ist, bzw. tornstats.com, wenn ein TornStats-Key gesetzt ist).',
@@ -541,6 +542,7 @@
       tsKeyPrompt: 'TornStats API key (tornstats.com → Settings → API Key).\nWith a key the training page gets your stats from TornStats instead of Torn.\nLeave empty to use the Torn API.',
       tsKeyNone: 'off',
       trainSourceTs: 'Source: TornStats',
+      trainTsUpdateFail: 'TornStats update failed',
       tileGenKey: 'Create custom key',
       genKeyTitle: "Opens Torn's API key page with a pre-filled key that has only the access this script needs. Tap „Create“ there yourself and enter the key here under „Torn API key“.",
       keysTos: '🔒 Your keys stay in this browser and are only sent to api.torn.com (and ffscouter.com if FF Scouter is on, tornstats.com if a TornStats key is set).',
@@ -5349,11 +5351,14 @@
   }
   // battlestats/record lets TornStats store your current stats first (so today's gains are in),
   // then battlestats/graph returns its history of the last ~3 months: { strength, defense, speed, dexterity, timestamp }
+  // Returns a warning when the update failed (the graph is shown anyway).
   async function refreshTrainingTs(key) {
+    let warn = '';
     try {
-      await tsGet('battlestats/record', key);
-    } catch {
-      // the graph below still shows what TornStats has
+      const r = await tsGet('battlestats/record', key);
+      if (!r || r.status === false) warn = `${t('trainTsUpdateFail')}: ${(r && r.message) || t('invalidResponse')}`;
+    } catch (e) {
+      warn = `${t('trainTsUpdateFail')}: ${e.message}`;
     }
     await sleep(REQUEST_GAP_MS);
     const d = await tsGet('battlestats/graph', key);
@@ -5363,6 +5368,7 @@
       .filter((e) => isTrainSnap(e) && e[0] > 0)
       .sort((a, b) => a[0] - b[0]);
     GM_setValue('trainTsHist', snaps);
+    return warn;
   }
 
   async function refreshTraining(force) {
@@ -5375,8 +5381,7 @@
     renderTraining();
     try {
       if (tsKey) {
-        await refreshTrainingTs(tsKey);
-        GM_setValue('trainError', '');
+        GM_setValue('trainError', await refreshTrainingTs(tsKey));
         return;
       }
       const d = await apiGet('v2/user/battlestats', key);
