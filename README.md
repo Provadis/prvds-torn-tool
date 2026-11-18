@@ -4,7 +4,7 @@
 
 **Keep an eye on your ranked war targets: who is online, who is in hospital, how strong they are and how much time the chain has left – all in one small panel right inside Torn. On the PC and on your iPhone.**
 
-[![Version](https://img.shields.io/badge/version-2.31.0-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
+[![Version](https://img.shields.io/badge/version-2.31.1-ff7518?style=for-the-badge)](https://raw.githubusercontent.com/Provadis/prvds-torn-tool/main/torn-war-watchlist.user.js)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-Userscript-00485B?style=for-the-badge&logo=tampermonkey&logoColor=white)](https://www.tampermonkey.net/)
 [![Language](https://img.shields.io/badge/UI-EN%20%7C%20DE-1b1b1f?style=for-the-badge)](#-features)
 [![License](https://img.shields.io/badge/license-MIT-2ea44f?style=for-the-badge)](LICENSE)
@@ -500,6 +500,7 @@ The script restores its browser backup automatically. If something is still miss
 
 | Version | What's new |
 |---|---|
+| **2.31.1** | Training with TornStats: if TornStats' stats update fails, the status line now shows TornStats' message instead of hiding it |
 | **2.31.0** | Training: optional **TornStats** source – with a TornStats key (⚙ → 📈 TornStats key) the page shows TornStats' battle stats history (~3 months) instead of the Torn API; without a key nothing changes |
 | **2.30.1** | Attack links (target finder and the tile menu) use Torn's new attack page `page.php?sid=attack`; the old `loader.php` link only showed an error |
 | **2.30.0** | 🔍 Target finder: new tile in the start menu, one tap opens a matching target (attack page or profile). Source FFScouter (`get-targets`, at most 1 request per tap, cached for 1 h) or your watchlist (no requests), with its own settings section: fair fight, level, inactive, factionless, status Okay. Watched players now also keep their level (no extra calls) |
